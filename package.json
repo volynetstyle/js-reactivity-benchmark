@@ -1,0 +1,45 @@
+{
+  "name": "js-reactivity-benchmark",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "build": "esbuild src/index.ts --bundle --format=cjs --platform=node --outdir=dist --sourcemap=external",
+    "run": "node --expose-gc dist/index.js",
+    "bench": "npm run build && node scripts/bench-and-update.mjs",
+    "results:page": "node scripts/render-results-page.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@amadeus-it-group/tansu": "^2.0.0",
+    "@angular/core": "21.2.8",
+    "@preact/signals": "^2.0.0",
+    "@reactively/core": "^0.0.8",
+    "@vue/reactivity": "^3.5.13",
+    "alien-signals": "3.1.2",
+    "compostate": "0.6.0-alpha.1",
+    "kairo": "0.6.0-rc.0",
+    "mobx": "^6.13.5",
+    "mol_wire_lib": "^1.0.1259",
+    "oby": "15.1.2",
+    "preact": "^10.25.4",
+    "random": "^5.1.1",
+    "react": "^19.0.0",
+    "s-js": "^0.4.9",
+    "signal-polyfill": "^0.2.1",
+    "signia": "^0.1.5",
+    "solid-js": "^1.9.4",
+    "svelte": "5.55.3",
+    "usignal": "^0.10.0",
+    "valtio": "^2.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "esbuild": "^0.28.0",
+    "prettier": "^3.4.2",
+    "vitest": "^4.1.4"
+  }
+}
