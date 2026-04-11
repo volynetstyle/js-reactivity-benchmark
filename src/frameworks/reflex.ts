@@ -3,7 +3,7 @@ import {
   signal,
   computed,
   effect,
-} from "../../reflex/dist/esm";
+} from "@volynets/reflex";
 import { ReactiveFramework } from "../util/reactiveFramework";
 
 const rt = createRuntime({ effectStrategy: "sab" });
