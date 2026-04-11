@@ -56,9 +56,6 @@ importers:
       react:
         specifier: ^19.0.0
         version: 19.0.0
-      ripple:
-        specifier: ^0.3.8
-        version: 0.3.8
       s-js:
         specifier: ^0.4.9
         version: 0.4.9
@@ -1124,9 +1121,6 @@ packages:
   require-main-filename@2.0.0:
     resolution: {integrity: sha512-NKN5kMDylKuldxYLSUfrbo5Tuzh4hd+2E8NPPX02mZtn1VuREQToYe/ZdlJy+J3uCpfaiGF05e7B8W0iXbQHmg==}
 
-  ripple@0.3.8:
-    resolution: {integrity: sha512-BxTLyKGYZM8VhbYH/1ep1UDxTwJikteMJC2lL3tH8E7OcZuatoA3QJMsFMtpp7c7rcqgssMIOWOsx7mSAn+47w==}
-
   rollup@4.60.1:
     resolution: {integrity: sha512-VmtB2rFU/GroZ4oL8+ZqXgSA38O6GR8KSIvWmEFv63pQ0G6KaBH9s07PO8XTXP4vI+3UJUEypOfjkGfmSBBR0w==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
@@ -2072,25 +2066,7 @@ snapshots:
   require-directory@2.1.1: {}
 
   require-main-filename@2.0.0: {}
-
-  ripple@0.3.8:
-    dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
-      '@sveltejs/acorn-typescript': 1.0.9(acorn@8.16.0)
-      '@types/estree': 1.0.8
-      '@types/estree-jsx': 1.0.5
-      acorn: 8.16.0
-      clsx: 2.1.1
-      devalue: 5.7.1
-      esm-env: 1.2.2
-      esrap: 2.2.5
-      is-reference: 3.0.3
-      magic-string: 0.30.21
-      muggle-string: 0.4.1
-      zimmerframe: 1.1.2
-    transitivePeerDependencies:
-      - '@typescript-eslint/types'
-
+  
   rollup@4.60.1:
     dependencies:
       '@types/estree': 1.0.8
