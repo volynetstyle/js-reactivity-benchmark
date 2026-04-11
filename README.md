@@ -81,3 +81,7 @@ Not every adapter is enabled in the default run. The currently active framework 
 ## Current State
 
 Results in this folder are generated locally from `bench-results/latest.log`, and `index.html` shows average execution time across all parsed tests for each framework. If you want to document a specific machine, Node version, or benchmark date in the README, it is best to do that after the next full benchmark run.
+
+## Thanks
+
+Based on the original work from [milomg/js-reactivity-benchmark](https://github.com/milomg/js-reactivity-benchmark). Thanks for the benchmark foundation and ideas behind this codebase. :)
