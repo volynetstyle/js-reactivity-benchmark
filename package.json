@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run --pool=threads",
     "build": "esbuild src/index.ts --bundle --format=cjs --platform=node --outdir=dist --sourcemap=external",
     "run": "node --expose-gc dist/index.js",
     "bench": "npm run build && node scripts/bench-and-update.mjs",
@@ -18,6 +18,7 @@
     "@angular/core": "21.2.8",
     "@preact/signals": "^2.0.0",
     "@reactively/core": "^0.0.8",
+    "@solidjs/signals": "^0.13.11",
     "@vue/reactivity": "^3.5.13",
     "alien-signals": "3.1.2",
     "compostate": "0.6.0-alpha.1",
@@ -40,6 +41,7 @@
     "@types/node": "^25.6.0",
     "esbuild": "^0.28.0",
     "prettier": "^3.4.2",
+    "vite": "^7.1.11",
     "vitest": "^4.1.4"
   }
 }

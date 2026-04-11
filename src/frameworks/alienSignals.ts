@@ -1,7 +1,5 @@
-import { getDefaultSystem } from "alien-signals/esm";
+import { computed, effect, endBatch, signal, startBatch } from "alien-signals";
 import { ReactiveFramework } from "../util/reactiveFramework";
-
-const { signal, computed, effect, startBatch, endBatch } = getDefaultSystem();
 
 export const alienFramework: ReactiveFramework = {
   name: "alien-signals",

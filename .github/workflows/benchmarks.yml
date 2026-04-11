@@ -1,0 +1,88 @@
+name: Benchmarks
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  benchmark:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --strict-peer-dependencies
+
+      - name: Run benchmarks
+        run: pnpm bench
+
+      - name: Archive benchmark output
+        id: archive
+        shell: bash
+        run: |
+          timestamp="$(date -u +'%Y%m%dT%H%M%SZ')"
+          short_sha="${GITHUB_SHA::7}"
+          archive_dir="bench-results/history"
+          archive_log="$archive_dir/${timestamp}-${short_sha}.log"
+          archive_meta="$archive_dir/${timestamp}-${short_sha}.json"
+
+          mkdir -p "$archive_dir"
+          cp bench-results/latest.log "$archive_log"
+
+          cat > "$archive_meta" <<EOF
+          {
+            "commit": "${GITHUB_SHA}",
+            "shortCommit": "${short_sha}",
+            "ref": "${GITHUB_REF}",
+            "runId": "${GITHUB_RUN_ID}",
+            "runNumber": "${GITHUB_RUN_NUMBER}",
+            "generatedAtUtc": "${timestamp}",
+            "logPath": "${archive_log}"
+          }
+          EOF
+
+          {
+            echo "archive_log=$archive_log"
+            echo "archive_meta=$archive_meta"
+            echo "timestamp=$timestamp"
+            echo "short_sha=$short_sha"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload benchmark artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-${{ steps.archive.outputs.timestamp }}-${{ steps.archive.outputs.short_sha }}
+          path: |
+            bench-results/latest.log
+            ${{ steps.archive.outputs.archive_log }}
+            ${{ steps.archive.outputs.archive_meta }}
+            index.html
+
+      - name: Commit benchmark results
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update benchmark results [skip ci]"
+          file_pattern: bench-results index.html

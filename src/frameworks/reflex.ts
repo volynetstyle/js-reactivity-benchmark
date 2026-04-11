@@ -1,28 +1,29 @@
 import {
   createRuntime,
   signal,
-  memo,
+  computed,
   effect,
 } from "../../node_modules/reflex/dist/esm";
 import { ReactiveFramework } from "../util/reactiveFramework";
 
-const rt = createRuntime({ effectStrategy: "sab"});
+const rt = createRuntime({ effectStrategy: "sab" });
 
 export const reflexFramework: ReactiveFramework = {
   name: "reflex",
   signal: (initial) => {
-    const [r, w] = signal(initial);
+    const { 0: read, 1: write } = signal(initial);
+    
     return {
-      read: r,
-      write: w,
+      read,
+      write,
     };
   },
   computed: (fn) => {
     return {
-      read: memo(fn),
+      read: computed(fn),
     };
   },
   effect: effect,
-  withBatch:  rt.batch,
+  withBatch: rt.batch,
   withBuild: (fn) => fn(),
 };
