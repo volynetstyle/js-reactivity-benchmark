@@ -3,7 +3,7 @@ import {
   signal,
   computed,
   effect,
-} from "../../node_modules/reflex/dist/esm";
+} from "../../reflex/dist/esm";
 import { ReactiveFramework } from "../util/reactiveFramework";
 
 const rt = createRuntime({ effectStrategy: "sab" });
