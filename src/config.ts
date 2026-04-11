@@ -8,14 +8,16 @@ import { molWireFramework } from "./frameworks/molWire";
 import { obyFramework } from "./frameworks/oby";
 import { preactSignalFramework } from "./frameworks/preactSignals";
 import { reactivelyFramework } from "./frameworks/reactively";
+
 import { signiaFramework } from "./frameworks/signia";
 import { solidFramework } from "./frameworks/solid";
 import { sFramework } from "./frameworks/s";
 import { usignalFramework } from "./frameworks/uSignal";
 import { vueReactivityFramework } from "./frameworks/vueReactivity";
-import { svelteFramework } from "./frameworks/svelte";
+//import { svelteFramework } from "./frameworks/svelte";
 import { tansuFramework } from "./frameworks/tansu";
 import { reflexFramework } from "./frameworks/reflex";
+import { solidSignalsFramework } from "./frameworks/solid-signals";
 // import { compostateFramework } from "./frameworks/compostate";
 // import { valtioFramework } from "./frameworks/valtio";
 
@@ -26,12 +28,15 @@ export const frameworkInfo: FrameworkInfo[] = [
   //{ framework: svelteFramework, testPullCounts: true },
   { framework: tc39SignalsProposalStage0, testPullCounts: true },
   { framework: reactivelyFramework, testPullCounts: true },
+  // unoptimized and too heavy
+  //{ framework: rippleFramework, testPullCounts: true },
   { framework: sFramework },
   { framework: tansuFramework, testPullCounts: true },
   { framework: angularFramework, testPullCounts: true },
   { framework: molWireFramework, testPullCounts: true },
   { framework: obyFramework, testPullCounts: true },
   { framework: signiaFramework, testPullCounts: true },
+  { framework: solidSignalsFramework },
   { framework: solidFramework },
   { framework: usignalFramework, testPullCounts: true },
   { framework: vueReactivityFramework, testPullCounts: true },

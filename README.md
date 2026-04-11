@@ -15,6 +15,14 @@ pnpm install
 pnpm bench
 ```
 
+To run only one framework locally, set `BENCH_FRAMEWORK`:
+
+```bash
+BENCH_FRAMEWORK=ripple pnpm bench
+```
+
+You can also pass a comma-separated list such as `BENCH_FRAMEWORK="ripple,alien-signals"`.
+
 After the run, these files are updated:
 
 - `bench-results/latest.log` - raw runner output

@@ -6,6 +6,12 @@ on:
       - main
       - master
   workflow_dispatch:
+    inputs:
+      framework:
+        description: "Optional framework name to benchmark, e.g. ripple"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -37,6 +43,8 @@ jobs:
         run: pnpm install --frozen-lockfile --strict-peer-dependencies
 
       - name: Run benchmarks
+        env:
+          BENCH_FRAMEWORK: ${{ github.event.inputs.framework }}
         run: pnpm bench
 
       - name: Archive benchmark output

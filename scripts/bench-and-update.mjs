@@ -8,9 +8,14 @@ const LOG_PATH = path.join(LOG_DIR, "latest.log");
 const HTML_PATH = path.resolve("index.html");
 
 async function runBench() {
+  const benchFramework = process.env.BENCH_FRAMEWORK?.trim();
   return await new Promise((resolve, reject) => {
     const child = spawn("node", ["--expose-gc", "dist/index.js"], {
       cwd: process.cwd(),
+      env: {
+        ...process.env,
+        ...(benchFramework ? { BENCH_FRAMEWORK: benchFramework } : {}),
+      },
       stdio: ["inherit", "pipe", "pipe"],
       shell: false,
     });
