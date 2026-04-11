@@ -115,17 +115,17 @@ export const perfTests: TestConfig[] = [
   },
   // Several frameworks hang on this test, so disabling it for now.
   // @see https://github.com/vuejs/core/issues/11928
-  {
-    name: "very dynamic",
-    width: 100,
-    totalLayers: 15,
-    staticFraction: 0.5,
-    nSources: 6,
-    readFraction: 1,
-    iterations: 2000,
-    expected: {
-      sum: 15664996402790400,
-      count: 1078671,
-    },
-  },
+  // {
+  //   name: "very dynamic",
+  //   width: 100,
+  //   totalLayers: 15,
+  //   staticFraction: 0.5,
+  //   nSources: 6,
+  //   readFraction: 1,
+  //   iterations: 2000,
+  //   expected: {
+  //     sum: 15664996402790400,
+  //     count: 1078671,
+  //   },
+  // },
 ];
