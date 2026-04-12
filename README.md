@@ -84,7 +84,11 @@ The repository contains adapters for:
 - Valtio
 - Kairo
 
-The list of adapters enabled in the default run is defined in [src/config.ts](/d:/PersonalProjects/js-reactivity-benchmark/src/config.ts). At the moment, the default configuration enables `Reflex` and `Alien Signals`; the rest remain in the codebase but are commented out or temporarily disabled.
+The list of adapters enabled in the default run is defined in [src/config.ts](/d:/PersonalProjects/js-reactivity-benchmark/src/config.ts). 
+
+Two adapter notes are worth calling out explicitly:
+
+`TC39 Signals Proposal polyfill` and `Angular Signals` is currently removed from the default benchmark set because it was too slow for the current suite, especially once the larger graph scenarios were added.
 
 ## Artifacts
 

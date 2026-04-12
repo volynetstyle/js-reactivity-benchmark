@@ -14,7 +14,7 @@ import { solidFramework } from "./frameworks/solid";
 import { sFramework } from "./frameworks/s";
 import { usignalFramework } from "./frameworks/uSignal";
 import { vueReactivityFramework } from "./frameworks/vueReactivity";
-//import { svelteFramework } from "./frameworks/svelte";
+import { svelteFramework } from "./frameworks/svelte";
 import { tansuFramework } from "./frameworks/tansu";
 import { reflexFramework } from "./frameworks/reflex";
 import { solidSignalsFramework } from "./frameworks/solid-signals";
@@ -23,25 +23,27 @@ import { solidSignalsFramework } from "./frameworks/solid-signals";
 
 export const frameworkInfo: FrameworkInfo[] = [
   { framework: reflexFramework, testPullCounts: true },
-   { framework: alienFramework, testPullCounts: true },
-  // { framework: preactSignalFramework, testPullCounts: true },
-  // //{ framework: svelteFramework, testPullCounts: true },
+  { framework: alienFramework, testPullCounts: true },
+  { framework: preactSignalFramework, testPullCounts: true },
+  { framework: svelteFramework, testPullCounts: true },
+  // REMOVED: cause too slow
   // { framework: tc39SignalsProposalStage0, testPullCounts: true },
-  // { framework: reactivelyFramework, testPullCounts: true },
-  // // unoptimized and too heavy
-  // //{ framework: rippleFramework, testPullCounts: true },
-  // { framework: sFramework },
-  // { framework: tansuFramework, testPullCounts: true },
+  { framework: reactivelyFramework, testPullCounts: true },
+  // unoptimized and too heavy
+  //{ framework: rippleFramework, testPullCounts: true },
+  { framework: sFramework },
+  { framework: tansuFramework, testPullCounts: true },
+  // REMOVED: cause too slow
   // { framework: angularFramework, testPullCounts: true },
-  // { framework: molWireFramework, testPullCounts: true },
-  // { framework: obyFramework, testPullCounts: true },
-  // { framework: signiaFramework, testPullCounts: true },
-  // { framework: solidSignalsFramework },
-  // { framework: solidFramework },
-  // { framework: usignalFramework, testPullCounts: true },
-  // { framework: vueReactivityFramework, testPullCounts: true },
-  // // NOTE: MobX currently hangs on some of the `dynamic` tests and `cellx` tests, so disable it if you want to run them. (https://github.com/mobxjs/mobx/issues/3926)
-  // { framework: mobxFramework, testPullCounts: false },
+  { framework: molWireFramework, testPullCounts: true },
+  { framework: obyFramework, testPullCounts: true },
+  { framework: signiaFramework, testPullCounts: true },
+  { framework: solidSignalsFramework },
+  { framework: solidFramework },
+  { framework: usignalFramework, testPullCounts: true },
+  { framework: vueReactivityFramework, testPullCounts: true },
+  // NOTE: MobX currently hangs on some of the `dynamic` tests and `cellx` tests, so disable it if you want to run them. (https://github.com/mobxjs/mobx/issues/3926)
+  { framework: mobxFramework, testPullCounts: false },
 
   // --- Disabled frameworks ---
   // NOTE: the compostate adapter is currently broken and unused.
