@@ -88,7 +88,7 @@ The list of adapters enabled in the default run is defined in [src/config.ts](/d
 
 Two adapter notes are worth calling out explicitly:
 
-`TC39 Signals Proposal polyfill` and `Angular Signals` is currently removed from the default benchmark set because it was too slow for the current suite, especially once the larger graph scenarios were added.
+`Svelte`, `TC39 Signals Proposal polyfill` and `Angular Signals` is currently removed from the default benchmark set because it was too slow for the current suite, especially once the larger graph scenarios were added.
 
 ## Artifacts
 

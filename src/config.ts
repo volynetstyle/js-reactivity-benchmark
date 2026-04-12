@@ -1,9 +1,9 @@
 import { TestConfig, FrameworkInfo } from "./util/frameworkTypes";
 
 import { alienFramework } from "./frameworks/alienSignals";
-import { angularFramework } from "./frameworks/angularSignals";
+//import { angularFramework } from "./frameworks/angularSignals";
 import { mobxFramework } from "./frameworks/mobx";
-import { tc39SignalsProposalStage0 } from "./frameworks/tc39-proposal-signals-stage-0";
+//import { tc39SignalsProposalStage0 } from "./frameworks/tc39-proposal-signals-stage-0";
 import { molWireFramework } from "./frameworks/molWire";
 import { obyFramework } from "./frameworks/oby";
 import { preactSignalFramework } from "./frameworks/preactSignals";
@@ -14,7 +14,7 @@ import { solidFramework } from "./frameworks/solid";
 import { sFramework } from "./frameworks/s";
 import { usignalFramework } from "./frameworks/uSignal";
 import { vueReactivityFramework } from "./frameworks/vueReactivity";
-import { svelteFramework } from "./frameworks/svelte";
+//import { svelteFramework } from "./frameworks/svelte";
 import { tansuFramework } from "./frameworks/tansu";
 import { reflexFramework } from "./frameworks/reflex";
 import { solidSignalsFramework } from "./frameworks/solid-signals";
@@ -25,7 +25,8 @@ export const frameworkInfo: FrameworkInfo[] = [
   { framework: reflexFramework, testPullCounts: true },
   { framework: alienFramework, testPullCounts: true },
   { framework: preactSignalFramework, testPullCounts: true },
-  { framework: svelteFramework, testPullCounts: true },
+   // REMOVED: cause too slow because it maybe should compiled - tough to measure
+  //{ framework: svelteFramework, testPullCounts: true },
   // REMOVED: cause too slow
   // { framework: tc39SignalsProposalStage0, testPullCounts: true },
   { framework: reactivelyFramework, testPullCounts: true },
