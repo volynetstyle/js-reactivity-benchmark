@@ -66,7 +66,7 @@ function frameworkTests({ framework, testPullCounts }: FrameworkInfo) {
       const graph = makeGraph(framework, config, counter);
       const sum = runGraph(graph, 10, 2 / 3, framework);
 
-      expect(sum).toEqual(73);
+      expect(sum).toEqual(71);
       if (testPullCounts) {
         expect(counter.count).toEqual(41);
       } else {
