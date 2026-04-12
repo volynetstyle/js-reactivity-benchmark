@@ -23,25 +23,25 @@ import { solidSignalsFramework } from "./frameworks/solid-signals";
 
 export const frameworkInfo: FrameworkInfo[] = [
   { framework: reflexFramework, testPullCounts: true },
-  { framework: alienFramework, testPullCounts: true },
-  { framework: preactSignalFramework, testPullCounts: true },
-  //{ framework: svelteFramework, testPullCounts: true },
-  { framework: tc39SignalsProposalStage0, testPullCounts: true },
-  { framework: reactivelyFramework, testPullCounts: true },
-  // unoptimized and too heavy
-  //{ framework: rippleFramework, testPullCounts: true },
-  { framework: sFramework },
-  { framework: tansuFramework, testPullCounts: true },
-  { framework: angularFramework, testPullCounts: true },
-  { framework: molWireFramework, testPullCounts: true },
-  { framework: obyFramework, testPullCounts: true },
-  { framework: signiaFramework, testPullCounts: true },
-  { framework: solidSignalsFramework },
-  { framework: solidFramework },
-  { framework: usignalFramework, testPullCounts: true },
-  { framework: vueReactivityFramework, testPullCounts: true },
-  // NOTE: MobX currently hangs on some of the `dynamic` tests and `cellx` tests, so disable it if you want to run them. (https://github.com/mobxjs/mobx/issues/3926)
-  { framework: mobxFramework, testPullCounts: false },
+   { framework: alienFramework, testPullCounts: true },
+  // { framework: preactSignalFramework, testPullCounts: true },
+  // //{ framework: svelteFramework, testPullCounts: true },
+  // { framework: tc39SignalsProposalStage0, testPullCounts: true },
+  // { framework: reactivelyFramework, testPullCounts: true },
+  // // unoptimized and too heavy
+  // //{ framework: rippleFramework, testPullCounts: true },
+  // { framework: sFramework },
+  // { framework: tansuFramework, testPullCounts: true },
+  // { framework: angularFramework, testPullCounts: true },
+  // { framework: molWireFramework, testPullCounts: true },
+  // { framework: obyFramework, testPullCounts: true },
+  // { framework: signiaFramework, testPullCounts: true },
+  // { framework: solidSignalsFramework },
+  // { framework: solidFramework },
+  // { framework: usignalFramework, testPullCounts: true },
+  // { framework: vueReactivityFramework, testPullCounts: true },
+  // // NOTE: MobX currently hangs on some of the `dynamic` tests and `cellx` tests, so disable it if you want to run them. (https://github.com/mobxjs/mobx/issues/3926)
+  // { framework: mobxFramework, testPullCounts: false },
 
   // --- Disabled frameworks ---
   // NOTE: the compostate adapter is currently broken and unused.
@@ -53,7 +53,52 @@ export const frameworkInfo: FrameworkInfo[] = [
 ];
 
 export const perfTests: TestConfig[] = [
+  // App-like scenarios: moderate graph sizes, selective leaf reads, and a mix
+  // of mostly-static and partially-dynamic derivations. These are less
+  // synthetic than the stress-style cases below and tend to track real UI data
+  // flows more closely.
+  {
+    name: "dashboard selective reads",
+    width: 64,
+    totalLayers: 6,
+    staticFraction: 0.95,
+    nSources: 4,
+    readFraction: 0.12,
+    iterations: 120000,
+    expected: {},
+  },
+  {
+    name: "editor derived state",
+    width: 24,
+    totalLayers: 8,
+    staticFraction: 0.8,
+    nSources: 3,
+    readFraction: 0.4,
+    iterations: 90000,
+    expected: {},
+  },
+  {
+    name: "kanban board",
+    width: 120,
+    totalLayers: 7,
+    staticFraction: 0.9,
+    nSources: 5,
+    readFraction: 0.18,
+    iterations: 30000,
+    expected: {},
+  },
+  {
+    name: "entity detail page",
+    width: 40,
+    totalLayers: 10,
+    staticFraction: 0.97,
+    nSources: 4,
+    readFraction: 0.6,
+    iterations: 30000,
+    expected: {},
+  },
 
+  // Stress-style scenarios kept for continuity with older runs.
   {
     name: "simple component",
     width: 10, // can't change for decorator tests

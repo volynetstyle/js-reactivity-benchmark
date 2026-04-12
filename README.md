@@ -51,6 +51,12 @@ The current default run includes several benchmark groups:
 - computation creation and update scenarios from `sBench`
 - larger graph scenarios from `dynamicBench`: `simple component`, `dynamic component`, `large web app`, `wide dense`, `deep`, `very dynamic`
 
+The `dynamicBench` set now also includes several more app-like presets such as
+`dashboard selective reads`, `editor derived state`, `kanban board`, and
+`entity detail page`. These use the same rectangular graph generator, but with
+more moderate widths/depths and partial leaf reads to better resemble common UI
+workloads.
+
 The larger graph benchmark parameters are defined in [src/config.ts](/d:/PersonalProjects/js-reactivity-benchmark/src/config.ts).
 
 ## Framework Adapters

@@ -310,6 +310,29 @@ function renderTestFilter(tests) {
   `;
 }
 
+function renderBenchmarkInterpretation(frameworks, tests) {
+  const winner = frameworks[0];
+  const runnerUp = frameworks[1];
+  const wins = countWins(frameworks, tests);
+  const winnerWinCount = wins.get(winner.name) ?? 0;
+  const runnerUpWinCount = runnerUp ? wins.get(runnerUp.name) ?? 0 : 0;
+  const averageLead =
+    runnerUp && winner.average > 0
+      ? ((runnerUp.average - winner.average) / winner.average) * 100
+      : 0;
+
+  return `
+    <section class="card interpretation-card">
+      <h2>How To Read This</h2>
+      <div class="interpretation-copy">
+        <p>${escapeHtml(winner.name)} is the strongest result in this run with the best average runtime${runnerUp ? `, ${averageLead.toFixed(1)}% ahead of ${escapeHtml(runnerUp.name)}` : ""}. It also takes ${winnerWinCount} of ${tests.length} scenario wins${runnerUp ? `, while ${escapeHtml(runnerUp.name)} takes ${runnerUpWinCount}` : ""}.</p>
+        <p>That usually points to an advantage in update-heavy, graph-propagation, and computation-creation workloads covered by this suite, not a universal guarantee for every production app.</p>
+        <p>Real-world performance still depends on rendering cost, memory pressure, batching strategy, cache locality, framework ergonomics, and whether your app looks more like the fast scenarios or the outliers shown above.</p>
+      </div>
+    </section>
+  `;
+}
+
 export function renderResultsPage(parsed, options = {}) {
   const { frameworks, tests } = parsed;
   const generatedAt = options.generatedAt ?? new Date();
@@ -377,6 +400,7 @@ export function renderResultsPage(parsed, options = {}) {
     background:
       linear-gradient(120deg, transparent 0 46%, rgba(126, 255, 205, 0.02) 50%, transparent 54% 100%);
     animation: sweep 14s linear infinite;
+    will-change: transform;
   }
   main {
     position: relative;
@@ -535,9 +559,9 @@ export function renderResultsPage(parsed, options = {}) {
     padding: 12px;
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(35, 37, 44, 0.84);
-    backdrop-filter: blur(18px);
+    background: rgba(35, 37, 44, 0.96);
     box-shadow: var(--shadow);
+    transform: translateZ(0);
   }
   .view-toggle {
     display: inline-grid;
@@ -768,6 +792,23 @@ export function renderResultsPage(parsed, options = {}) {
   .remarks {
     margin-top: 20px;
   }
+  .interpretation-card {
+    margin-top: 20px;
+    padding: 28px 30px;
+  }
+  .interpretation-copy {
+    max-width: 74ch;
+    padding: 8px 4px 2px;
+  }
+  .interpretation-copy p {
+    margin: 0 0 14px;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--muted);
+  }
+  .interpretation-copy p:last-child {
+    margin-bottom: 0;
+  }
   .comparison-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -954,6 +995,12 @@ export function renderResultsPage(parsed, options = {}) {
       padding: 18px;
       border-radius: 22px;
     }
+    .interpretation-card {
+      padding: 20px;
+    }
+    .interpretation-copy {
+      padding: 6px 2px 0;
+    }
     .hero-shell {
       gap: 12px;
     }
@@ -1056,6 +1103,8 @@ export function renderResultsPage(parsed, options = {}) {
     <p class="meta">Every card ranks frameworks for a single scenario, so outliers and specialists stay visible.</p>
     <div class="comparison-grid">${renderPerTestComparison(frameworks, tests)}</div>
   </section>
+
+  ${renderBenchmarkInterpretation(frameworks, tests)}
 </main>
 <script>
   (() => {

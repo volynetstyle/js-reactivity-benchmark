@@ -1,7 +1,11 @@
 name: Benchmarks
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
     branches:
       - main
       - master
@@ -18,14 +22,19 @@ permissions:
 
 jobs:
   benchmark:
-    if: github.actor != 'github-actions[bot]'
+    if: |
+      github.actor != 'github-actions[bot]' &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        github.event.workflow_run.conclusion == 'success'
+      )
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_branch || github.ref_name }}
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -52,7 +61,9 @@ jobs:
         shell: bash
         run: |
           timestamp="$(date -u +'%Y%m%dT%H%M%SZ')"
-          short_sha="${GITHUB_SHA::7}"
+          commit_sha="${{ github.event.workflow_run.head_sha || github.sha }}"
+          short_sha="${commit_sha::7}"
+          ref_name="${{ github.event.workflow_run.head_branch || github.ref_name }}"
           archive_dir="bench-results/history"
           archive_log="$archive_dir/${timestamp}-${short_sha}.log"
           archive_meta="$archive_dir/${timestamp}-${short_sha}.json"
@@ -62,9 +73,9 @@ jobs:
 
           cat > "$archive_meta" <<EOF
           {
-            "commit": "${GITHUB_SHA}",
+            "commit": "${commit_sha}",
             "shortCommit": "${short_sha}",
-            "ref": "${GITHUB_REF}",
+            "ref": "${ref_name}",
             "runId": "${GITHUB_RUN_ID}",
             "runNumber": "${GITHUB_RUN_NUMBER}",
             "generatedAtUtc": "${timestamp}",

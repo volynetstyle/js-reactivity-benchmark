@@ -1,7 +1,11 @@
 name: Deploy Pages
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - Benchmarks
+    types:
+      - completed
     branches:
       - main
       - master
@@ -18,11 +22,16 @@ concurrency:
 
 jobs:
   build:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch || github.ref_name }}
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
