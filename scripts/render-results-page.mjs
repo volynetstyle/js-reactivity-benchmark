@@ -194,13 +194,13 @@ function renderSpotlight(frameworks, tests) {
   return `
     <section class="hero-shell">
       <div class="hero-copy">
-        <span class="eyebrow">Benchmark Observatory</span>
+        <span class="eyebrow">Benchmark Overview</span>
         <h1>JS Reactivity Benchmark</h1>
-        <p class="subtitle">A responsive results board for propagation, graph, and computation stress tests. Lower average runtime wins.</p>
+        <p class="subtitle">Propagation, graph, and computation stress tests. Lower average runtime wins.</p>
         <div class="hero-notes">
           <div class="hero-chip">Leader: ${escapeHtml(winner.name)}</div>
-          <div class="hero-chip">Tests tracked: ${tests.length}</div>
-          <div class="hero-chip">Frameworks compared: ${frameworks.length}</div>
+          <div class="hero-chip">Tests: ${tests.length}</div>
+          <div class="hero-chip">Frameworks: ${frameworks.length}</div>
         </div>
       </div>
       <aside class="spotlight-card">
@@ -323,17 +323,20 @@ export function renderResultsPage(parsed, options = {}) {
 <title>JS Reactivity Benchmark</title>
 <style>
   :root {
-    --bg: #f3efe5;
-    --bg-deep: #efe6d2;
-    --surface: rgba(255, 251, 244, 0.8);
-    --surface-strong: rgba(255, 248, 236, 0.94);
-    --line: rgba(58, 41, 25, 0.12);
-    --text: #1e1a15;
-    --muted: #6c6257;
-    --accent: #0f766e;
-    --accent-2: #c2410c;
-    --accent-3: #1d4ed8;
-    --shadow: 0 24px 60px rgba(74, 48, 24, 0.12);
+    --bg: #07120f;
+    --bg-deep: #020707;
+    --surface: rgba(37, 39, 46, 0.82);
+    --surface-strong: rgba(43, 45, 53, 0.94);
+    --surface-glass: rgba(58, 62, 72, 0.3);
+    --line: rgba(126, 255, 205, 0.18);
+    --line-strong: rgba(126, 255, 205, 0.3);
+    --text: #f2f4f8;
+    --muted: #a2a8b5;
+    --accent: #7affc8;
+    --accent-2: #f7b955;
+    --accent-3: #4bd6ff;
+    --danger: #ff7a67;
+    --shadow: 0 22px 60px rgba(0, 0, 0, 0.38);
     --radius-xl: 28px;
     --radius-lg: 22px;
     --radius-md: 16px;
@@ -341,14 +344,43 @@ export function renderResultsPage(parsed, options = {}) {
   *, *::before, *::after { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: "Avenir Next", "Segoe UI Variable Display", "Trebuchet MS", sans-serif;
+    font-family: Bahnschrift, "Arial Narrow", "Segoe UI", sans-serif;
     background:
-      radial-gradient(circle at 15% 10%, rgba(194, 65, 12, 0.16), transparent 24%),
-      radial-gradient(circle at 85% 8%, rgba(15, 118, 110, 0.18), transparent 28%),
-      linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+      radial-gradient(circle at 18% 0%, rgba(122, 255, 200, 0.08), transparent 24%),
+      radial-gradient(circle at 85% 0%, rgba(75, 214, 255, 0.07), transparent 18%),
+      linear-gradient(180deg, #181a20 0%, #121419 38%, #090b10 100%);
     color: var(--text);
+    min-height: 100vh;
+    position: relative;
+  }
+  body::before,
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::before {
+    background:
+      linear-gradient(90deg, transparent 0, rgba(126, 255, 205, 0.015) 50%, transparent 100%),
+      repeating-linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.02) 0,
+        rgba(255, 255, 255, 0.02) 1px,
+        transparent 1px,
+        transparent 6px
+      );
+    opacity: 0.35;
+  }
+  body::after {
+    background:
+      linear-gradient(120deg, transparent 0 46%, rgba(126, 255, 205, 0.02) 50%, transparent 54% 100%);
+    animation: sweep 14s linear infinite;
   }
   main {
+    position: relative;
+    z-index: 1;
     max-width: 1320px;
     margin: 0 auto;
     padding: 28px 20px 72px;
@@ -366,24 +398,38 @@ export function renderResultsPage(parsed, options = {}) {
   .stat-card,
   .leader-card {
     border: 1px solid var(--line);
-    background: var(--surface);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 40%),
+      var(--surface);
     backdrop-filter: blur(16px);
     box-shadow: var(--shadow);
   }
   .hero-copy {
     border-radius: 32px;
-    padding: 30px;
+    padding: 28px 30px;
     position: relative;
     overflow: hidden;
+  }
+  .hero-copy::before,
+  .spotlight-card::before,
+  .card::before,
+  .stat-card::before,
+  .leader-card::before {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    border: 1px solid rgba(126, 255, 205, 0.08);
+    border-radius: inherit;
+    pointer-events: none;
   }
   .hero-copy::after {
     content: "";
     position: absolute;
-    inset: auto -8% -28% auto;
-    width: 240px;
+    inset: auto -6% -20% auto;
+    width: 260px;
     aspect-ratio: 1;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(29, 78, 216, 0.14), transparent 65%);
+    background: radial-gradient(circle, rgba(122, 255, 200, 0.08), transparent 65%);
     pointer-events: none;
   }
   .eyebrow {
@@ -391,45 +437,47 @@ export function renderResultsPage(parsed, options = {}) {
     margin-bottom: 12px;
     padding: 8px 12px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(58, 41, 25, 0.09);
-    color: var(--accent-3);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #d7dbe3;
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.12em;
   }
   h1 {
     margin: 0;
-    max-width: 10ch;
-    font-size: clamp(40px, 7vw, 72px);
-    line-height: 0.95;
-    letter-spacing: -0.05em;
+    max-width: 12ch;
+    font-size: clamp(34px, 6vw, 60px);
+    line-height: 0.98;
+    letter-spacing: -0.04em;
   }
   .subtitle {
-    margin: 18px 0 0;
+    margin: 12px 0 0;
     max-width: 56ch;
-    font-size: 17px;
-    line-height: 1.55;
+    font-size: 15px;
+    line-height: 1.5;
     color: var(--muted);
   }
   .hero-notes {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-top: 22px;
+    margin-top: 18px;
   }
   .hero-chip {
-    padding: 10px 14px;
+    padding: 8px 12px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.56);
-    border: 1px solid rgba(58, 41, 25, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     font-size: 13px;
+    color: var(--text);
   }
   .spotlight-card {
+    position: relative;
     border-radius: 32px;
     padding: 26px;
     background:
-      linear-gradient(180deg, rgba(15, 118, 110, 0.10), rgba(15, 118, 110, 0.02)),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
       var(--surface-strong);
     display: flex;
     flex-direction: column;
@@ -456,6 +504,7 @@ export function renderResultsPage(parsed, options = {}) {
     font-weight: 700;
     line-height: 0.95;
     letter-spacing: -0.05em;
+    color: var(--accent);
   }
   .spotlight-metric span {
     font-size: 18px;
@@ -483,10 +532,10 @@ export function renderResultsPage(parsed, options = {}) {
     gap: 12px;
     align-items: end;
     margin: 0 0 18px;
-    padding: 14px;
-    border-radius: 22px;
-    border: 1px solid var(--line);
-    background: rgba(255, 248, 236, 0.78);
+    padding: 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(35, 37, 44, 0.84);
     backdrop-filter: blur(18px);
     box-shadow: var(--shadow);
   }
@@ -496,13 +545,13 @@ export function renderResultsPage(parsed, options = {}) {
     gap: 8px;
     padding: 6px;
     border-radius: 999px;
-    background: rgba(30, 26, 21, 0.06);
+    background: rgba(255, 255, 255, 0.05);
   }
   .view-button,
   .clear-filter-button,
   .filter-input,
   .filter-select {
-    border: 1px solid rgba(58, 41, 25, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     font: inherit;
   }
   .view-button,
@@ -511,15 +560,16 @@ export function renderResultsPage(parsed, options = {}) {
     transition: transform 180ms ease, background-color 180ms ease, color 180ms ease, border-color 180ms ease;
   }
   .view-button {
-    padding: 10px 14px;
+    padding: 9px 13px;
     border-radius: 999px;
     background: transparent;
     color: var(--muted);
   }
   .view-button.is-active {
-    background: var(--text);
-    border-color: var(--text);
-    color: #fff9f0;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
   }
   .filter-box {
     display: grid;
@@ -533,18 +583,21 @@ export function renderResultsPage(parsed, options = {}) {
   }
   .filter-input,
   .filter-select {
-    min-height: 44px;
+    min-height: 42px;
     width: 100%;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.7);
+    border-radius: 12px;
+    background: rgba(20, 22, 28, 0.92);
     padding: 0 14px;
     color: var(--text);
   }
+  .filter-input::placeholder {
+    color: rgba(162, 168, 181, 0.7);
+  }
   .clear-filter-button {
-    min-height: 44px;
+    min-height: 42px;
     padding: 0 16px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
     color: var(--text);
   }
   .clear-filter-button:hover,
@@ -613,7 +666,7 @@ export function renderResultsPage(parsed, options = {}) {
     display: inline-flex;
     padding: 7px 10px;
     border-radius: 999px;
-    background: rgba(30, 26, 21, 0.06);
+    background: rgba(255, 255, 255, 0.05);
     font-size: 12px;
   }
   .leader-card h3 {
@@ -624,6 +677,7 @@ export function renderResultsPage(parsed, options = {}) {
     font-size: 28px;
     font-weight: 700;
     letter-spacing: -0.04em;
+    color: var(--accent);
   }
   .leader-time span {
     font-size: 14px;
@@ -643,7 +697,7 @@ export function renderResultsPage(parsed, options = {}) {
   h2 {
     margin: 0 0 16px;
     font-size: 18px;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
   }
   table {
     width: 100%;
@@ -658,7 +712,7 @@ export function renderResultsPage(parsed, options = {}) {
     text-align: left;
     font-size: 12px;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
   }
   .rank {
     width: 36px;
@@ -694,14 +748,16 @@ export function renderResultsPage(parsed, options = {}) {
     height: 16px;
     border-radius: 999px;
     overflow: hidden;
-    background: rgba(30, 26, 21, 0.08);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.06);
   }
   .bar-fill {
     height: 100%;
     border-radius: 999px;
     width: 0;
     background:
-      linear-gradient(90deg, color-mix(in srgb, var(--bar-color) 88%, white), var(--bar-color));
+      linear-gradient(90deg, color-mix(in srgb, var(--bar-color) 76%, black), color-mix(in srgb, var(--bar-color) 88%, white));
+    box-shadow: 0 0 18px color-mix(in srgb, var(--bar-color) 40%, transparent);
     animation: grow-bar 900ms cubic-bezier(.2,.8,.2,1) forwards;
     animation-delay: calc(var(--row-delay, 0ms) + 120ms);
   }
@@ -718,12 +774,13 @@ export function renderResultsPage(parsed, options = {}) {
     gap: 14px;
   }
   .comparison-card {
+    position: relative;
     padding: 16px;
     border-radius: 18px;
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.12)),
-      rgba(255, 248, 236, 0.58);
-    border: 1px solid rgba(58, 41, 25, 0.08);
+      linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),
+      rgba(31, 33, 40, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     animation: fade-up 620ms ease both;
     animation-delay: var(--card-delay, 0ms);
   }
@@ -764,13 +821,14 @@ export function renderResultsPage(parsed, options = {}) {
     height: 10px;
     border-radius: 999px;
     overflow: hidden;
-    background: rgba(30, 26, 21, 0.08);
+    background: rgba(255, 255, 255, 0.06);
   }
   .comparison-bar-fill {
     height: 100%;
     width: 0;
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--accent-2), var(--accent-3), var(--accent));
+    background: linear-gradient(90deg, var(--danger), var(--accent-2), var(--accent));
+    box-shadow: 0 0 18px rgba(247, 185, 85, 0.18);
     animation: grow-bar 820ms cubic-bezier(.2,.8,.2,1) forwards;
     animation-delay: calc(var(--row-delay, 0ms) + 140ms);
   }
@@ -838,6 +896,14 @@ export function renderResultsPage(parsed, options = {}) {
       width: var(--target-width);
     }
   }
+  @keyframes sweep {
+    from {
+      transform: translateX(-18%);
+    }
+    to {
+      transform: translateX(18%);
+    }
+  }
   @media (max-width: 1080px) {
     .hero-shell,
     .dashboard-grid,
@@ -846,22 +912,87 @@ export function renderResultsPage(parsed, options = {}) {
     }
     .controls-shell {
       grid-template-columns: 1fr 1fr;
+      align-items: stretch;
     }
   }
   @media (max-width: 720px) {
     main {
-      padding-inline: 14px;
+      padding: 14px 12px 56px;
     }
     .controls-shell {
       top: 8px;
-      grid-template-columns: 1fr;
-      align-items: stretch;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 18px;
+      align-items: center;
+    }
+    .filter-box {
+      min-width: 0;
+    }
+    .filter-select-box,
+    .clear-filter-button {
+      display: none;
+    }
+    .view-toggle {
+      order: 2;
+      justify-self: end;
+    }
+    .view-button {
+      padding-inline: 11px;
+      font-size: 12px;
+    }
+    .filter-label {
+      display: none;
+    }
+    .filter-input {
+      min-height: 40px;
     }
     .hero-copy,
     .spotlight-card,
     .card {
-      padding: 20px;
-      border-radius: 24px;
+      padding: 18px;
+      border-radius: 22px;
+    }
+    .hero-shell {
+      gap: 12px;
+    }
+    .hero-copy {
+      padding-bottom: 16px;
+    }
+    .eyebrow {
+      margin-bottom: 8px;
+      font-size: 11px;
+    }
+    h1 {
+      font-size: 28px;
+      max-width: none;
+    }
+    .subtitle {
+      margin-top: 8px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .hero-notes {
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .hero-chip {
+      font-size: 12px;
+      padding: 7px 10px;
+    }
+    .spotlight-card {
+      padding-top: 18px;
+    }
+    .spotlight-card h2 {
+      font-size: 24px;
+    }
+    .spotlight-copy {
+      font-size: 14px;
+    }
+    .stat-card,
+    .leader-card {
+      border-radius: 20px;
     }
     .leader-grid,
     .comparison-grid {
