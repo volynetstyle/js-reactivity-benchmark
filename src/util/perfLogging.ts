@@ -40,11 +40,19 @@ export function perfRowStrings(
 }
 
 export function makeTitle(config: TestConfig): string {
-  const { width, totalLayers, staticFraction, nSources, readFraction } = config;
+  const {
+    width,
+    totalLayers,
+    staticFraction,
+    nSources,
+    readFraction,
+    mode,
+  } = config;
   const dyn = staticFraction < 1 ? " - dynamic" : "";
   const read = readFraction < 1 ? ` - read ${percent(readFraction)}` : "";
+  const execMode = mode && mode !== "mixed" ? ` - ${mode}` : "";
   const sources = ` - ${nSources} sources`;
-  return `${width}x${totalLayers}${sources}${dyn}${read}`;
+  return `${width}x${totalLayers}${sources}${dyn}${read}${execMode}`;
 }
 
 function percent(n: number): string {

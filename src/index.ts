@@ -37,6 +37,25 @@ async function main() {
   logPerfResult(perfReportHeaders());
   (globalThis as any).__DEV__ = true;
 
+  const benchOnlyRaw = process.env.BENCH_ONLY?.trim().toLowerCase();
+  const benchOnly = benchOnlyRaw?.replace(/\s+/g, "");
+  const runCompareDeep =
+    !benchOnly || benchOnly === "comparedeep" || benchOnly === "compare-deep";
+  const runFrameworks =
+    !benchOnly || benchOnly === "frameworks" || benchOnly === "reactive";
+
+  if (benchOnly && !runCompareDeep && !runFrameworks) {
+    throw new Error(
+      `Unknown BENCH_ONLY="${benchOnlyRaw}". Use "compareDeep" or "frameworks".`
+    );
+  }
+
+  // if (runCompareDeep) {
+  //   await compareDeepBench();
+  // }
+
+  if (!runFrameworks) return;
+
   for (const frameworkTest of getSelectedFrameworks()) {
     const { framework } = frameworkTest;
 

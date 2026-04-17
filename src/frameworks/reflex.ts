@@ -1,11 +1,9 @@
-import { createRuntime, signal, computed, effect } from "@volynets/reflex";
+import { createRuntime, signal, computed, effect, batch, flush } from "@volynets/reflex";
 import { ReactiveFramework } from "../util/reactiveFramework";
 
-const rt = createRuntime({ effectStrategy: "sab" });
-
-const b = rt.batch.bind(rt);
-
 const fn = (fn: any) => fn();
+
+createRuntime({ effectStrategy: "flush" });
 
 export const reflexFramework: ReactiveFramework = {
   name: "reflex",
@@ -23,6 +21,9 @@ export const reflexFramework: ReactiveFramework = {
     };
   },
   effect: effect,
-  withBatch: b,
+  withBatch: (fn) => {
+    batch(fn);
+    flush()
+  },
   withBuild: fn,
 };

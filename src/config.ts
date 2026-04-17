@@ -25,17 +25,9 @@ export const frameworkInfo: FrameworkInfo[] = [
   { framework: reflexFramework, testPullCounts: true },
   { framework: alienFramework, testPullCounts: true },
   { framework: preactSignalFramework, testPullCounts: true },
-   // REMOVED: cause too slow because it maybe should compiled - tough to measure
-  //{ framework: svelteFramework, testPullCounts: true },
-  // REMOVED: cause too slow
-  // { framework: tc39SignalsProposalStage0, testPullCounts: true },
   { framework: reactivelyFramework, testPullCounts: true },
-  // unoptimized and too heavy
-  //{ framework: rippleFramework, testPullCounts: true },
   { framework: sFramework },
   { framework: tansuFramework, testPullCounts: true },
-  // REMOVED: cause too slow
-  // { framework: angularFramework, testPullCounts: true },
   { framework: molWireFramework, testPullCounts: true },
   { framework: obyFramework, testPullCounts: true },
   { framework: signiaFramework, testPullCounts: true },
@@ -43,10 +35,19 @@ export const frameworkInfo: FrameworkInfo[] = [
   { framework: solidFramework },
   { framework: usignalFramework, testPullCounts: true },
   { framework: vueReactivityFramework, testPullCounts: true },
-  // NOTE: MobX currently hangs on some of the `dynamic` tests and `cellx` tests, so disable it if you want to run them. (https://github.com/mobxjs/mobx/issues/3926)
+  // NOTE: MobX currently hangs on some of the `dynamic` tests and `cellx` tests, 
+  // so disable it if you want to run them. (https://github.com/mobxjs/mobx/issues/3926)
   { framework: mobxFramework, testPullCounts: false },
 
   // --- Disabled frameworks ---
+  // unoptimized and too heavy
+  //{ framework: rippleFramework, testPullCounts: true },
+  // REMOVED: cause too slow because it maybe should compiled - tough to measure
+  //{ framework: svelteFramework, testPullCounts: true },
+  // REMOVED: cause too slow
+  // { framework: tc39SignalsProposalStage0, testPullCounts: true },
+  // REMOVED: cause too slow
+  // { framework: angularFramework, testPullCounts: true }
   // NOTE: the compostate adapter is currently broken and unused.
   // { framework: compostateFramework },
   // NOTE: the kairo adapter is currently broken and unused.
@@ -99,6 +100,34 @@ export const perfTests: TestConfig[] = [
     readFraction: 0.6,
     iterations: 30000,
     expected: {},
+  },
+  {
+    name: "pure pull",
+    mode: "pull",
+    width: 32,
+    totalLayers: 8,
+    staticFraction: 1,
+    nSources: 4,
+    readFraction: 1,
+    iterations: 10000,
+    expected: {
+      sum: 5242355712,
+      count: 224,
+    },
+  },
+  {
+    name: "pure push",
+    mode: "push",
+    width: 32,
+    totalLayers: 8,
+    staticFraction: 1,
+    nSources: 4,
+    readFraction: 1,
+    iterations: 10000,
+    expected: {
+      sum: 5242355712,
+      count: 910133,
+    },
   },
 
   // Stress-style scenarios kept for continuity with older runs.

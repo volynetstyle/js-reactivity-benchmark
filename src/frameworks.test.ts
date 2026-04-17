@@ -48,7 +48,7 @@ function frameworkTests({ framework, testPullCounts }: FrameworkInfo) {
     const config = makeConfig();
     const counter = new Counter();
     const graph = makeGraph(framework, config, counter);
-    const sum = runGraph(graph, 2, 1, framework);
+    const sum = runGraph(graph, { iterations: 2, readFraction: 1 }, framework);
     expect(sum).toEqual(16);
     if (testPullCounts) {
       expect(counter.count).toEqual(11);
@@ -64,7 +64,7 @@ function frameworkTests({ framework, testPullCounts }: FrameworkInfo) {
       config.iterations = 10;
       const counter = new Counter();
       const graph = makeGraph(framework, config, counter);
-      const sum = runGraph(graph, 10, 2 / 3, framework);
+      const sum = runGraph(graph, config, framework);
 
       expect(sum).toEqual(71);
       if (testPullCounts) {
@@ -83,7 +83,7 @@ function frameworkTests({ framework, testPullCounts }: FrameworkInfo) {
       config.totalLayers = 2;
       const counter = new Counter();
       const graph = makeGraph(framework, config, counter);
-      const sum = runGraph(graph, 10, 1, framework);
+      const sum = runGraph(graph, { iterations: 10, readFraction: 1 }, framework);
 
       expect(sum).toEqual(72);
       if (testPullCounts) {

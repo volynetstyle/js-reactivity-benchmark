@@ -45,25 +45,70 @@ export function makeGraph(
  */
 export function runGraph(
   graph: Graph,
-  iterations: number,
-  readFraction: number,
+  config: Pick<TestConfig, "iterations" | "readFraction" | "mode">,
   framework: ReactiveFramework
 ): number {
+  const { iterations, readFraction, mode = "mixed" } = config;
   const rand = new Random("seed");
   const { sources, layers } = graph;
   const leaves = layers[layers.length - 1];
   const skipCount = Math.round(leaves.length * (1 - readFraction));
   const readLeaves = removeElems(leaves, skipCount, rand);
   const frameworkName = framework.name.toLowerCase();
-  // const start = Date.now();
-  let sum = 0;
+  const batchPerIteration = frameworkName === "s-js" || frameworkName === "solidjs";
 
-  if (frameworkName === "s-js" || frameworkName === "solidjs") {
-    // [S.js freeze](https://github.com/adamhaile/S#sdatavalue) doesn't allow different values to be set during a single batch, so special case it.
+  const writeIteration = (i: number) => {
+    const sourceDex = i % sources.length;
+    sources[sourceDex].write(i + sourceDex);
+  };
+
+  const sumLeaves = () =>
+    readLeaves.reduce((total, leaf) => leaf.read() + total, 0);
+
+  if (mode === "pull") {
+    if (batchPerIteration) {
+      for (let i = 0; i < iterations; i++) {
+        framework.withBatch(() => {
+          writeIteration(i);
+        });
+      }
+    } else {
+      framework.withBatch(() => {
+        for (let i = 0; i < iterations; i++) {
+          writeIteration(i);
+        }
+      });
+    }
+
+    return sumLeaves();
+  }
+
+  if (mode === "push") {
+    const latestValues = new Array(readLeaves.length).fill(0);
+
+    for (const [i, leaf] of readLeaves.entries()) {
+      framework.effect(() => {
+        latestValues[i] = leaf.read();
+      });
+    }
+
     for (let i = 0; i < iterations; i++) {
       framework.withBatch(() => {
-        const sourceDex = i % sources.length;
-        sources[sourceDex].write(i + sourceDex);
+        writeIteration(i);
+      });
+    }
+
+    return latestValues.reduce((total, value) => total + value, 0);
+  }
+
+  let sum = 0;
+
+  if (batchPerIteration) {
+    // [S.js freeze](https://github.com/adamhaile/S#sdatavalue) doesn't allow different
+    // values to be set during a single batch, so special case it.
+    for (let i = 0; i < iterations; i++) {
+      framework.withBatch(() => {
+        writeIteration(i);
       });
 
       for (const leaf of readLeaves) {
@@ -71,28 +116,18 @@ export function runGraph(
       }
     }
 
-    sum = readLeaves.reduce((total, leaf) => leaf.read() + total, 0);
+    sum = sumLeaves();
   } else {
     framework.withBatch(() => {
       for (let i = 0; i < iterations; i++) {
-        // Useful for debugging edge cases for some frameworks that experience
-        // dramatic slow downs for certain test configurations. These are generally
-        // due to `computed` effects not being cached efficiently, and as the number
-        // of layers increases, the uncached `computed` effects are re-evaluated in
-        // an `O(n^2)` manner where `n` is the number of layers.
-        // if (i % 100 === 0) {
-        //   console.log("iteration:", i, "delta:", Date.now() - start);
-        // }
-
-        const sourceDex = i % sources.length;
-        sources[sourceDex].write(i + sourceDex);
+        writeIteration(i);
 
         for (const leaf of readLeaves) {
           leaf.read();
         }
       }
 
-      sum = readLeaves.reduce((total, leaf) => leaf.read() + total, 0);
+      sum = sumLeaves();
     });
   }
 

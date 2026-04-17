@@ -1,491 +1,112 @@
 framework              , test                                                         , time    
-reflex                 , avoidablePropagation                                         , 497.07  
-reflex                 , broadPropagation                                             , 506.06  
-reflex                 , deepPropagation                                              , 113.59  
-reflex                 , diamond                                                      , 449.69  
-reflex                 , mux                                                          , 398.70  
-reflex                 , repeatedObservers                                            , 49.76   
-reflex                 , triangle                                                     , 123.00  
-reflex                 , unstable                                                     , 71.22   
-reflex                 , molBench                                                     , 581.53  
-reflex                 , createDataSignals                                            , 8.12    
-reflex                 , createComputations0to1                                       , 5.12    
-reflex                 , createComputations1to1                                       , 8.32    
-reflex                 , createComputations2to1                                       , 5.41    
-reflex                 , createComputations4to1                                       , 8.32    
-reflex                 , createComputations1000to1                                    , 4.65    
-reflex                 , createComputations1to2                                       , 6.33    
-reflex                 , createComputations1to4                                       , 6.73    
-reflex                 , createComputations1to8                                       , 5.09    
-reflex                 , createComputations1to1000                                    , 6.27    
-reflex                 , updateComputations1to1                                       , 8.07    
-reflex                 , updateComputations2to1                                       , 6.68    
-reflex                 , updateComputations4to1                                       , 5.14    
-reflex                 , updateComputations1000to1                                    , 4.32    
-reflex                 , updateComputations1to2                                       , 7.59    
-reflex                 , updateComputations1to4                                       , 5.54    
-reflex                 , updateComputations1to1000                                    , 2.90    
-reflex                 , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 363.58  
-reflex                 , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 555.10  
-reflex                 , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 291.14  
-reflex                 , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 532.43  
-reflex                 , 10x5 - 2 sources - read 20% (simple component)               , 403.95  
-reflex                 , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 234.24  
-reflex                 , 1000x12 - 4 sources - dynamic (large web app)                , 407.33  
-reflex                 , 1000x5 - 25 sources (wide dense)                             , 586.98  
-reflex                 , 5x500 - 3 sources (deep)                                     , 219.65  
-alien-signals          , avoidablePropagation                                         , 325.72  
-alien-signals          , broadPropagation                                             , 229.68  
-alien-signals          , deepPropagation                                              , 90.39   
-alien-signals          , diamond                                                      , 267.91  
-alien-signals          , mux                                                          , 265.17  
-alien-signals          , repeatedObservers                                            , 45.49   
-alien-signals          , triangle                                                     , 84.98   
-alien-signals          , unstable                                                     , 58.76   
-alien-signals          , molBench                                                     , 572.28  
-alien-signals          , createDataSignals                                            , 65.90   
-alien-signals          , createComputations0to1                                       , 62.34   
-alien-signals          , createComputations1to1                                       , 99.94   
-alien-signals          , createComputations2to1                                       , 47.32   
-alien-signals          , createComputations4to1                                       , 98.51   
-alien-signals          , createComputations1000to1                                    , 52.11   
-alien-signals          , createComputations1to2                                       , 61.47   
-alien-signals          , createComputations1to4                                       , 64.10   
-alien-signals          , createComputations1to8                                       , 61.92   
-alien-signals          , createComputations1to1000                                    , 64.54   
-alien-signals          , updateComputations1to1                                       , 56.37   
-alien-signals          , updateComputations2to1                                       , 97.10   
-alien-signals          , updateComputations4to1                                       , 48.24   
-alien-signals          , updateComputations1000to1                                    , 134.40  
-alien-signals          , updateComputations1to2                                       , 95.87   
-alien-signals          , updateComputations1to4                                       , 58.94   
-alien-signals          , updateComputations1to1000                                    , 97.15   
-alien-signals          , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 329.12  
-alien-signals          , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 510.05  
-alien-signals          , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 297.38  
-alien-signals          , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 533.13  
-alien-signals          , 10x5 - 2 sources - read 20% (simple component)               , 255.04  
-alien-signals          , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 216.61  
-alien-signals          , 1000x12 - 4 sources - dynamic (large web app)                , 325.45  
-alien-signals          , 1000x5 - 25 sources (wide dense)                             , 589.53  
-alien-signals          , 5x500 - 3 sources (deep)                                     , 190.12  
-Preact Signals         , avoidablePropagation                                         , 415.13  
-Preact Signals         , broadPropagation                                             , 294.28  
-Preact Signals         , deepPropagation                                              , 139.27  
-Preact Signals         , diamond                                                      , 389.48  
-Preact Signals         , mux                                                          , 306.58  
-Preact Signals         , repeatedObservers                                            , 52.81   
-Preact Signals         , triangle                                                     , 123.28  
-Preact Signals         , unstable                                                     , 62.86   
-Preact Signals         , molBench                                                     , 572.63  
-Preact Signals         , createDataSignals                                            , 61.42   
-Preact Signals         , createComputations0to1                                       , 99.73   
-Preact Signals         , createComputations1to1                                       , 104.02  
-Preact Signals         , createComputations2to1                                       , 55.12   
-Preact Signals         , createComputations4to1                                       , 59.94   
-Preact Signals         , createComputations1000to1                                    , 59.47   
-Preact Signals         , createComputations1to2                                       , 102.65  
-Preact Signals         , createComputations1to4                                       , 51.78   
-Preact Signals         , createComputations1to8                                       , 57.09   
-Preact Signals         , createComputations1to1000                                    , 65.68   
-Preact Signals         , updateComputations1to1                                       , 66.00   
-Preact Signals         , updateComputations2to1                                       , 152.99  
-Preact Signals         , updateComputations4to1                                       , 152.57  
-Preact Signals         , updateComputations1000to1                                    , 54.78   
-Preact Signals         , updateComputations1to2                                       , 62.49   
-Preact Signals         , updateComputations1to4                                       , 98.64   
-Preact Signals         , updateComputations1to1000                                    , 59.01   
-Preact Signals         , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 865.30  
-Preact Signals         , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 742.52  
-Preact Signals         , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 870.04  
-Preact Signals         , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 693.52  
-Preact Signals         , 10x5 - 2 sources - read 20% (simple component)               , 481.95  
-Preact Signals         , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 243.83  
-Preact Signals         , 1000x12 - 4 sources - dynamic (large web app)                , 3626.74 
-Preact Signals         , 1000x5 - 25 sources (wide dense)                             , 2341.09 
-Preact Signals         , 5x500 - 3 sources (deep)                                     , 193.83  
-@reactively            , avoidablePropagation                                         , 463.76  
-@reactively            , broadPropagation                                             , 366.85  
-@reactively            , deepPropagation                                              , 151.64  
-@reactively            , diamond                                                      , 361.95  
-@reactively            , mux                                                          , 308.80  
-@reactively            , repeatedObservers                                            , 77.34   
-@reactively            , triangle                                                     , 110.00  
-@reactively            , unstable                                                     , 162.95  
-@reactively            , molBench                                                     , 578.47  
-@reactively            , createDataSignals                                            , 55.98   
-@reactively            , createComputations0to1                                       , 157.92  
-@reactively            , createComputations1to1                                       , 65.25   
-@reactively            , createComputations2to1                                       , 59.77   
-@reactively            , createComputations4to1                                       , 98.22   
-@reactively            , createComputations1000to1                                    , 46.31   
-@reactively            , createComputations1to2                                       , 54.28   
-@reactively            , createComputations1to4                                       , 156.50  
-@reactively            , createComputations1to8                                       , 70.60   
-@reactively            , createComputations1to1000                                    , 59.76   
-@reactively            , updateComputations1to1                                       , 48.34   
-@reactively            , updateComputations2to1                                       , 98.56   
-@reactively            , updateComputations4to1                                       , 54.44   
-@reactively            , updateComputations1000to1                                    , 61.40   
-@reactively            , updateComputations1to2                                       , 68.18   
-@reactively            , updateComputations1to4                                       , 54.94   
-@reactively            , updateComputations1to1000                                    , 95.35   
-@reactively            , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 419.70  
-@reactively            , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 643.79  
-@reactively            , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 374.90  
-@reactively            , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 647.82  
-@reactively            , 10x5 - 2 sources - read 20% (simple component)               , 412.95  
-@reactively            , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 265.81  
-@reactively            , 1000x12 - 4 sources - dynamic (large web app)                , 437.07  
-@reactively            , 1000x5 - 25 sources (wide dense)                             , 594.40  
-@reactively            , 5x500 - 3 sources (deep)                                     , 253.42  
-s-js                   , avoidablePropagation                                         , 519.87  
-s-js                   , broadPropagation                                             , 281.45  
-s-js                   , deepPropagation                                              , 96.91   
-s-js                   , diamond                                                      , 362.41  
-s-js                   , mux                                                          , 374.74  
-s-js                   , repeatedObservers                                            , 102.76  
-s-js                   , triangle                                                     , 112.00  
-s-js                   , unstable                                                     , 116.90  
-s-js                   , molBench                                                     , 904.28  
-s-js                   , createDataSignals                                            , 155.86  
-s-js                   , createComputations0to1                                       , 53.03   
-s-js                   , createComputations1to1                                       , 62.65   
-s-js                   , createComputations2to1                                       , 70.73   
-s-js                   , createComputations4to1                                       , 68.17   
-s-js                   , createComputations1000to1                                    , 65.55   
-s-js                   , createComputations1to2                                       , 69.56   
-s-js                   , createComputations1to4                                       , 64.30   
-s-js                   , createComputations1to8                                       , 64.16   
-s-js                   , createComputations1to1000                                    , 162.90  
-s-js                   , updateComputations1to1                                       , 82.52   
-s-js                   , updateComputations2to1                                       , 90.30   
-s-js                   , updateComputations4to1                                       , 67.11   
-s-js                   , updateComputations1000to1                                    , 71.34   
-s-js                   , updateComputations1to2                                       , 105.60  
-s-js                   , updateComputations1to4                                       , 96.26   
-s-js                   , updateComputations1to1000                                    , 81.96   
-s-js                   , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 1217.12 
-s-js                   , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 909.47  
-s-js                   , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 684.96  
-s-js                   , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 912.98  
-s-js                   , 10x5 - 2 sources - read 20% (simple component)               , 787.70  
-s-js                   , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 400.26  
-s-js                   , 1000x12 - 4 sources - dynamic (large web app)                , 518.83  
-s-js                   , 1000x5 - 25 sources (wide dense)                             , 929.61  
-s-js                   , 5x500 - 3 sources (deep)                                     , 296.00  
-@amadeus-it-group/tans , avoidablePropagation                                         , 640.13  
-@amadeus-it-group/tans , broadPropagation                                             , 701.30  
-@amadeus-it-group/tans , deepPropagation                                              , 248.67  
-@amadeus-it-group/tans , diamond                                                      , 503.52  
-@amadeus-it-group/tans , mux                                                          , 564.55  
-@amadeus-it-group/tans , repeatedObservers                                            , 102.99  
-@amadeus-it-group/tans , triangle                                                     , 155.41  
-@amadeus-it-group/tans , unstable                                                     , 198.98  
-@amadeus-it-group/tans , molBench                                                     , 597.72  
-@amadeus-it-group/tans , createDataSignals                                            , 88.00   
-@amadeus-it-group/tans , createComputations0to1                                       , 84.71   
-@amadeus-it-group/tans , createComputations1to1                                       , 79.72   
-@amadeus-it-group/tans , createComputations2to1                                       , 95.06   
-@amadeus-it-group/tans , createComputations4to1                                       , 71.08   
-@amadeus-it-group/tans , createComputations1000to1                                    , 63.64   
-@amadeus-it-group/tans , createComputations1to2                                       , 66.43   
-@amadeus-it-group/tans , createComputations1to4                                       , 66.57   
-@amadeus-it-group/tans , createComputations1to8                                       , 70.33   
-@amadeus-it-group/tans , createComputations1to1000                                    , 56.57   
-@amadeus-it-group/tans , updateComputations1to1                                       , 69.59   
-@amadeus-it-group/tans , updateComputations2to1                                       , 58.87   
-@amadeus-it-group/tans , updateComputations4to1                                       , 63.08   
-@amadeus-it-group/tans , updateComputations1000to1                                    , 65.27   
-@amadeus-it-group/tans , updateComputations1to2                                       , 56.53   
-@amadeus-it-group/tans , updateComputations1to4                                       , 57.39   
-@amadeus-it-group/tans , updateComputations1to1000                                    , 54.33   
-@amadeus-it-group/tans , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 700.14  
-@amadeus-it-group/tans , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 1035.97 
-@amadeus-it-group/tans , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 572.84  
-@amadeus-it-group/tans , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 1070.32 
-@amadeus-it-group/tans , 10x5 - 2 sources - read 20% (simple component)               , 581.44  
-@amadeus-it-group/tans , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 375.25  
-@amadeus-it-group/tans , 1000x12 - 4 sources - dynamic (large web app)                , 763.41  
-@amadeus-it-group/tans , 1000x5 - 25 sources (wide dense)                             , 942.11  
-@amadeus-it-group/tans , 5x500 - 3 sources (deep)                                     , 448.31  
-$mol_wire              , avoidablePropagation                                         , 715.09  
-$mol_wire              , broadPropagation                                             , 1351.21 
-$mol_wire              , deepPropagation                                              , 381.82  
-$mol_wire              , diamond                                                      , 778.88  
-$mol_wire              , mux                                                          , 769.29  
-$mol_wire              , repeatedObservers                                            , 161.85  
-$mol_wire              , triangle                                                     , 253.29  
-$mol_wire              , unstable                                                     , 340.01  
-$mol_wire              , molBench                                                     , 455.27  
-$mol_wire              , createDataSignals                                            , 92.23   
-$mol_wire              , createComputations0to1                                       , 61.80   
-$mol_wire              , createComputations1to1                                       , 75.80   
-$mol_wire              , createComputations2to1                                       , 75.44   
-$mol_wire              , createComputations4to1                                       , 60.61   
-$mol_wire              , createComputations1000to1                                    , 68.45   
-$mol_wire              , createComputations1to2                                       , 66.59   
-$mol_wire              , createComputations1to4                                       , 60.22   
-$mol_wire              , createComputations1to8                                       , 69.57   
-$mol_wire              , createComputations1to1000                                    , 80.93   
-$mol_wire              , updateComputations1to1                                       , 59.31   
-$mol_wire              , updateComputations2to1                                       , 53.03   
-$mol_wire              , updateComputations4to1                                       , 54.98   
-$mol_wire              , updateComputations1000to1                                    , 46.20   
-$mol_wire              , updateComputations1to2                                       , 53.96   
-$mol_wire              , updateComputations1to4                                       , 66.15   
-$mol_wire              , updateComputations1to1000                                    , 57.61   
-$mol_wire              , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 836.20  
-$mol_wire              , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 1231.62 
-$mol_wire              , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 694.08  
-$mol_wire              , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 1293.08 
-$mol_wire              , 10x5 - 2 sources - read 20% (simple component)               , 864.71  
-$mol_wire              , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 506.17  
-$mol_wire              , 1000x12 - 4 sources - dynamic (large web app)                , 901.45  
-$mol_wire              , 1000x5 - 25 sources (wide dense)                             , 914.81  
-$mol_wire              , 5x500 - 3 sources (deep)                                     , 466.30  
-Oby                    , avoidablePropagation                                         , 555.02  
-Oby                    , broadPropagation                                             , 710.11  
-Oby                    , deepPropagation                                              , 287.19  
-Oby                    , diamond                                                      , 532.14  
-Oby                    , mux                                                          , 424.54  
-Oby                    , repeatedObservers                                            , 84.94   
-Oby                    , triangle                                                     , 183.04  
-Oby                    , unstable                                                     , 96.74   
-Oby                    , molBench                                                     , 696.80  
-Oby                    , createDataSignals                                            , 55.47   
-Oby                    , createComputations0to1                                       , 129.19  
-Oby                    , createComputations1to1                                       , 156.38  
-Oby                    , createComputations2to1                                       , 128.43  
-Oby                    , createComputations4to1                                       , 114.74  
-Oby                    , createComputations1000to1                                    , 144.59  
-Oby                    , createComputations1to2                                       , 138.04  
-Oby                    , createComputations1to4                                       , 142.95  
-Oby                    , createComputations1to8                                       , 124.29  
-Oby                    , createComputations1to1000                                    , 132.20  
-Oby                    , updateComputations1to1                                       , 56.86   
-Oby                    , updateComputations2to1                                       , 51.03   
-Oby                    , updateComputations4to1                                       , 57.33   
-Oby                    , updateComputations1000to1                                    , 46.79   
-Oby                    , updateComputations1to2                                       , 59.48   
-Oby                    , updateComputations1to4                                       , 51.64   
-Oby                    , updateComputations1to1000                                    , 46.92   
-Oby                    , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 634.69  
-Oby                    , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 947.95  
-Oby                    , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 530.46  
-Oby                    , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 916.70  
-Oby                    , 10x5 - 2 sources - read 20% (simple component)               , 511.50  
-Oby                    , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 392.27  
-Oby                    , 1000x12 - 4 sources - dynamic (large web app)                , 613.49  
-Oby                    , 1000x5 - 25 sources (wide dense)                             , 812.98  
-Oby                    , 5x500 - 3 sources (deep)                                     , 341.23  
-Signia                 , avoidablePropagation                                         , 625.60  
-Signia                 , broadPropagation                                             , 603.02  
-Signia                 , deepPropagation                                              , 232.56  
-Signia                 , diamond                                                      , 557.81  
-Signia                 , mux                                                          , 532.57  
-Signia                 , repeatedObservers                                            , 99.74   
-Signia                 , triangle                                                     , 177.93  
-Signia                 , unstable                                                     , 124.36  
-Signia                 , molBench                                                     , 590.39  
-Signia                 , createDataSignals                                            , 56.79   
-Signia                 , createComputations0to1                                       , 66.05   
-Signia                 , createComputations1to1                                       , 57.23   
-Signia                 , createComputations2to1                                       , 54.70   
-Signia                 , createComputations4to1                                       , 63.04   
-Signia                 , createComputations1000to1                                    , 59.79   
-Signia                 , createComputations1to2                                       , 56.98   
-Signia                 , createComputations1to4                                       , 74.10   
-Signia                 , createComputations1to8                                       , 70.08   
-Signia                 , createComputations1to1000                                    , 72.48   
-Signia                 , updateComputations1to1                                       , 85.82   
-Signia                 , updateComputations2to1                                       , 72.64   
-Signia                 , updateComputations4to1                                       , 57.79   
-Signia                 , updateComputations1000to1                                    , 51.22   
-Signia                 , updateComputations1to2                                       , 63.15   
-Signia                 , updateComputations1to4                                       , 77.46   
-Signia                 , updateComputations1to1000                                    , 61.64   
-Signia                 , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 1125.73 
-Signia                 , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 1055.49 
-Signia                 , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 1051.22 
-Signia                 , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 1091.45 
-Signia                 , 10x5 - 2 sources - read 20% (simple component)               , 493.38  
-Signia                 , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 319.02  
-Signia                 , 1000x12 - 4 sources - dynamic (large web app)                , 4357.78 
-Signia                 , 1000x5 - 25 sources (wide dense)                             , 2605.83 
-Signia                 , 5x500 - 3 sources (deep)                                     , 260.42  
-@solidjs/signals       , avoidablePropagation                                         , 841.11  
-@solidjs/signals       , broadPropagation                                             , 1816.22 
-@solidjs/signals       , deepPropagation                                              , 592.70  
-@solidjs/signals       , diamond                                                      , 1294.90 
-@solidjs/signals       , mux                                                          , 589.19  
-@solidjs/signals       , repeatedObservers                                            , 214.97  
-@solidjs/signals       , triangle                                                     , 404.96  
-@solidjs/signals       , unstable                                                     , 298.85  
-@solidjs/signals       , molBench                                                     , 736.67  
-@solidjs/signals       , createDataSignals                                            , 55.66   
-@solidjs/signals       , createComputations0to1                                       , 101.70  
-@solidjs/signals       , createComputations1to1                                       , 171.38  
-@solidjs/signals       , createComputations2to1                                       , 143.30  
-@solidjs/signals       , createComputations4to1                                       , 122.87  
-@solidjs/signals       , createComputations1000to1                                    , 167.59  
-@solidjs/signals       , createComputations1to2                                       , 133.29  
-@solidjs/signals       , createComputations1to4                                       , 126.18  
-@solidjs/signals       , createComputations1to8                                       , 138.41  
-@solidjs/signals       , createComputations1to1000                                    , 123.01  
-@solidjs/signals       , updateComputations1to1                                       , 63.40   
-@solidjs/signals       , updateComputations2to1                                       , 58.07   
-@solidjs/signals       , updateComputations4to1                                       , 47.62   
-@solidjs/signals       , updateComputations1000to1                                    , 56.19   
-@solidjs/signals       , updateComputations1to2                                       , 54.70   
-@solidjs/signals       , updateComputations1to4                                       , 53.14   
-@solidjs/signals       , updateComputations1to1000                                    , 49.81   
-@solidjs/signals       , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 2397.85 
-@solidjs/signals       , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 2045.37 
-@solidjs/signals       , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 1236.66 
-@solidjs/signals       , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 1747.48 
-@solidjs/signals       , 10x5 - 2 sources - read 20% (simple component)               , 2599.29 
-@solidjs/signals       , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 708.60  
-@solidjs/signals       , 1000x12 - 4 sources - dynamic (large web app)                , 889.27  
-@solidjs/signals       , 1000x5 - 25 sources (wide dense)                             , 1181.30 
-@solidjs/signals       , 5x500 - 3 sources (deep)                                     , 544.66  
-SolidJS                , avoidablePropagation                                         , 743.31  
-SolidJS                , broadPropagation                                             , 875.62  
-SolidJS                , deepPropagation                                              , 324.72  
-SolidJS                , diamond                                                      , 749.57  
-SolidJS                , mux                                                          , 526.47  
-SolidJS                , repeatedObservers                                            , 182.84  
-SolidJS                , triangle                                                     , 257.92  
-SolidJS                , unstable                                                     , 222.82  
-SolidJS                , molBench                                                     , 702.39  
-SolidJS                , createDataSignals                                            , 61.18   
-SolidJS                , createComputations0to1                                       , 64.87   
-SolidJS                , createComputations1to1                                       , 88.53   
-SolidJS                , createComputations2to1                                       , 74.19   
-SolidJS                , createComputations4to1                                       , 182.10  
-SolidJS                , createComputations1000to1                                    , 59.03   
-SolidJS                , createComputations1to2                                       , 90.04   
-SolidJS                , createComputations1to4                                       , 66.35   
-SolidJS                , createComputations1to8                                       , 74.57   
-SolidJS                , createComputations1to1000                                    , 67.12   
-SolidJS                , updateComputations1to1                                       , 128.29  
-SolidJS                , updateComputations2to1                                       , 87.60   
-SolidJS                , updateComputations4to1                                       , 82.54   
-SolidJS                , updateComputations1000to1                                    , 82.95   
-SolidJS                , updateComputations1to2                                       , 104.46  
-SolidJS                , updateComputations1to4                                       , 105.37  
-SolidJS                , updateComputations1to1000                                    , 100.46  
-SolidJS                , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 2502.32 
-SolidJS                , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 1865.07 
-SolidJS                , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 1325.42 
-SolidJS                , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 2041.49 
-SolidJS                , 10x5 - 2 sources - read 20% (simple component)               , 2243.47 
-SolidJS                , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 741.31  
-SolidJS                , 1000x12 - 4 sources - dynamic (large web app)                , 1044.82 
-SolidJS                , 1000x5 - 25 sources (wide dense)                             , 1400.51 
-SolidJS                , 5x500 - 3 sources (deep)                                     , 596.78  
-uSignal                , avoidablePropagation                                         , 1074.62 
-uSignal                , broadPropagation                                             , 981.34  
-uSignal                , deepPropagation                                              , 334.22  
-uSignal                , diamond                                                      , 735.57  
-uSignal                , mux                                                          , 849.03  
-uSignal                , repeatedObservers                                            , 99.99   
-uSignal                , triangle                                                     , 228.95  
-uSignal                , unstable                                                     , 108.00  
-uSignal                , molBench                                                     , 804.96  
-uSignal                , createDataSignals                                            , 54.49   
-uSignal                , createComputations0to1                                       , 67.68   
-uSignal                , createComputations1to1                                       , 64.17   
-uSignal                , createComputations2to1                                       , 74.61   
-uSignal                , createComputations4to1                                       , 52.95   
-uSignal                , createComputations1000to1                                    , 46.67   
-uSignal                , createComputations1to2                                       , 74.37   
-uSignal                , createComputations1to4                                       , 75.28   
-uSignal                , createComputations1to8                                       , 69.97   
-uSignal                , createComputations1to1000                                    , 67.14   
-uSignal                , updateComputations1to1                                       , 56.03   
-uSignal                , updateComputations2to1                                       , 73.75   
-uSignal                , updateComputations4to1                                       , 49.94   
-uSignal                , updateComputations1000to1                                    , 54.44   
-uSignal                , updateComputations1to2                                       , 52.77   
-uSignal                , updateComputations1to4                                       , 158.16  
-uSignal                , updateComputations1to1000                                    , 48.45   
-uSignal                , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 794.90  
-uSignal                , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 1217.36 
-uSignal                , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 844.76  
-uSignal                , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 1314.65 
-uSignal                , 10x5 - 2 sources - read 20% (simple component)               , 617.77  
-uSignal                , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 547.56  
-uSignal                , 1000x12 - 4 sources - dynamic (large web app)                , 770.49  
-uSignal                , 1000x5 - 25 sources (wide dense)                             , 1460.24 
-uSignal                , 5x500 - 3 sources (deep)                                     , 497.89  
-@vue/reactivity        , avoidablePropagation                                         , 641.82  
-@vue/reactivity        , broadPropagation                                             , 501.64  
-@vue/reactivity        , deepPropagation                                              , 197.25  
-@vue/reactivity        , diamond                                                      , 522.57  
-@vue/reactivity        , mux                                                          , 498.74  
-@vue/reactivity        , repeatedObservers                                            , 63.24   
-@vue/reactivity        , triangle                                                     , 151.90  
-@vue/reactivity        , unstable                                                     , 103.72  
-@vue/reactivity        , molBench                                                     , 1247.27 
-@vue/reactivity        , createDataSignals                                            , 57.09   
-@vue/reactivity        , createComputations0to1                                       , 56.95   
-@vue/reactivity        , createComputations1to1                                       , 61.98   
-@vue/reactivity        , createComputations2to1                                       , 59.07   
-@vue/reactivity        , createComputations4to1                                       , 60.57   
-@vue/reactivity        , createComputations1000to1                                    , 51.81   
-@vue/reactivity        , createComputations1to2                                       , 57.40   
-@vue/reactivity        , createComputations1to4                                       , 60.82   
-@vue/reactivity        , createComputations1to8                                       , 65.75   
-@vue/reactivity        , createComputations1to1000                                    , 73.35   
-@vue/reactivity        , updateComputations1to1                                       , 57.63   
-@vue/reactivity        , updateComputations2to1                                       , 54.20   
-@vue/reactivity        , updateComputations4to1                                       , 65.94   
-@vue/reactivity        , updateComputations1000to1                                    , 50.36   
-@vue/reactivity        , updateComputations1to2                                       , 55.76   
-@vue/reactivity        , updateComputations1to4                                       , 51.52   
-@vue/reactivity        , updateComputations1to1000                                    , 49.79   
-@vue/reactivity        , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 1319.51 
-@vue/reactivity        , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 1179.22 
-@vue/reactivity        , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 1972.25 
-@vue/reactivity        , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 1454.22 
-@vue/reactivity        , 10x5 - 2 sources - read 20% (simple component)               , 568.91  
-@vue/reactivity        , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 355.72  
-@vue/reactivity        , 1000x12 - 4 sources - dynamic (large web app)                , 3738.83 
-@vue/reactivity        , 1000x5 - 25 sources (wide dense)                             , 3110.47 
-@vue/reactivity        , 5x500 - 3 sources (deep)                                     , 314.13  
-MobX                   , avoidablePropagation                                         , 1241.28 
-MobX                   , broadPropagation                                             , 2475.67 
-MobX                   , deepPropagation                                              , 822.40  
-MobX                   , diamond                                                      , 1376.62 
-MobX                   , mux                                                          , 948.12  
-MobX                   , repeatedObservers                                            , 135.90  
-MobX                   , triangle                                                     , 452.47  
-MobX                   , unstable                                                     , 261.49  
-MobX                   , molBench                                                     , 630.92  
-MobX                   , createDataSignals                                            , 58.58   
-MobX                   , createComputations0to1                                       , 70.14   
-MobX                   , createComputations1to1                                       , 71.69   
-MobX                   , createComputations2to1                                       , 65.82   
-MobX                   , createComputations4to1                                       , 68.35   
-MobX                   , createComputations1000to1                                    , 68.63   
-MobX                   , createComputations1to2                                       , 75.55   
-MobX                   , createComputations1to4                                       , 72.11   
-MobX                   , createComputations1to8                                       , 69.49   
-MobX                   , createComputations1to1000                                    , 70.84   
-MobX                   , updateComputations1to1                                       , 65.73   
-MobX                   , updateComputations2to1                                       , 60.82   
-MobX                   , updateComputations4to1                                       , 53.81   
-MobX                   , updateComputations1000to1                                    , 61.17   
-MobX                   , updateComputations1to2                                       , 60.91   
-MobX                   , updateComputations1to4                                       , 52.11   
-MobX                   , updateComputations1to1000                                    , 51.93   
-MobX                   , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 1553.93 
-MobX                   , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 2394.14 
-MobX                   , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 1263.23 
-MobX                   , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 2616.98 
-MobX                   , 10x5 - 2 sources - read 20% (simple component)               , 1334.82 
-MobX                   , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 961.99  
-MobX                   , 1000x12 - 4 sources - dynamic (large web app)                , 1352.50 
-MobX                   , 1000x5 - 25 sources (wide dense)                             , 1986.46 
-MobX                   , 5x500 - 3 sources (deep)                                     , 740.31  
+reflex                 , avoidablePropagation                                         , 219.20  
+reflex                 , broadPropagation                                             , 254.76  
+reflex                 , deepPropagation                                              , 64.41   
+reflex                 , diamond                                                      , 238.90  
+reflex                 , mux                                                          , 261.57  
+reflex                 , repeatedObservers                                            , 25.86   
+reflex                 , triangle                                                     , 64.53   
+reflex                 , unstable                                                     , 41.11   
+reflex                 , molBench                                                     , 228.93  
+reflex                 , createDataSignals                                            , 6.36    
+reflex                 , createComputations0to1                                       , 3.88    
+reflex                 , createComputations1to1                                       , 3.74    
+reflex                 , createComputations2to1                                       , 4.86    
+reflex                 , createComputations4to1                                       , 6.12    
+reflex                 , createComputations1000to1                                    , 2.96    
+reflex                 , createComputations1to2                                       , 7.35    
+reflex                 , createComputations1to4                                       , 4.23    
+reflex                 , createComputations1to8                                       , 2.35    
+reflex                 , createComputations1to1000                                    , 6.08    
+reflex                 , updateComputations1to1                                       , 4.14    
+reflex                 , updateComputations2to1                                       , 3.03    
+reflex                 , updateComputations4to1                                       , 3.90    
+reflex                 , updateComputations1000to1                                    , 1.83    
+reflex                 , updateComputations1to2                                       , 5.02    
+reflex                 , updateComputations1to4                                       , 3.38    
+reflex                 , updateComputations1to1000                                    , 2.55    
+reflex                 , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 213.21  
+reflex                 , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 319.05  
+reflex                 , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 180.38  
+reflex                 , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 327.04  
+reflex                 , 32x8 - 4 sources - pull (pure pull)                          , 7.90    
+reflex                 , 32x8 - 4 sources - push (pure push)                          , 96.59   
+reflex                 , 10x5 - 2 sources - read 20% (simple component)               , 227.99  
+reflex                 , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 143.13  
+reflex                 , 1000x12 - 4 sources - dynamic (large web app)                , 178.28  
+reflex                 , 1000x5 - 25 sources (wide dense)                             , 311.61  
+reflex                 , 5x500 - 3 sources (deep)                                     , 116.40  
+alien-signals          , avoidablePropagation                                         , 151.88  
+alien-signals          , broadPropagation                                             , 137.97  
+alien-signals          , deepPropagation                                              , 56.95   
+alien-signals          , diamond                                                      , 157.39  
+alien-signals          , mux                                                          , 180.91  
+alien-signals          , repeatedObservers                                            , 23.94   
+alien-signals          , triangle                                                     , 48.17   
+alien-signals          , unstable                                                     , 41.96   
+alien-signals          , molBench                                                     , 232.51  
+alien-signals          , createDataSignals                                            , 57.98   
+alien-signals          , createComputations0to1                                       , 55.54   
+alien-signals          , createComputations1to1                                       , 69.52   
+alien-signals          , createComputations2to1                                       , 56.27   
+alien-signals          , createComputations4to1                                       , 50.57   
+alien-signals          , createComputations1000to1                                    , 21.66   
+alien-signals          , createComputations1to2                                       , 58.89   
+alien-signals          , createComputations1to4                                       , 31.14   
+alien-signals          , createComputations1to8                                       , 52.90   
+alien-signals          , createComputations1to1000                                    , 27.92   
+alien-signals          , updateComputations1to1                                       , 25.44   
+alien-signals          , updateComputations2to1                                       , 22.57   
+alien-signals          , updateComputations4to1                                       , 52.00   
+alien-signals          , updateComputations1000to1                                    , 24.61   
+alien-signals          , updateComputations1to2                                       , 21.66   
+alien-signals          , updateComputations1to4                                       , 52.09   
+alien-signals          , updateComputations1to1000                                    , 23.41   
+alien-signals          , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 193.02  
+alien-signals          , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 323.45  
+alien-signals          , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 205.78  
+alien-signals          , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 327.05  
+alien-signals          , 32x8 - 4 sources - pull (pure pull)                          , 48.55   
+alien-signals          , 32x8 - 4 sources - push (pure push)                          , 84.09   
+alien-signals          , 10x5 - 2 sources - read 20% (simple component)               , 142.44  
+alien-signals          , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 133.88  
+alien-signals          , 1000x12 - 4 sources - dynamic (large web app)                , 226.17  
+alien-signals          , 1000x5 - 25 sources (wide dense)                             , 357.13  
+alien-signals          , 5x500 - 3 sources (deep)                                     , 108.25  
+$mol_wire              , avoidablePropagation                                         , 394.11  
+$mol_wire              , broadPropagation                                             , 808.91  
+$mol_wire              , deepPropagation                                              , 243.79  
+$mol_wire              , diamond                                                      , 450.92  
+$mol_wire              , mux                                                          , 537.30  
+$mol_wire              , repeatedObservers                                            , 96.51   
+$mol_wire              , triangle                                                     , 147.87  
+$mol_wire              , unstable                                                     , 213.15  
+$mol_wire              , molBench                                                     , 249.08  
+$mol_wire              , createDataSignals                                            , 54.75   
+$mol_wire              , createComputations0to1                                       , 42.73   
+$mol_wire              , createComputations1to1                                       , 55.57   
+$mol_wire              , createComputations2to1                                       , 55.29   
+$mol_wire              , createComputations4to1                                       , 27.98   
+$mol_wire              , createComputations1000to1                                    , 56.55   
+$mol_wire              , createComputations1to2                                       , 40.42   
+$mol_wire              , createComputations1to4                                       , 50.18   
+$mol_wire              , createComputations1to8                                       , 46.34   
+$mol_wire              , createComputations1to1000                                    , 76.59   
+$mol_wire              , updateComputations1to1                                       , 27.64   
+$mol_wire              , updateComputations2to1                                       , 30.49   
+$mol_wire              , updateComputations4to1                                       , 30.11   
+$mol_wire              , updateComputations1000to1                                    , 30.79   
+$mol_wire              , updateComputations1to2                                       , 63.22   
+$mol_wire              , updateComputations1to4                                       , 33.05   
+$mol_wire              , updateComputations1to1000                                    , 51.21   
+$mol_wire              , 64x6 - 4 sources - dynamic - read 12% (dashboard selective r , 510.14  
+$mol_wire              , 24x8 - 3 sources - dynamic - read 40% (editor derived state) , 859.48  
+$mol_wire              , 120x7 - 5 sources - dynamic - read 18% (kanban board)        , 410.45  
+$mol_wire              , 40x10 - 4 sources - dynamic - read 60% (entity detail page)  , 765.09  
+$mol_wire              , 32x8 - 4 sources - pull (pure pull)                          , 30.86   
+$mol_wire              , 32x8 - 4 sources - push (pure push)                          , 257.54  
+$mol_wire              , 10x5 - 2 sources - read 20% (simple component)               , 482.66  
+$mol_wire              , 10x10 - 6 sources - dynamic - read 20% (dynamic component)   , 283.52  
+$mol_wire              , 1000x12 - 4 sources - dynamic (large web app)                , 438.85  
+$mol_wire              , 1000x5 - 25 sources (wide dense)                             , 510.11  
+$mol_wire              , 5x500 - 3 sources (deep)                                     , 255.34  

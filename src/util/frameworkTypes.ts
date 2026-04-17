@@ -22,6 +22,9 @@ export interface TestConfig {
   /** friendly name for the test, should be unique */
   name?: string;
 
+  /** benchmark execution mode */
+  mode?: "mixed" | "pull" | "push";
+
   /** width of dependency graph to construct */
   width: number;
 

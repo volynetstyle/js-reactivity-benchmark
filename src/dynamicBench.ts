@@ -14,8 +14,6 @@ export async function dynamicBench(
 ): Promise<void> {
   const { framework } = frameworkTest;
   for (const config of perfTests) {
-    const { iterations, readFraction } = config;
-
     let counter = new Counter();
 
     function runOnce(): number {
@@ -23,7 +21,7 @@ export async function dynamicBench(
       // from each other.
       try {
         const graph = makeGraph(framework, config, counter);
-        const res = runGraph(graph, iterations, readFraction, framework);
+        const res = runGraph(graph, config, framework);
         globalThis.gc?.();
         return res;
       } catch (err: any) {

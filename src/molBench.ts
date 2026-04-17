@@ -19,9 +19,15 @@ export async function molBench(framework: ReactiveFramework) {
     const A = framework.signal(0);
     const B = framework.signal(0);
     const C = framework.computed(() => (A.read() % 2) + (B.read() % 2));
-    const D = framework.computed(() =>
-      numbers.map((i) => ({ x: i + (A.read() % 2) - (B.read() % 2) }))
-    );
+    const D_items = numbers.map(() => ({ x: 0 }));
+    const D = framework.computed(() => {
+      const a = A.read() % 2;
+      const b = B.read() % 2;
+      for (let i = 0; i < numbers.length; i++) {
+        D_items[i].x = numbers[i] + a - b;
+      }
+      return D_items;
+    });
     const E = framework.computed(() =>
       hard(C.read() + A.read() + D.read()[0].x, "E")
     );
