@@ -24,8 +24,8 @@ importers:
         specifier: ^0.13.11
         version: 0.13.13
       '@volynets/reflex':
-        specifier: ^0.2.9
-        version: 0.2.9
+        specifier: ^0.3.0
+        version: 0.3.0
       '@vue/reactivity':
         specifier: ^3.5.13
         version: 3.5.32
@@ -631,8 +631,8 @@ packages:
   '@vitest/utils@4.1.4':
     resolution: {integrity: sha512-13QMT+eysM5uVGa1rG4kegGYNp6cnQcsTc67ELFbhNLQO+vgsygtYJx2khvdt4gVQqSSpC/KT5FZZxUpP3Oatw==}
 
-  '@volynets/reflex@0.2.9':
-    resolution: {integrity: sha512-tep5O4OBLgHiiINEINOV0ktAHaghMjgLuofuh3klGIEnVlfVobKfM49gWNj1F74HOSJy61+Fz1+xxgA3JdH1bQ==}
+  '@volynets/reflex@0.3.0':
+    resolution: {integrity: sha512-Q5+vdvGYwmAa1Inkt5skrzqkCtATJtbD/jAT3tv1JhOF5YWcgCa9SqZNZZU24DUXKXpYz4bszljrWoIdgYu4Mw==}
 
   '@vue/reactivity@3.5.32':
     resolution: {integrity: sha512-/ORasxSGvZ6MN5gc+uE364SxFdJ0+WqVG0CENXaGW58TOCdrAW76WWaplDtECeS1qphvtBZtR+3/o1g1zL4xPQ==}
@@ -1292,7 +1292,7 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
-  '@volynets/reflex@0.2.9': {}
+  '@volynets/reflex@0.3.0': {}
 
   '@vue/reactivity@3.5.32':
     dependencies:
