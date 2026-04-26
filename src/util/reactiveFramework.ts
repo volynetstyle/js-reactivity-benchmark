@@ -9,6 +9,7 @@ export interface ReactiveFramework {
   effect(fn: () => void): void;
   withBatch<T>(fn: () => T): void;
   withBuild<T>(fn: () => T): T;
+  benchmarkMetrics?: FrameworkBenchmarkMetrics;
 }
 
 export interface Signal<T> {
@@ -18,4 +19,15 @@ export interface Signal<T> {
 
 export interface Computed<T> {
   read(): T;
+}
+
+export interface FrameworkBenchSnapshot {
+  fallbackCount?: number;
+  heightAdjustCount?: number;
+  maxDirtyQueueSize?: number;
+}
+
+export interface FrameworkBenchmarkMetrics {
+  reset(): void;
+  snapshot(): FrameworkBenchSnapshot;
 }

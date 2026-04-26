@@ -22,10 +22,10 @@ importers:
         version: 0.0.8
       '@solidjs/signals':
         specifier: ^0.13.11
-        version: 0.13.11
+        version: 0.13.13
       '@volynets/reflex':
-        specifier: ^0.2.3
-        version: 0.2.3
+        specifier: ^0.2.9
+        version: 0.2.9
       '@vue/reactivity':
         specifier: ^3.5.13
         version: 3.5.32
@@ -86,7 +86,7 @@ importers:
         version: 0.28.0
       prettier:
         specifier: ^3.4.2
-        version: 3.8.2
+        version: 3.8.3
       vite:
         specifier: ^7.1.11
         version: 7.3.2(@types/node@25.6.0)
@@ -576,8 +576,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@solidjs/signals@0.13.11':
-    resolution: {integrity: sha512-EHrJONVsjvCeWSWTRhDWqqbT9MsP3IVZzBrprw6H1OTU99FBoo+oQ9JX976bhY6zAn/WApsAp/M5i92VVRtKCQ==}
+  '@solidjs/signals@0.13.13':
+    resolution: {integrity: sha512-4FrkhyvbAT5V6vprmv9Qoi5DAMzo25zkTa7ifEH1W1pwtU6N95ErEZZot8j2rm+KIRYlto9Kq0dzn6nNRdW/uA==}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -631,8 +631,8 @@ packages:
   '@vitest/utils@4.1.4':
     resolution: {integrity: sha512-13QMT+eysM5uVGa1rG4kegGYNp6cnQcsTc67ELFbhNLQO+vgsygtYJx2khvdt4gVQqSSpC/KT5FZZxUpP3Oatw==}
 
-  '@volynets/reflex@0.2.3':
-    resolution: {integrity: sha512-BXWm9aIFvs84r7LUt6iYgLRvsjsFRkkvqnQv/7iODIyYSTEaKJGgib0udJ3Daoeyk5m8iu6Kw9e7BSa73t7jAg==}
+  '@volynets/reflex@0.2.9':
+    resolution: {integrity: sha512-tep5O4OBLgHiiINEINOV0ktAHaghMjgLuofuh3klGIEnVlfVobKfM49gWNj1F74HOSJy61+Fz1+xxgA3JdH1bQ==}
 
   '@vue/reactivity@3.5.32':
     resolution: {integrity: sha512-/ORasxSGvZ6MN5gc+uE364SxFdJ0+WqVG0CENXaGW58TOCdrAW76WWaplDtECeS1qphvtBZtR+3/o1g1zL4xPQ==}
@@ -765,15 +765,15 @@ packages:
     resolution: {integrity: sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A==}
     engines: {node: '>=12'}
 
-  postcss@8.5.9:
-    resolution: {integrity: sha512-7a70Nsot+EMX9fFU3064K/kdHWZqGVY+BADLyXc8Dfv+mTLLVl6JzJpPaCZ2kQL9gIJvKXSLMHhqdRRjwQeFtw==}
+  postcss@8.5.10:
+    resolution: {integrity: sha512-pMMHxBOZKFU6HgAZ4eyGnwXF/EvPGGqUr0MnZ5+99485wwW41kW91A4LOGxSHhgugZmSChL5AlElNdwlNgcnLQ==}
     engines: {node: ^10 || ^12 || >=14}
 
   preact@10.29.1:
     resolution: {integrity: sha512-gQCLc/vWroE8lIpleXtdJhTFDogTdZG9AjMUpVkDf2iTCNwYNWA+u16dL41TqUDJO4gm2IgrcMv3uTpjd4Pwmg==}
 
-  prettier@3.8.2:
-    resolution: {integrity: sha512-8c3mgTe0ASwWAJK+78dpviD+A8EqhndQPUBpNUIPt6+xWlIigCwfN01lWr9MAede4uqXGTEKeQWTvzb3vjia0Q==}
+  prettier@3.8.3:
+    resolution: {integrity: sha512-7igPTM53cGHMW8xWuVTydi2KO233VFiTNyF5hLJqpilHfmn8C8gPf+PS7dUT64YcXFbiMGZxS9pCSxL/Dxm/Jw==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -828,8 +828,8 @@ packages:
   stackback@0.0.2:
     resolution: {integrity: sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==}
 
-  std-env@4.0.0:
-    resolution: {integrity: sha512-zUMPtQ/HBY3/50VbpkupYHbRroTRZJPRLvreamgErJVys0ceuzMkD44J/QjqhHjOzK42GQ3QZIeFG1OYfOtKqQ==}
+  std-env@4.1.0:
+    resolution: {integrity: sha512-Rq7ybcX2RuC55r9oaPVEW7/xu3tj8u4GeBYHBWCychFtzMIr86A7e3PPEBPT37sHStKX3+TiX/Fr/ACmJLVlLQ==}
 
   svelte@5.55.3:
     resolution: {integrity: sha512-dS1N+i3bA1v+c4UDb750MlN5vCO82G6vxh8HeTsPsTdJ1BLsN1zxSyDlIdBBqUjqZ/BxEwM8UrFf98aaoVnZFQ==}
@@ -1228,7 +1228,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.60.1':
     optional: true
 
-  '@solidjs/signals@0.13.11': {}
+  '@solidjs/signals@0.13.13': {}
 
   '@standard-schema/spec@1.1.0': {}
 
@@ -1292,7 +1292,7 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
-  '@volynets/reflex@0.2.3': {}
+  '@volynets/reflex@0.2.9': {}
 
   '@vue/reactivity@3.5.32':
     dependencies:
@@ -1429,7 +1429,7 @@ snapshots:
 
   picomatch@4.0.4: {}
 
-  postcss@8.5.9:
+  postcss@8.5.10:
     dependencies:
       nanoid: 3.3.11
       picocolors: 1.1.1
@@ -1437,7 +1437,7 @@ snapshots:
 
   preact@10.29.1: {}
 
-  prettier@3.8.2: {}
+  prettier@3.8.3: {}
 
   proxy-compare@3.0.1: {}
 
@@ -1504,7 +1504,7 @@ snapshots:
 
   stackback@0.0.2: {}
 
-  std-env@4.0.0: {}
+  std-env@4.1.0: {}
 
   svelte@5.55.3:
     dependencies:
@@ -1555,7 +1555,7 @@ snapshots:
       esbuild: 0.27.7
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
-      postcss: 8.5.9
+      postcss: 8.5.10
       rollup: 4.60.1
       tinyglobby: 0.2.16
     optionalDependencies:
@@ -1577,7 +1577,7 @@ snapshots:
       obug: 2.1.1
       pathe: 2.0.3
       picomatch: 4.0.4
-      std-env: 4.0.0
+      std-env: 4.1.0
       tinybench: 2.9.0
       tinyexec: 1.1.1
       tinyglobby: 0.2.16

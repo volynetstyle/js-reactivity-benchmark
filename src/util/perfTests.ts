@@ -1,8 +1,11 @@
 import { FrameworkInfo, TestConfig } from "./frameworkTypes";
+import { BenchCountersSnapshot } from "./dependencyGraph";
+import { FrameworkBenchSnapshot } from "./reactiveFramework";
 
 export interface TestResult {
   sum: number;
   count: number;
+  metrics?: BenchCountersSnapshot & FrameworkBenchSnapshot;
 }
 
 export interface TimingResult<T> {

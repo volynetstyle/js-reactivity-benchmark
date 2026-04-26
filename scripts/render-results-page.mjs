@@ -16,7 +16,7 @@ export function parseBenchOutput(text) {
 
   for (const line of lines) {
     const parts = line.split(/\s*,\s*/);
-    if (parts.length !== 3) {
+    if (parts.length < 3) {
       continue;
     }
 

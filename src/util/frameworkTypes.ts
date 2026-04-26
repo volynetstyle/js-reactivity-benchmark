@@ -22,14 +22,26 @@ export interface TestConfig {
   /** friendly name for the test, should be unique */
   name?: string;
 
+  /** graph family used to construct the benchmark */
+  graphKind?: "rect" | "layered-dag" | "diamond-mesh";
+
   /** benchmark execution mode */
   mode?: "mixed" | "pull" | "push";
+
+  /** sink read cadence during a benchmark iteration */
+  sinkReadMode?: "per-update" | "per-batch" | "final-only";
 
   /** width of dependency graph to construct */
   width: number;
 
+  /** number of mutable sources, defaults to width for rectangular graphs */
+  sourcesCount?: number;
+
   /** depth of dependency graph to construct */
   totalLayers: number;
+
+  /** fan-in for layered DAG style graphs, defaults to nSources */
+  fanIn?: number;
 
   /** fraction of nodes that are static */ // TODO change to dynamicFraction
   staticFraction: number;
@@ -42,6 +54,15 @@ export interface TestConfig {
 
   /** number of test iterations */
   iterations: number;
+
+  /** number of source writes performed per iteration */
+  updatesPerIteration?: number;
+
+  /** steady-state warmup iterations executed before the timed phase */
+  warmupIterations?: number;
+
+  /** whether graph construction should be included in the measured time */
+  measureBuild?: boolean;
 
   /** sum and count of all iterations, for verification */
   expected: Partial<TestResult>;
