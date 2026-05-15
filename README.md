@@ -23,7 +23,7 @@ BENCH_FRAMEWORK=ripple pnpm bench
 
 You can also pass a comma-separated list such as `BENCH_FRAMEWORK="ripple,alien-signals"`.
 
-To change the number of measured repeats per benchmark row, set `BENCH_RUNS`:
+By default each benchmark row uses one measured run so the full suite stays practical for local iteration. To collect stronger distribution statistics, set `BENCH_RUNS`:
 
 ```bash
 BENCH_RUNS=30 pnpm bench
@@ -72,7 +72,7 @@ The semantics and interpretation rules are documented in [SEMANTICS.md](/d:/Pers
 
 ## Reported Metrics
 
-Rows are measured repeatedly. The primary terminal `time` column is the median, not the fastest run. Rows also emit:
+Rows are measured according to `BENCH_RUNS` (`1` by default for speed). The primary terminal `time` column is the median, not the fastest run. Rows also emit:
 
 - `p95` and `p99` - tail latency for jitter/outliers
 - `cv` - coefficient of variation for stability

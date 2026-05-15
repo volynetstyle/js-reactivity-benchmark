@@ -92,6 +92,10 @@ The report groups benchmarks into these families:
 
 ## Statistics
 
+The default local run uses `BENCH_RUNS=1` so the full configuration remains
+fast enough for iteration. Set `BENCH_RUNS=30` or another repeat count when you
+want publication-grade distribution statistics.
+
 The primary row score is median wall-clock time. Rows also emit:
 
 ```txt
