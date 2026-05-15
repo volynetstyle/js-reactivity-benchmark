@@ -7,6 +7,7 @@ import { repeatedObservers } from "./kairo/repeated";
 import { triangle } from "./kairo/triangle";
 import { unstable } from "./kairo/unstable";
 import { fastestTest } from "./util/benchRepeat";
+import { benchRunCount } from "./util/benchOptions";
 import { metadataForNamedScenario } from "./util/benchMetadata";
 import { logPerfResult, perfNamedRowStrings } from "./util/perfLogging";
 import { ReactiveFramework } from "./util/reactiveFramework";
@@ -48,7 +49,7 @@ export async function kairoBench(
     // 2. The graph's internal subscriber/dependency lists start clean.
     // The build cost itself is excluded — only the 1000 update iterations
     // are measured — matching the original intent.
-    const { timing } = await fastestTest(10, () => {
+    const { timing } = await fastestTest(benchRunCount(), () => {
       // Build outside the timed window
       const iter = framework.withBuild(() => c(framework));
 

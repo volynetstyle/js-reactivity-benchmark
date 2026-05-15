@@ -2,6 +2,7 @@ import { dynamicBench } from "./dynamicBench";
 import { sBenchCaseNames, sbench } from "./sBench";
 import { frameworkInfo, perfTests } from "./config";
 import { logPerfResult, perfReportHeaders } from "./util/perfLogging";
+import { benchRunCount } from "./util/benchOptions";
 import { molBench, molBenchCaseNames } from "./molBench";
 import { kairoBench, kairoBenchCaseNames } from "./kairoBench";
 import { fanBench, fanBenchCaseNames } from "./fanBench";
@@ -89,11 +90,6 @@ export async function runScenario(
   }
 
   globalThis.gc?.();
-}
-
-function benchRunCount(): number {
-  const parsed = Number.parseInt(process.env.BENCH_RUNS ?? "7", 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 7;
 }
 
 // Spawn a child process for each scenario so V8 JIT, heap state, subscriptions,

@@ -1,5 +1,6 @@
 // Inspired by https://github.com/solidjs/solid/blob/main/packages/solid/bench/bench.cjs
 import { summarizeSamples } from "./util/benchRepeat";
+import { benchRunCount } from "./util/benchOptions";
 import { metadataForNamedScenario } from "./util/benchMetadata";
 import { logPerfResult, perfNamedRowStrings } from "./util/perfLogging";
 import { Computed, Signal, ReactiveFramework } from "./util/reactiveFramework";
@@ -304,9 +305,4 @@ export function sbench(framework: ReactiveFramework, caseName?: string) {
       set1(i);
     }
   }
-}
-
-function benchRunCount(): number {
-  const parsed = Number.parseInt(process.env.BENCH_RUNS ?? "7", 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 7;
 }

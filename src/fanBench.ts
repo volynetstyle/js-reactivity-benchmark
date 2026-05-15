@@ -1,4 +1,5 @@
 import { fastestTest } from "./util/benchRepeat";
+import { benchRunCount } from "./util/benchOptions";
 import { metadataForNamedScenario } from "./util/benchMetadata";
 import { logPerfResult, perfNamedRowStrings } from "./util/perfLogging";
 import { ReactiveFramework, Signal } from "./util/reactiveFramework";
@@ -34,7 +35,7 @@ export async function fanBench(
     warmup(1_000);
     globalThis.gc?.();
 
-    const { timing, result } = await fastestTest(10, () => {
+    const { timing, result } = await fastestTest(benchRunCount(), () => {
       const run = framework.withBuild(() => c(framework));
       run(1_000);
 

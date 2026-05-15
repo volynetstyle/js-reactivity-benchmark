@@ -1,4 +1,5 @@
 import { fastestTest } from "./util/benchRepeat";
+import { benchRunCount } from "./util/benchOptions";
 import { metadataForNamedScenario } from "./util/benchMetadata";
 import { logPerfResult, perfNamedRowStrings } from "./util/perfLogging";
 import { ReactiveFramework } from "./util/reactiveFramework";
@@ -76,7 +77,7 @@ export async function molBench(
   warmupIter(1);
   globalThis.gc?.();
 
-  const { timing } = await fastestTest(10, () => {
+  const { timing } = await fastestTest(benchRunCount(), () => {
     // Rebuild the graph for every repeat so reactive state is clean.
     // Build cost is outside the timed window.
     const iter = buildGraph(framework);
