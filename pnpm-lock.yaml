@@ -24,14 +24,17 @@ importers:
         specifier: ^0.13.11
         version: 0.13.13
       '@volynets/reflex':
-        specifier: ^0.3.4
-        version: 0.3.4
+        specifier: ^0.3.5
+        version: 0.3.5
       '@vue/reactivity':
         specifier: ^3.5.13
         version: 3.5.32
+      '@zakkster/lite-signal':
+        specifier: ^1.0.4
+        version: 1.0.4
       alien-signals:
-        specifier: 3.1.2
-        version: 3.1.2
+        specifier: 3.2.0
+        version: 3.2.0
       compostate:
         specifier: 0.6.0-alpha.1
         version: 0.6.0-alpha.1
@@ -631,8 +634,8 @@ packages:
   '@vitest/utils@4.1.4':
     resolution: {integrity: sha512-13QMT+eysM5uVGa1rG4kegGYNp6cnQcsTc67ELFbhNLQO+vgsygtYJx2khvdt4gVQqSSpC/KT5FZZxUpP3Oatw==}
 
-  '@volynets/reflex@0.3.4':
-    resolution: {integrity: sha512-5FSvie8tRoH1QdorHf0ujNHMT+5MNGwyhFYBdXRkjKRS1YJxtLm6bT19m5ukzqitHYn4sRRcI/KcWbqkZKsoMw==}
+  '@volynets/reflex@0.3.5':
+    resolution: {integrity: sha512-Nj/8Ggc1jGAvtI6mJuZPrj/nMdIZa1oIPA+Pa2mWb+QKNFvdRGfi+lHFRLFW7Jn5lLwTBiKlRkKug0FK0j1kWg==}
 
   '@vue/reactivity@3.5.32':
     resolution: {integrity: sha512-/ORasxSGvZ6MN5gc+uE364SxFdJ0+WqVG0CENXaGW58TOCdrAW76WWaplDtECeS1qphvtBZtR+3/o1g1zL4xPQ==}
@@ -640,13 +643,17 @@ packages:
   '@vue/shared@3.5.32':
     resolution: {integrity: sha512-ksNyrmRQzWJJ8n3cRDuSF7zNNontuJg1YHnmWRJd2AMu8Ij2bqwiiri2lH5rHtYPZjj4STkNcgcmiQqlOjiYGg==}
 
+  '@zakkster/lite-signal@1.0.4':
+    resolution: {integrity: sha512-d2gs6ARuq60JDy9IsJtI0JziwjaBIdlj4C7CfBSNhGyWqFK20rMO5ZhvMv1DqaSYZqLxn95tolsK6/pinSJwjw==}
+    engines: {node: '>=18'}
+
   acorn@8.16.0:
     resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  alien-signals@3.1.2:
-    resolution: {integrity: sha512-d9dYqZTS90WLiU0I5c6DHj/HcKkF8ZyGN3G5x8wSbslulz70KOxaqCT0hQCo9KOyhVqzqGojvNdJXoTumZOtcw==}
+  alien-signals@3.2.0:
+    resolution: {integrity: sha512-5J9+NpCLHgic4xnZtI8SznvNagwJsZSvRFsAwoLlLw+Edaqa4upCiOC19P8Vx2DqmEvqK2qJBMtI8+9eXOEb/A==}
 
   aria-query@5.3.1:
     resolution: {integrity: sha512-Z/ZeOgVl7bcSYZ/u/rh0fOpvEpq//LZmdbkXyc7syVzjPAhfOa9ebsdTSjEBDU4vs5nC98Kfduj1uFo0qyET3g==}
@@ -1292,7 +1299,7 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
-  '@volynets/reflex@0.3.4': {}
+  '@volynets/reflex@0.3.5': {}
 
   '@vue/reactivity@3.5.32':
     dependencies:
@@ -1300,9 +1307,11 @@ snapshots:
 
   '@vue/shared@3.5.32': {}
 
+  '@zakkster/lite-signal@1.0.4': {}
+
   acorn@8.16.0: {}
 
-  alien-signals@3.1.2: {}
+  alien-signals@3.2.0: {}
 
   aria-query@5.3.1: {}
 

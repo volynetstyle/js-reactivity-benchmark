@@ -731,7 +731,7 @@
       <div class="hero-copy">
         <span class="eyebrow">Benchmark Overview</span>
         <h1>JS Reactivity Benchmark</h1>
-        <p class="subtitle">Propagation, graph, and computation stress tests. Lower average runtime wins.</p>
+        <p class="subtitle">Reactive graph benchmarks reported as topology profiles. Lower relative score and tighter p95/p99 tails are better.</p>
         <div class="hero-notes">
           <div class="hero-chip">Leader: alien-signals</div>
           <div class="hero-chip">Tests: 41</div>
@@ -739,7 +739,7 @@
         </div>
       </div>
       <aside class="spotlight-card">
-        <p class="spotlight-label">Fastest Overall</p>
+        <p class="spotlight-label">Best Geomean Profile</p>
         <h2>alien-signals</h2>
         <div class="spotlight-metric">149.30<span> ms avg</span></div>
         <p class="spotlight-copy">24 test wins and 0.0% ahead of reflex.</p>
@@ -761,7 +761,7 @@
       <article class="stat-card">
         <span class="stat-label">Most Wins</span>
         <strong>alien-signals</strong>
-        <p>24 first-place finishes across individual tests.</p>
+        <p>31 first-place finishes across individual tests.</p>
       </article>
       <article class="stat-card">
         <span class="stat-label">Run Snapshot</span>
@@ -784,7 +784,7 @@
         <span class="filter-label">Jump to test</span>
         <select id="testFilterSelect" class="filter-select">
           <option value="">All tests</option>
-          <option value="avoidablePropagation">avoidablePropagation</option><option value="broadPropagation">broadPropagation</option><option value="deepPropagation">deepPropagation</option><option value="diamond">diamond</option><option value="mux">mux</option><option value="repeatedObservers">repeatedObservers</option><option value="triangle">triangle</option><option value="unstable">unstable</option><option value="molBench">molBench</option><option value="createDataSignals">createDataSignals</option><option value="createComputations0to1">createComputations0to1</option><option value="createComputations1to1">createComputations1to1</option><option value="createComputations2to1">createComputations2to1</option><option value="createComputations4to1">createComputations4to1</option><option value="createComputations1000to1">createComputations1000to1</option><option value="createComputations1to2">createComputations1to2</option><option value="createComputations1to4">createComputations1to4</option><option value="createComputations1to8">createComputations1to8</option><option value="createComputations1to1000">createComputations1to1000</option><option value="updateComputations1to1">updateComputations1to1</option><option value="updateComputations2to1">updateComputations2to1</option><option value="updateComputations4to1">updateComputations4to1</option><option value="updateComputations1000to1">updateComputations1000to1</option><option value="updateComputations1to2">updateComputations1to2</option><option value="updateComputations1to4">updateComputations1to4</option><option value="updateComputations1to1000">updateComputations1to1000</option><option value="64x6 - 4 sources - dynamic - read 12% (dashboard selective r">64x6 - 4 sources - dynamic - read 12% (dashboard selective r</option><option value="24x8 - 3 sources - dynamic - read 40% (editor derived state)">24x8 - 3 sources - dynamic - read 40% (editor derived state)</option><option value="120x7 - 5 sources - dynamic - read 18% (kanban board)">120x7 - 5 sources - dynamic - read 18% (kanban board)</option><option value="40x10 - 4 sources - dynamic - read 60% (entity detail page)">40x10 - 4 sources - dynamic - read 60% (entity detail page)</option><option value="256-&gt;512x32 - fanIn 4 - layered-dag - 4 sources (layered ful">256-&gt;512x32 - fanIn 4 - layered-dag - 4 sources (layered ful</option><option value="256-&gt;512x32 - fanIn 4 - layered-dag - 4 sources - warm 320 (">256-&gt;512x32 - fanIn 4 - layered-dag - 4 sources - warm 320 (</option><option value="256-&gt;512x32 - fanIn 8 - layered-dag - 8 sources - burst 16 -">256-&gt;512x32 - fanIn 8 - layered-dag - 8 sources - burst 16 -</option><option value="256-&gt;512x32 - fanIn 8 - diamond-mesh - 8 sources - warm 256">256-&gt;512x32 - fanIn 8 - diamond-mesh - 8 sources - warm 256</option><option value="32x8 - 4 sources - pull (pure pull)">32x8 - 4 sources - pull (pure pull)</option><option value="32x8 - 4 sources - push (pure push)">32x8 - 4 sources - push (pure push)</option><option value="10x5 - 2 sources - read 20% (simple component)">10x5 - 2 sources - read 20% (simple component)</option><option value="10x10 - 6 sources - dynamic - read 20% (dynamic component)">10x10 - 6 sources - dynamic - read 20% (dynamic component)</option><option value="1000x12 - 4 sources - dynamic (large web app)">1000x12 - 4 sources - dynamic (large web app)</option><option value="1000x5 - 25 sources (wide dense)">1000x5 - 25 sources (wide dense)</option><option value="5x500 - 3 sources (deep)">5x500 - 3 sources (deep)</option>
+          <option value="avoidablePropagation">avoidablePropagation</option><option value="broadPropagation">broadPropagation</option><option value="deepPropagation">deepPropagation</option><option value="diamond">diamond</option><option value="mux">mux</option><option value="repeatedObservers">repeatedObservers</option><option value="triangle">triangle</option><option value="unstable">unstable</option><option value="manyEffectsFromOneSource">manyEffectsFromOneSource</option><option value="manySourcesIntoOneComputedEffectWithDirect">manySourcesIntoOneComputedEffectWithDirect</option><option value="manySourcesIntoOneComputedEffect">manySourcesIntoOneComputedEffect</option><option value="manySourcesIntoOneDirectEffect">manySourcesIntoOneDirectEffect</option><option value="molBench">molBench</option><option value="createDataSignals">createDataSignals</option><option value="createComputations0to1">createComputations0to1</option><option value="createComputations1to1">createComputations1to1</option><option value="createComputations2to1">createComputations2to1</option><option value="createComputations4to1">createComputations4to1</option><option value="createComputations1000to1">createComputations1000to1</option><option value="createComputations1to2">createComputations1to2</option><option value="createComputations1to4">createComputations1to4</option><option value="createComputations1to8">createComputations1to8</option><option value="createComputations1to1000">createComputations1to1000</option><option value="updateComputations1to1">updateComputations1to1</option><option value="updateComputations2to1">updateComputations2to1</option><option value="updateComputations4to1">updateComputations4to1</option><option value="updateComputations1000to1">updateComputations1000to1</option><option value="updateComputations1to2">updateComputations1to2</option><option value="updateComputations1to4">updateComputations1to4</option><option value="updateComputations1to1000">updateComputations1to1000</option><option value="64x6 - 4 sources - dynamic - read 12% (dashboard selective r">64x6 - 4 sources - dynamic - read 12% (dashboard selective r</option><option value="24x8 - 3 sources - dynamic - read 40% (editor derived state)">24x8 - 3 sources - dynamic - read 40% (editor derived state)</option><option value="120x7 - 5 sources - dynamic - read 18% (kanban board)">120x7 - 5 sources - dynamic - read 18% (kanban board)</option><option value="40x10 - 4 sources - dynamic - read 60% (entity detail page)">40x10 - 4 sources - dynamic - read 60% (entity detail page)</option><option value="256-&gt;512x32 - fanIn 4 - layered-dag - 4 sources (layered ful">256-&gt;512x32 - fanIn 4 - layered-dag - 4 sources (layered ful</option><option value="256-&gt;512x32 - fanIn 4 - layered-dag - 4 sources - warm 320 (">256-&gt;512x32 - fanIn 4 - layered-dag - 4 sources - warm 320 (</option><option value="256-&gt;512x32 - fanIn 8 - layered-dag - 8 sources - burst 16 -">256-&gt;512x32 - fanIn 8 - layered-dag - 8 sources - burst 16 -</option><option value="256-&gt;512x32 - fanIn 8 - diamond-mesh - 8 sources - warm 256">256-&gt;512x32 - fanIn 8 - diamond-mesh - 8 sources - warm 256</option><option value="32x8 - 4 sources - pull (pure pull)">32x8 - 4 sources - pull (pure pull)</option><option value="8x64 - 1 sources - pull (linear chain - 1 source - pull (lin">8x64 - 1 sources - pull (linear chain - 1 source - pull (lin</option><option value="64x4 - 8 sources - pull (wide tree - 8 sources - pull (branc">64x4 - 8 sources - pull (wide tree - 8 sources - pull (branc</option><option value="32x8 - 4 sources - push (pure push)">32x8 - 4 sources - push (pure push)</option><option value="10x5 - 2 sources - read 20% (simple component)">10x5 - 2 sources - read 20% (simple component)</option><option value="10x10 - 6 sources - dynamic - read 20% (dynamic component)">10x10 - 6 sources - dynamic - read 20% (dynamic component)</option><option value="1000x12 - 4 sources - dynamic (large web app)">1000x12 - 4 sources - dynamic (large web app)</option><option value="1000x5 - 25 sources (wide dense)">1000x5 - 25 sources (wide dense)</option><option value="5x500 - 3 sources (deep)">5x500 - 3 sources (deep)</option>
         </select>
       </label>
       <button id="clearTestFilter" class="clear-filter-button" type="button">Reset</button>
@@ -800,7 +800,7 @@
             <tr>
               <th class="rank">#</th>
               <th>Framework</th>
-              <th class="time">Avg, ms</th>
+              <th class="time">Rel.</th>
             </tr>
           </thead>
           <tbody><tr><td class="rank">1</td><td class="framework winner">alien-signals</td><td class="time">149.30</td></tr><tr><td class="rank">2</td><td class="framework">reflex</td><td class="time">149.38</td></tr><tr><td class="rank">3</td><td class="framework">@reactively</td><td class="time">181.08</td></tr><tr><td class="rank">4</td><td class="framework">Oby</td><td class="time">271.63</td></tr><tr><td class="rank">5</td><td class="framework">@amadeus-it-group/tans</td><td class="time">283.43</td></tr><tr><td class="rank">6</td><td class="framework">s-js</td><td class="time">298.87</td></tr><tr><td class="rank">7</td><td class="framework">$mol_wire</td><td class="time">323.59</td></tr><tr><td class="rank">8</td><td class="framework">Preact Signals</td><td class="time">329.85</td></tr><tr><td class="rank">9</td><td class="framework">uSignal</td><td class="time">378.44</td></tr><tr><td class="rank">10</td><td class="framework">Signia</td><td class="time">421.79</td></tr><tr><td class="rank">11</td><td class="framework">@vue/reactivity</td><td class="time">527.05</td></tr><tr><td class="rank">12</td><td class="framework">SolidJS</td><td class="time">549.36</td></tr><tr><td class="rank">13</td><td class="framework">@solidjs/signals</td><td class="time">580.65</td></tr><tr><td class="rank">14</td><td class="framework">MobX</td><td class="time">625.91</td></tr></tbody>
@@ -817,8 +817,8 @@
           <h3>alien-signals</h3>
           <div class="leader-time">149.30 <span>ms avg</span></div>
           <div class="leader-meta">
-            <span>24 wins</span>
-            <span>41 results</span>
+            <span>31 wins</span>
+            <span>p99 101.35 ms</span>
           </div>
         </article>
       
@@ -992,6 +992,21 @@
         </article>
       
       </section>
+      
+    <article class="card detail-only">
+      <h2>Workload Profile</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Framework</th>
+            <th class="time">baseline</th><th class="time">creation</th><th class="time">dynamic</th><th class="time">large_graph</th><th class="time">pull</th><th class="time">push</th><th class="time">update</th>
+          </tr>
+        </thead>
+        <tbody><tr><td class="framework">alien-signals</td><td class="time">1.03x</td><td class="time">1.02x</td><td class="time">1.01x</td><td class="time">1.07x</td><td class="time">1.05x</td><td class="time">1.08x</td><td class="time">1.10x</td></tr><tr><td class="framework">reflex</td><td class="time">1.07x</td><td class="time">1.30x</td><td class="time">1.04x</td><td class="time">1.06x</td><td class="time">1.05x</td><td class="time">1.06x</td><td class="time">1.21x</td></tr><tr><td class="framework">lite</td><td class="time">1.16x</td><td class="time">18.37x</td><td class="time">1.99x</td><td class="time">3.37x</td><td class="time">1.35x</td><td class="time">1.00x</td><td class="time">2.45x</td></tr></tbody>
+      </table>
+      <p class="note">Each cell is a geometric mean slowdown vs the best result within that workload group.</p>
+    </article>
+  
     </div>
 
     <article class="card">

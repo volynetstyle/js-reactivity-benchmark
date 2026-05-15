@@ -1,5 +1,6 @@
 import { TestConfig } from "./frameworkTypes";
 import { TestResult, TimingResult } from "./perfTests";
+import { metadataForDynamicConfig, WorkloadMetadata } from "./benchMetadata";
 
 export function logPerfResult(row: PerfRowStrings): void {
   const line = Object.values(trimColumns(row)).join(" , ");
@@ -10,6 +11,11 @@ export interface PerfRowStrings {
   framework: string;
   test: string;
   time: string;
+  p95: string;
+  p99: string;
+  cv: string;
+  group: string;
+  family: string;
   metrics: string;
 }
 
@@ -17,6 +23,11 @@ const columnWidth = {
   framework: 22,
   test: 60,
   time: 8,
+  p95: 8,
+  p99: 8,
+  cv: 8,
+  group: 14,
+  family: 24,
   metrics: 96,
 };
 
@@ -33,12 +44,39 @@ export function perfRowStrings(
   timed: TimingResult<TestResult>
 ): PerfRowStrings {
   const { timing } = timed;
+  const metadata = metadataForDynamicConfig(config);
 
   return {
     framework: frameworkName,
     test: `${makeTitle(config)} (${config.name || ""})`,
     time: timing.time.toFixed(2),
+    p95: formatOptionalTiming(timing.p95),
+    p99: formatOptionalTiming(timing.p99),
+    cv: formatOptionalRatio(timing.cv),
+    group: metadata.group,
+    family: metadata.family,
     metrics: formatMetrics(timed.result.metrics),
+  };
+}
+
+export function perfNamedRowStrings(
+  frameworkName: string,
+  test: string,
+  timed: TimingResult<unknown>,
+  metadata: WorkloadMetadata,
+  metrics = ""
+): PerfRowStrings {
+  const { timing } = timed;
+  return {
+    framework: frameworkName,
+    test,
+    time: timing.time.toFixed(2),
+    p95: formatOptionalTiming(timing.p95),
+    p99: formatOptionalTiming(timing.p99),
+    cv: formatOptionalRatio(timing.cv),
+    group: metadata.group,
+    family: metadata.family,
+    metrics,
   };
 }
 
@@ -111,4 +149,12 @@ function formatMetrics(metrics: Record<string, number | undefined> | undefined):
       return typeof value === "number" ? `${key}=${value}` : [];
     })
     .join(" ");
+}
+
+function formatOptionalTiming(value: number | undefined): string {
+  return typeof value === "number" ? value.toFixed(2) : "";
+}
+
+function formatOptionalRatio(value: number | undefined): string {
+  return typeof value === "number" ? value.toFixed(3) : "";
 }

@@ -1,5 +1,6 @@
 import { fastestTest } from "./util/benchRepeat";
-import { logPerfResult } from "./util/perfLogging";
+import { metadataForNamedScenario } from "./util/benchMetadata";
+import { logPerfResult, perfNamedRowStrings } from "./util/perfLogging";
 import { ReactiveFramework } from "./util/reactiveFramework";
 
 function fib(n: number): number {
@@ -13,8 +14,12 @@ function hard(n: number, _log: string) {
 
 const numbers = Array.from({ length: 5 }, (_, i) => i);
 
-export async function molBench(framework: ReactiveFramework) {
-  let res = [];
+function buildGraph(framework: ReactiveFramework) {
+  // Each call creates a fully independent graph with its own signals,
+  // computeds, effects, and result buffer. This prevents state from leaking
+  // between fastestTest repeats.
+  const res: number[] = [];
+
   const iter = framework.withBuild(() => {
     const A = framework.signal(0);
     const B = framework.signal(0);
@@ -53,17 +58,49 @@ export async function molBench(framework: ReactiveFramework) {
     };
   });
 
-  iter(1);
+  return iter;
+}
+
+export const molBenchCaseNames = ["molBench"];
+
+export async function molBench(
+  framework: ReactiveFramework,
+  caseName?: string
+) {
+  if (caseName && caseName !== "molBench") {
+    throw new Error(`Unknown mol benchmark scenario: ${caseName}`);
+  }
+
+  // Warm up: build graph, run a few iterations to trigger JIT. Discarded.
+  const warmupIter = buildGraph(framework);
+  warmupIter(1);
+  globalThis.gc?.();
 
   const { timing } = await fastestTest(10, () => {
+    // Rebuild the graph for every repeat so reactive state is clean.
+    // Build cost is outside the timed window.
+    const iter = buildGraph(framework);
+
+    // One un-timed settle iteration
+    iter(0);
+
+    // Timed: 10k update iterations on a fresh, settled graph
+    const start = performance.now();
     for (let i = 0; i < 1e4; i++) {
       iter(i);
     }
+    const time = performance.now() - start;
+
+    globalThis.gc?.();
+    return time;
   });
 
-  logPerfResult({
-    framework: framework.name,
-    test: "molBench",
-    time: timing.time.toFixed(2),
-  });
+  logPerfResult(
+    perfNamedRowStrings(
+      framework.name,
+      "molBench",
+      { result: undefined, timing },
+      metadataForNamedScenario("mol", "molBench")
+    )
+  );
 }
