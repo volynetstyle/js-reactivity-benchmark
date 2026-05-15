@@ -20,7 +20,7 @@ export function parseBenchOutput(text) {
       continue;
     }
 
-    const [framework, test, timeText] = parts;
+    const [framework, test, timeText, p95Text, p99Text, cvText, group, family] = parts;
     if (framework === "framework" && test === "test" && timeText === "time") {
       continue;
     }
@@ -30,7 +30,16 @@ export function parseBenchOutput(text) {
       continue;
     }
 
-    rows.push({ framework, test, time });
+    rows.push({
+      framework,
+      test,
+      time,
+      p95: Number.parseFloat(p95Text),
+      p99: Number.parseFloat(p99Text),
+      cv: Number.parseFloat(cvText),
+      group: group || "baseline",
+      family: family || "baseline",
+    });
   }
 
   if (rows.length === 0) {
@@ -56,21 +65,79 @@ export function parseBenchOutput(text) {
     }
 
     const framework = byFramework.get(row.framework);
-    framework.entries.push({ test: row.test, time: row.time });
+    framework.entries.push({
+      test: row.test,
+      time: row.time,
+      p95: row.p95,
+      p99: row.p99,
+      cv: row.cv,
+      group: row.group,
+      family: row.family,
+    });
     framework.totals += row.time;
+  }
+
+  const bestByTest = new Map();
+  for (const test of tests) {
+    const best = rows
+      .filter((row) => row.test === test)
+      .reduce((min, row) => Math.min(min, row.time), Number.POSITIVE_INFINITY);
+    bestByTest.set(test, best);
   }
 
   const frameworks = Array.from(byFramework.values())
     .map((framework) => ({
       ...framework,
       average: framework.totals / framework.entries.length,
+      relativeScore: geometricMean(
+        framework.entries.map((entry) => entry.time / bestByTest.get(entry.test))
+      ),
+      p95Average: averageFinite(framework.entries.map((entry) => entry.p95)),
+      p99Average: averageFinite(framework.entries.map((entry) => entry.p99)),
+      cvAverage: averageFinite(framework.entries.map((entry) => entry.cv)),
+      groupScores: computeGroupScores(framework.entries, bestByTest),
       byTest: Object.fromEntries(
         framework.entries.map((entry) => [entry.test, entry.time])
       ),
     }))
-    .sort((left, right) => left.average - right.average);
+    .sort((left, right) => left.relativeScore - right.relativeScore);
 
   return { rows, tests, frameworks };
+}
+
+function averageFinite(values) {
+  const finite = values.filter((value) => Number.isFinite(value));
+  return finite.length === 0
+    ? Number.NaN
+    : finite.reduce((sum, value) => sum + value, 0) / finite.length;
+}
+
+function geometricMean(values) {
+  const finite = values.filter((value) => Number.isFinite(value) && value > 0);
+  if (finite.length === 0) {
+    return Number.POSITIVE_INFINITY;
+  }
+  return Math.exp(
+    finite.reduce((sum, value) => sum + Math.log(value), 0) / finite.length
+  );
+}
+
+function computeGroupScores(entries, bestByTest) {
+  const groups = new Map();
+  for (const entry of entries) {
+    const group = entry.group || "baseline";
+    if (!groups.has(group)) {
+      groups.set(group, []);
+    }
+    groups.get(group).push(entry.time / bestByTest.get(entry.test));
+  }
+
+  return Object.fromEntries(
+    Array.from(groups.entries()).map(([group, values]) => [
+      group,
+      geometricMean(values),
+    ])
+  );
 }
 
 function formatTime(value) {
@@ -101,13 +168,13 @@ function renderRows(frameworks) {
   return frameworks
     .map((framework, index) => {
       const winnerClass = index === 0 ? " winner" : "";
-      return `<tr><td class="rank">${index + 1}</td><td class="framework${winnerClass}">${escapeHtml(framework.name)}</td><td class="time">${formatTime(framework.average)}</td></tr>`;
+      return `<tr><td class="rank">${index + 1}</td><td class="framework${winnerClass}">${escapeHtml(framework.name)}</td><td class="time">${framework.relativeScore.toFixed(2)}x</td></tr>`;
     })
     .join("");
 }
 
 function renderBars(frameworks) {
-  const maxAverage = Math.max(...frameworks.map((framework) => framework.average));
+  const maxAverage = Math.max(...frameworks.map((framework) => framework.relativeScore));
   const colors = [
     "#0f766e",
     "#1d4ed8",
@@ -121,9 +188,9 @@ function renderBars(frameworks) {
 
   return frameworks
     .map((framework, index) => {
-      const width = maxAverage === 0 ? 0 : (framework.average / maxAverage) * 100;
+      const width = maxAverage === 0 ? 0 : (framework.relativeScore / maxAverage) * 100;
       const color = colors[index % colors.length];
-      return `<div class="bar-row" style="--row-delay:${index * 60}ms"><div class="bar-label" title="${escapeHtml(framework.name)}">${escapeHtml(framework.name)}</div><div class="bar-track"><div class="bar-fill" style="--target-width:${width.toFixed(2)}%;--bar-color:${color}"></div></div><div class="bar-value">${formatTime(framework.average)}</div></div>`;
+      return `<div class="bar-row" style="--row-delay:${index * 60}ms"><div class="bar-label" title="${escapeHtml(framework.name)}">${escapeHtml(framework.name)}</div><div class="bar-track"><div class="bar-fill" style="--target-width:${width.toFixed(2)}%;--bar-color:${color}"></div></div><div class="bar-value">${framework.relativeScore.toFixed(2)}x</div></div>`;
     })
     .join("");
 }
@@ -187,8 +254,8 @@ function renderSpotlight(frameworks, tests) {
   const runnerUp = frameworks[1];
   const wins = countWins(frameworks, tests);
   const lead =
-    runnerUp && winner.average > 0
-      ? ((runnerUp.average - winner.average) / winner.average) * 100
+    runnerUp && winner.relativeScore > 0
+      ? ((runnerUp.relativeScore - winner.relativeScore) / winner.relativeScore) * 100
       : 0;
 
   return `
@@ -196,7 +263,7 @@ function renderSpotlight(frameworks, tests) {
       <div class="hero-copy">
         <span class="eyebrow">Benchmark Overview</span>
         <h1>JS Reactivity Benchmark</h1>
-        <p class="subtitle">Propagation, graph, and computation stress tests. Lower average runtime wins.</p>
+        <p class="subtitle">Reactive graph benchmarks reported as topology profiles. Lower relative score and tighter p95/p99 tails are better.</p>
         <div class="hero-notes">
           <div class="hero-chip">Leader: ${escapeHtml(winner.name)}</div>
           <div class="hero-chip">Tests: ${tests.length}</div>
@@ -204,9 +271,9 @@ function renderSpotlight(frameworks, tests) {
         </div>
       </div>
       <aside class="spotlight-card">
-        <p class="spotlight-label">Fastest Overall</p>
+        <p class="spotlight-label">Best Geomean Profile</p>
         <h2>${escapeHtml(winner.name)}</h2>
-        <div class="spotlight-metric">${formatTime(winner.average)}<span> ms avg</span></div>
+        <div class="spotlight-metric">${winner.relativeScore.toFixed(2)}x<span> relative</span></div>
         <p class="spotlight-copy">${wins.get(winner.name) ?? 0} test wins${runnerUp ? ` and ${lead.toFixed(1)}% ahead of ${escapeHtml(runnerUp.name)}` : ""}.</p>
       </aside>
     </section>
@@ -218,22 +285,22 @@ function renderStatCards(frameworks, tests, generatedAt, sourceLabel) {
   const runnerUp = frameworks[1];
   const slowest = frameworks[frameworks.length - 1];
   const spread =
-    slowest && winner.average > 0
-      ? slowest.average / winner.average
+    slowest && winner.relativeScore > 0
+      ? slowest.relativeScore / winner.relativeScore
       : 1;
   const wins = countWins(frameworks, tests);
 
   return `
     <section class="stats-grid">
       <article class="stat-card">
-        <span class="stat-label">Best Average</span>
-        <strong>${formatTime(winner.average)} ms</strong>
-        <p>${escapeHtml(winner.name)} leads the full suite.</p>
+        <span class="stat-label">Best Profile</span>
+        <strong>${winner.relativeScore.toFixed(2)}x</strong>
+        <p>${escapeHtml(winner.name)} has the lowest geometric mean vs per-test best.</p>
       </article>
       <article class="stat-card">
         <span class="stat-label">Closest Rival</span>
         <strong>${runnerUp ? escapeHtml(runnerUp.name) : "N/A"}</strong>
-        <p>${runnerUp ? `${(((runnerUp.average - winner.average) / winner.average) * 100).toFixed(1)}% behind the leader.` : "Only one framework in this run."}</p>
+        <p>${runnerUp ? `${(((runnerUp.relativeScore - winner.relativeScore) / winner.relativeScore) * 100).toFixed(1)}% behind the leader by relative profile.` : "Only one framework in this run."}</p>
       </article>
       <article class="stat-card">
         <span class="stat-label">Most Wins</span>
@@ -243,9 +310,9 @@ function renderStatCards(frameworks, tests, generatedAt, sourceLabel) {
         <p>${Array.from(wins.values()).sort((a, b) => b - a)[0] ?? 0} first-place finishes across individual tests.</p>
       </article>
       <article class="stat-card">
-        <span class="stat-label">Run Snapshot</span>
+        <span class="stat-label">Tail Snapshot</span>
         <strong>${tests.length} tests</strong>
-        <p>Updated ${escapeHtml(formatDate(generatedAt))}. ${escapeHtml(sourceLabel)}. Slowest to fastest spread: ${spread.toFixed(2)}x.</p>
+        <p>Updated ${escapeHtml(formatDate(generatedAt))}. Leader p95 avg: ${Number.isFinite(winner.p95Average) ? formatTime(winner.p95Average) + " ms" : "n/a"}. Spread: ${spread.toFixed(2)}x.</p>
       </article>
     </section>
   `;
@@ -253,14 +320,14 @@ function renderStatCards(frameworks, tests, generatedAt, sourceLabel) {
 
 function renderLeaderboardCards(frameworks, tests) {
   const wins = countWins(frameworks, tests);
-  const fastestAverage = frameworks[0]?.average ?? 0;
+  const fastestAverage = frameworks[0]?.relativeScore ?? 0;
 
   return frameworks
     .map((framework, index) => {
       const relative =
         index === 0 || fastestAverage === 0
           ? "baseline"
-          : `+${(((framework.average - fastestAverage) / fastestAverage) * 100).toFixed(1)}%`;
+          : `+${(((framework.relativeScore - fastestAverage) / fastestAverage) * 100).toFixed(1)}%`;
 
       return `
         <article class="leader-card${index === 0 ? " leader-card-top" : ""}" style="--card-delay:${index * 45}ms">
@@ -269,15 +336,56 @@ function renderLeaderboardCards(frameworks, tests) {
             <span class="leader-delta">${relative}</span>
           </div>
           <h3>${escapeHtml(framework.name)}</h3>
-          <div class="leader-time">${formatTime(framework.average)} <span>ms avg</span></div>
+          <div class="leader-time">${framework.relativeScore.toFixed(2)}x <span>geomean</span></div>
           <div class="leader-meta">
             <span>${wins.get(framework.name) ?? 0} wins</span>
-            <span>${framework.entries.length} results</span>
+            <span>p99 ${Number.isFinite(framework.p99Average) ? formatTime(framework.p99Average) + " ms" : "n/a"}</span>
           </div>
         </article>
       `;
     })
     .join("");
+}
+
+function renderGroupProfile(frameworks) {
+  const groups = Array.from(
+    new Set(frameworks.flatMap((framework) => Object.keys(framework.groupScores)))
+  ).sort();
+
+  if (groups.length === 0) {
+    return "";
+  }
+
+  const header = groups
+    .map((group) => `<th class="time">${escapeHtml(group)}</th>`)
+    .join("");
+  const rows = frameworks
+    .map((framework) => {
+      const cells = groups
+        .map((group) => {
+          const score = framework.groupScores[group];
+          return `<td class="time">${Number.isFinite(score) ? score.toFixed(2) + "x" : "n/a"}</td>`;
+        })
+        .join("");
+      return `<tr><td class="framework">${escapeHtml(framework.name)}</td>${cells}</tr>`;
+    })
+    .join("");
+
+  return `
+    <article class="card detail-only">
+      <h2>Workload Profile</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Framework</th>
+            ${header}
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p class="note">Each cell is a geometric mean slowdown vs the best result within that workload group.</p>
+    </article>
+  `;
 }
 
 function renderTestFilter(tests) {
@@ -317,17 +425,17 @@ function renderBenchmarkInterpretation(frameworks, tests) {
   const winnerWinCount = wins.get(winner.name) ?? 0;
   const runnerUpWinCount = runnerUp ? wins.get(runnerUp.name) ?? 0 : 0;
   const averageLead =
-    runnerUp && winner.average > 0
-      ? ((runnerUp.average - winner.average) / winner.average) * 100
+    runnerUp && winner.relativeScore > 0
+      ? ((runnerUp.relativeScore - winner.relativeScore) / winner.relativeScore) * 100
       : 0;
 
   return `
     <section class="card interpretation-card">
       <h2>How To Read This</h2>
       <div class="interpretation-copy">
-        <p>${escapeHtml(winner.name)} is the strongest result in this run with the best average runtime${runnerUp ? `, ${averageLead.toFixed(1)}% ahead of ${escapeHtml(runnerUp.name)}` : ""}. It also takes ${winnerWinCount} of ${tests.length} scenario wins${runnerUp ? `, while ${escapeHtml(runnerUp.name)} takes ${runnerUpWinCount}` : ""}.</p>
-        <p>That usually points to an advantage in update-heavy, graph-propagation, and computation-creation workloads covered by this suite, not a universal guarantee for every production app.</p>
-        <p>Real-world performance still depends on rendering cost, memory pressure, batching strategy, cache locality, framework ergonomics, and whether your app looks more like the fast scenarios or the outliers shown above.</p>
+        <p>${escapeHtml(winner.name)} has the strongest relative profile in this run${runnerUp ? `, ${averageLead.toFixed(1)}% ahead of ${escapeHtml(runnerUp.name)} by geometric mean` : ""}. It also takes ${winnerWinCount} of ${tests.length} scenario wins${runnerUp ? `, while ${escapeHtml(runnerUp.name)} takes ${runnerUpWinCount}` : ""}.</p>
+        <p>This page intentionally treats benchmarks as workload families rather than a single universal speed claim. Median is the primary row score; p95/p99 and CV show predictability.</p>
+        <p>Interpret wins through the scenario taxonomy: creation, update, pull/push propagation, dynamic dependency churn, large graphs, lifecycle pressure, and memory behavior can favor different runtimes.</p>
       </div>
     </section>
   `;
@@ -1079,22 +1187,23 @@ export function renderResultsPage(parsed, options = {}) {
             <tr>
               <th class="rank">#</th>
               <th>Framework</th>
-              <th class="time">Avg, ms</th>
+              <th class="time">Rel.</th>
             </tr>
           </thead>
           <tbody>${renderRows(frameworks)}</tbody>
         </table>
-        <p class="note">Average across ${tests.length} tests for ${frameworks.length} frameworks.</p>
+        <p class="note">Geometric mean of relative slowdown across ${tests.length} tests for ${frameworks.length} frameworks.</p>
       </article>
       <section class="leader-grid">
         ${renderLeaderboardCards(frameworks, tests)}
       </section>
+      ${renderGroupProfile(frameworks)}
     </div>
 
     <article class="card">
       <h2>Visual Comparison</h2>
       ${renderBars(frameworks)}
-      <p class="meta">Each bar shows average runtime relative to the slowest average in this run.</p>
+      <p class="meta">Each bar shows geometric mean slowdown relative to the per-test winner. Lower is better.</p>
     </article>
   </section>
 

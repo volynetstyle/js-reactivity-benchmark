@@ -18,10 +18,12 @@ import { vueReactivityFramework } from "./frameworks/vueReactivity";
 import { tansuFramework } from "./frameworks/tansu";
 import { reflexFramework } from "./frameworks/reflex";
 import { solidSignalsFramework } from "./frameworks/solid-signals";
+import { liteSignal } from "./frameworks/liteSignal";
 // import { compostateFramework } from "./frameworks/compostate";
 // import { valtioFramework } from "./frameworks/valtio";
 
 export const frameworkInfo: FrameworkInfo[] = [
+  { framework: liteSignal, testPullCounts: true },
   { framework: reflexFramework, testPullCounts: true },
   { framework: alienFramework, testPullCounts: true },
   { framework: solidSignalsFramework },
@@ -36,7 +38,7 @@ export const frameworkInfo: FrameworkInfo[] = [
   { framework: solidFramework },
   { framework: usignalFramework, testPullCounts: true },
   { framework: vueReactivityFramework, testPullCounts: true },
-  // NOTE: MobX currently hangs on some of the `dynamic` tests and `cellx` tests, 
+  // NOTE: MobX currently hangs on some of the `dynamic` tests and `cellx` tests,
   // so disable it if you want to run them. (https://github.com/mobxjs/mobx/issues/3926)
   { framework: mobxFramework, testPullCounts: false },
 
@@ -179,6 +181,34 @@ export const perfTests: TestConfig[] = [
     expected: {
       sum: 5242355712,
       count: 224,
+    },
+  },
+  {
+    name: "linear chain - 1 source - pull (linear pull)",
+    mode: "pull",
+    width: 8,
+    totalLayers: 64,
+    staticFraction: 1,
+    nSources: 1,
+    readFraction: 1,
+    iterations: 10000,
+    expected: {
+      sum: 0,
+      count: 0,
+    },
+  },
+  {
+    name: "wide tree - 8 sources - pull (branchy pull)",
+    mode: "pull",
+    width: 64,
+    totalLayers: 4,
+    staticFraction: 1,
+    nSources: 8,
+    readFraction: 1,
+    iterations: 10000,
+    expected: {
+      sum: 0,
+      count: 0,
     },
   },
   {

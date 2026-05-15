@@ -3,7 +3,7 @@ import { logPerfResult, perfRowStrings } from "./util/perfLogging";
 import { TestResult, verifyBenchResult } from "./util/perfTests";
 import { FrameworkInfo } from "./util/frameworkTypes";
 import { perfTests } from "./config";
-import { fastestTest } from "./util/benchRepeat";
+import { fastestTest, summarizeSamples } from "./util/benchRepeat";
 import { runTimed } from "./util/perfUtil";
 
 /** benchmark a single test under single framework.
@@ -11,10 +11,19 @@ import { runTimed } from "./util/perfUtil";
  */
 export async function dynamicBench(
   frameworkTest: FrameworkInfo,
-  testRepeats = 1
+  testRepeats = 1,
+  testName?: string
 ): Promise<void> {
   const { framework } = frameworkTest;
-  for (const config of perfTests) {
+  const selectedTests = testName
+    ? perfTests.filter((config) => config.name === testName)
+    : perfTests;
+
+  if (selectedTests.length === 0) {
+    throw new Error(`Unknown dynamic benchmark scenario: ${testName}`);
+  }
+
+  for (const config of selectedTests) {
     let counter = new Counter();
     const {
       warmupIterations = 0,
@@ -116,14 +125,25 @@ async function fastestTimed<T>(
   times: number,
   fn: () => { result: T; timing: { time: number } }
 ): Promise<{ result: T; timing: { time: number } }> {
-  let fastest = fn();
+  const results = [fn()];
 
   for (let i = 1; i < times; i++) {
-    const next = fn();
-    if (next.timing.time < fastest.timing.time) {
-      fastest = next;
-    }
+    results.push(fn());
   }
 
-  return fastest;
+  const samples = results.map((run) => run.timing.time);
+  const stats = summarizeSamples(samples);
+  const medianIndex = Math.floor((results.length - 1) / 2);
+  const medianRun = [...results].sort(
+    (a, b) => a.timing.time - b.timing.time
+  )[medianIndex];
+
+  return {
+    result: medianRun.result,
+    timing: {
+      ...stats,
+      time: stats.median,
+      samples,
+    },
+  };
 }

@@ -14,7 +14,21 @@ export interface TimingResult<T> {
 }
 
 export interface TestTiming {
+  /** Primary score for a row. Prefer median over min for benchmark reporting. */
   time: number;
+  min?: number;
+  median?: number;
+  mean?: number;
+  p75?: number;
+  p90?: number;
+  p95?: number;
+  p99?: number;
+  max?: number;
+  stddev?: number;
+  mad?: number;
+  iqr?: number;
+  cv?: number;
+  samples?: number[];
 }
 
 export function verifyBenchResult(

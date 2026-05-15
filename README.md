@@ -1,12 +1,12 @@
 # JS Reactivity Benchmark
 
-Local benchmark harness for comparing JavaScript reactivity libraries across several scenario types:
+Local benchmark harness for comparing JavaScript reactivity libraries as behavior profiles across several scenario types:
 
 - classic propagation graphs
 - computation creation and update tests
 - larger static and dynamic dependency graphs
 
-The project bundles the runner with `esbuild`, runs benchmarks under `node --expose-gc`, saves the raw log, and generates an HTML results page.
+The project bundles the runner with `esbuild`, runs benchmarks under `node --expose-gc`, saves the raw log, and generates an HTML results page. The report ranks by relative geometric mean and keeps per-test medians, p95/p99 tails, and workload families visible.
 
 ## Quick Start
 
@@ -22,6 +22,12 @@ BENCH_FRAMEWORK=ripple pnpm bench
 ```
 
 You can also pass a comma-separated list such as `BENCH_FRAMEWORK="ripple,alien-signals"`.
+
+To change the number of measured repeats per benchmark row, set `BENCH_RUNS`:
+
+```bash
+BENCH_RUNS=30 pnpm bench
+```
 
 After the run, these files are updated:
 
@@ -44,12 +50,15 @@ pnpm results:page
 
 ## What Gets Measured
 
-The current default run includes several benchmark groups:
+The current default run includes several benchmark groups. They are classified by workload family instead of being treated as one flat race:
 
-- propagation scenarios: `avoidablePropagation`, `broadPropagation`, `deepPropagation`, `diamond`, `mux`, `repeatedObservers`, `triangle`, `unstable`
-- `molBench`
-- computation creation and update scenarios from `sBench`
-- larger graph scenarios from `dynamicBench`: `simple component`, `dynamic component`, `large web app`, `wide dense`, `deep`, `very dynamic`
+- `creation` - signal/computed allocation and setup cost
+- `update` - stable graph writes and invalidation hot paths
+- `pull` - dirty reads, aggregation, and chain pulls
+- `push` - fan-out propagation and effect delivery
+- `dynamic` - branch switching, dependency cleanup, and retracking
+- `large_graph` - scaling behavior on larger DAGs
+- `baseline` - historical propagation scenarios such as `diamond`, `mux`, and `triangle`
 
 The `dynamicBench` set now also includes several more app-like presets such as
 `dashboard selective reads`, `editor derived state`, `kanban board`, and
@@ -58,6 +67,26 @@ more moderate widths/depths and partial leaf reads to better resemble common UI
 workloads.
 
 The larger graph benchmark parameters are defined in [src/config.ts](/d:/PersonalProjects/js-reactivity-benchmark/src/config.ts).
+
+The semantics and interpretation rules are documented in [SEMANTICS.md](/d:/PersonalProjects/js-reactivity-benchmark/SEMANTICS.md). Read that file before treating results as comparable across libraries.
+
+## Reported Metrics
+
+Rows are measured repeatedly. The primary terminal `time` column is the median, not the fastest run. Rows also emit:
+
+- `p95` and `p99` - tail latency for jitter/outliers
+- `cv` - coefficient of variation for stability
+- `group` and `family` - workload taxonomy
+- benchmark-specific counters such as recomputation, traversal, or checksum data
+
+The HTML leaderboard uses:
+
+```txt
+r(L, test) = median_time(L, test) / best_median_time(test)
+score(L) = geometric_mean(r(L, tests))
+```
+
+Lower is better. A profile score is more honest than an arithmetic average because a catastrophic slowdown in one workload family is harder to hide.
 
 ## Framework Adapters
 
@@ -93,6 +122,7 @@ Two adapter notes are worth calling out explicitly:
 ## Artifacts
 
 - [README.md](/d:/PersonalProjects/js-reactivity-benchmark/README.md)
+- [SEMANTICS.md](/d:/PersonalProjects/js-reactivity-benchmark/SEMANTICS.md)
 - [index.html](/d:/PersonalProjects/js-reactivity-benchmark/index.html)
 - [bench-results/latest.log](/d:/PersonalProjects/js-reactivity-benchmark/bench-results/latest.log)
 - [bench-results/history](/d:/PersonalProjects/js-reactivity-benchmark/bench-results/history)
@@ -104,7 +134,7 @@ Two adapter notes are worth calling out explicitly:
 - [src/index.ts](/d:/PersonalProjects/js-reactivity-benchmark/src/index.ts) - runner entry point
 - [src/config.ts](/d:/PersonalProjects/js-reactivity-benchmark/src/config.ts) - active framework list and large-graph test configuration
 - [scripts/bench-and-update.mjs](/d:/PersonalProjects/js-reactivity-benchmark/scripts/bench-and-update.mjs) - full benchmark-and-refresh pipeline
-- [scripts/render-results-page.mjs](/d:/PersonalProjects/js-reactivity-benchmark/scripts/render-results-page.mjs) - log parser and HTML report generator
+- [scripts/render-results-page.mjs](/d:/PersonalProjects/js-reactivity-benchmark/scripts/render-results-page.mjs) - log parser and profile-oriented HTML report generator
 - [src/frameworks.test.ts](/d:/PersonalProjects/js-reactivity-benchmark/src/frameworks.test.ts) - adapter sanity checks with `vitest`
 
 ## Notes

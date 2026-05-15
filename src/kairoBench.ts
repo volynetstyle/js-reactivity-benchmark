@@ -7,7 +7,8 @@ import { repeatedObservers } from "./kairo/repeated";
 import { triangle } from "./kairo/triangle";
 import { unstable } from "./kairo/unstable";
 import { fastestTest } from "./util/benchRepeat";
-import { logPerfResult } from "./util/perfLogging";
+import { metadataForNamedScenario } from "./util/benchMetadata";
+import { logPerfResult, perfNamedRowStrings } from "./util/perfLogging";
 import { ReactiveFramework } from "./util/reactiveFramework";
 
 const cases = [
@@ -21,26 +22,57 @@ const cases = [
   unstable,
 ];
 
-export async function kairoBench(framework: ReactiveFramework) {
-  for (const c of cases) {
-    const iter = framework.withBuild(() => {
-      const iter = c(framework);
-      return iter;
-    });
+export const kairoBenchCaseNames = cases.map((c) => c.name);
 
-    // warm up
-    iter();
+export async function kairoBench(
+  framework: ReactiveFramework,
+  caseName?: string
+) {
+  const selectedCases = caseName
+    ? cases.filter((c) => c.name === caseName)
+    : cases;
 
+  if (selectedCases.length === 0) {
+    throw new Error(`Unknown kairo benchmark scenario: ${caseName}`);
+  }
+
+  for (const c of selectedCases) {
+    // Warm up: build graph and run once to trigger JIT compilation.
+    // Discarded — not measured.
+    const warmupIter = framework.withBuild(() => c(framework));
+    warmupIter();
+    globalThis.gc?.();
+
+    // Each repeat of fastestTest rebuilds the graph from scratch so that:
+    // 1. Reactive state does not accumulate across repeats.
+    // 2. The graph's internal subscriber/dependency lists start clean.
+    // The build cost itself is excluded — only the 1000 update iterations
+    // are measured — matching the original intent.
     const { timing } = await fastestTest(10, () => {
+      // Build outside the timed window
+      const iter = framework.withBuild(() => c(framework));
+
+      // One un-timed warmup iteration to settle the graph's initial state
+      iter();
+
+      // Timed: 1000 update iterations on a fresh, settled graph
+      const start = performance.now();
       for (let i = 0; i < 1000; i++) {
         iter();
       }
+      const time = performance.now() - start;
+
+      globalThis.gc?.();
+      return time;
     });
 
-    logPerfResult({
-      framework: framework.name,
-      test: c.name,
-      time: timing.time.toFixed(2),
-    });
+    logPerfResult(
+      perfNamedRowStrings(
+        framework.name,
+        c.name,
+        { result: undefined, timing },
+        metadataForNamedScenario("kairo", c.name)
+      )
+    );
   }
 }
