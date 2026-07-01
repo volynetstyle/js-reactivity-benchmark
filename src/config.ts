@@ -34,7 +34,6 @@ export const frameworkInfo: FrameworkInfo[] = [
   { framework: molWireFramework, testPullCounts: true },
   { framework: obyFramework, testPullCounts: true },
   { framework: signiaFramework, testPullCounts: true },
-  { framework: solidSignalsFramework },
   { framework: solidFramework },
   { framework: usignalFramework, testPullCounts: true },
   { framework: vueReactivityFramework, testPullCounts: true },

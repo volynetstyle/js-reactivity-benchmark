@@ -3,6 +3,11 @@ import { expect, test, vi } from "vitest";
 import { FrameworkInfo, TestConfig } from "./util/frameworkTypes";
 import { frameworkInfo } from "./config";
 
+test("framework names are unique", () => {
+  const names = frameworkInfo.map(({ framework }) => framework.name);
+  expect(new Set(names).size).toBe(names.length);
+});
+
 frameworkInfo.forEach((frameworkInfo) => frameworkTests(frameworkInfo));
 
 function makeConfig(): TestConfig {
