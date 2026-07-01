@@ -5,6 +5,7 @@ import { frameworkInfo } from "./config";
 import { molBench } from "./molBench";
 import { kairoBench } from "./kairoBench";
 import { runBenchmarks } from "./util/benchmark";
+import { fanBench } from "./fanBench";
 
 function getSelectedFrameworks() {
   const rawSelection = process.env.BENCH_FRAMEWORK?.trim();
@@ -57,6 +58,7 @@ async function main() {
     const { framework } = frameworkTest;
 
     kairoBench(framework);
+    fanBench(framework);
     molBench(framework);
     sbench(framework);
 

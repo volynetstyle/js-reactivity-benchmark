@@ -15,11 +15,18 @@ export const alienFramework: ReactiveFramework = {
       read: computed(fn),
     };
   },
-  effect: effect,
+  effect: (fn) => {
+    effect(() => {
+      fn();
+    });
+  },
   withBatch: (fn) => {
     startBatch();
-    fn();
-    endBatch();
+    try {
+      fn();
+    } finally {
+      endBatch();
+    }
   },
   withBuild: (fn) => fn(),
 };
