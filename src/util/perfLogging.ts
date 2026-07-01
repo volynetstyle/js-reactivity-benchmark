@@ -1,5 +1,5 @@
 import { TestConfig } from "./frameworkTypes";
-import { TestResult, TimingResult } from "./perfTests";
+import { TestResult } from "./perfTests";
 
 export function logPerfResult(row: PerfRowStrings): void {
   const line = Object.values(trimColumns(row)).join(" , ");
@@ -30,15 +30,14 @@ export function perfReportHeaders(): PerfRowStrings {
 export function perfRowStrings(
   frameworkName: string,
   config: TestConfig,
-  timed: TimingResult<TestResult>
+  timeMs: number,
+  result: TestResult
 ): PerfRowStrings {
-  const { timing } = timed;
-
   return {
     framework: frameworkName,
     test: `${makeTitle(config)} (${config.name || ""})`,
-    time: timing.time.toFixed(2),
-    metrics: formatMetrics(timed.result.metrics),
+    time: timeMs.toFixed(2),
+    metrics: formatMetrics(result.metrics),
   };
 }
 
@@ -66,12 +65,11 @@ export function makeTitle(config: TestConfig): string {
       ? `${width}x${totalLayers}`
       : `${sourcesCount ?? width}->${width}x${totalLayers} - fanIn ${fanIn ?? nSources}`;
   const graphLabel = graphKind === "rect" ? "" : ` - ${graphKind}`;
-  const burst = updatesPerIteration > 1 ? ` - burst ${updatesPerIteration}` : "";
+  const burst =
+    updatesPerIteration > 1 ? ` - burst ${updatesPerIteration}` : "";
   const warmup = warmupIterations > 0 ? ` - warm ${warmupIterations}` : "";
   const sinkMode =
-    sinkReadMode && sinkReadMode !== "per-update"
-      ? ` - ${sinkReadMode}`
-      : "";
+    sinkReadMode && sinkReadMode !== "per-update" ? ` - ${sinkReadMode}` : "";
   return `${dagShape}${graphLabel}${sources}${dyn}${read}${execMode}${burst}${warmup}${sinkMode}`;
 }
 
@@ -90,7 +88,9 @@ function trimColumns(row: PerfRowStrings): PerfRowStrings {
   return trimmed;
 }
 
-function formatMetrics(metrics: Record<string, number | undefined> | undefined): string {
+function formatMetrics(
+  metrics: TestResult["metrics"]
+): string {
   if (!metrics) {
     return "";
   }

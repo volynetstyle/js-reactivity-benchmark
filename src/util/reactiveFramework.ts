@@ -9,6 +9,8 @@ export interface ReactiveFramework {
   effect(fn: () => void): void;
   withBatch<T>(fn: () => T): void;
   withBuild<T>(fn: () => T): T;
+  /** Reset framework-owned benchmark state before constructing a fresh fixture. */
+  resetBenchmark?: () => void;
   benchmarkMetrics?: FrameworkBenchmarkMetrics;
 }
 

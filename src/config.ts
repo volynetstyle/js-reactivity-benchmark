@@ -18,27 +18,29 @@ import { vueReactivityFramework } from "./frameworks/vueReactivity";
 import { tansuFramework } from "./frameworks/tansu";
 import { reflexFramework } from "./frameworks/reflex";
 import { solidSignalsFramework } from "./frameworks/solid-signals";
+import { liteSignalFramework } from "./frameworks/liteSignal";
 // import { compostateFramework } from "./frameworks/compostate";
 // import { valtioFramework } from "./frameworks/valtio";
 
 export const frameworkInfo: FrameworkInfo[] = [
   { framework: reflexFramework, testPullCounts: true },
   { framework: alienFramework, testPullCounts: true },
-  { framework: solidSignalsFramework },
-  { framework: preactSignalFramework, testPullCounts: true },
-  { framework: reactivelyFramework, testPullCounts: true },
-  { framework: sFramework },
-  { framework: tansuFramework, testPullCounts: true },
-  { framework: molWireFramework, testPullCounts: true },
-  { framework: obyFramework, testPullCounts: true },
-  { framework: signiaFramework, testPullCounts: true },
-  { framework: solidSignalsFramework },
-  { framework: solidFramework },
-  { framework: usignalFramework, testPullCounts: true },
-  { framework: vueReactivityFramework, testPullCounts: true },
-  // NOTE: MobX currently hangs on some of the `dynamic` tests and `cellx` tests, 
-  // so disable it if you want to run them. (https://github.com/mobxjs/mobx/issues/3926)
-  { framework: mobxFramework, testPullCounts: false },
+  { framework: liteSignalFramework, testPullCounts: true },
+  // { framework: solidSignalsFramework },
+  // { framework: preactSignalFramework, testPullCounts: true },
+  // { framework: reactivelyFramework, testPullCounts: true },
+  // { framework: sFramework },
+  // { framework: tansuFramework, testPullCounts: true },
+  // { framework: molWireFramework, testPullCounts: true },
+  // { framework: obyFramework, testPullCounts: true },
+  // { framework: signiaFramework, testPullCounts: true },
+  // { framework: solidSignalsFramework },
+  // { framework: solidFramework },
+  // { framework: usignalFramework, testPullCounts: true },
+  // { framework: vueReactivityFramework, testPullCounts: true },
+  // // NOTE: MobX currently hangs on some of the `dynamic` tests and `cellx` tests,
+  // // so disable it if you want to run them. (https://github.com/mobxjs/mobx/issues/3926)
+  // { framework: mobxFramework, testPullCounts: false },
 
   // --- Disabled frameworks ---
   // unoptimized and too heavy

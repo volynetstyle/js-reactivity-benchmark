@@ -24,11 +24,14 @@ importers:
         specifier: ^0.13.11
         version: 0.13.13
       '@volynets/reflex':
-        specifier: ^0.3.3
-        version: 0.3.3
+        specifier: ^0.3.6
+        version: 0.3.6
       '@vue/reactivity':
         specifier: ^3.5.13
         version: 3.5.32
+      '@zakkster/lite-signal':
+        specifier: 1.3.0
+        version: 1.3.0
       alien-signals:
         specifier: 3.1.2
         version: 3.1.2
@@ -38,6 +41,12 @@ importers:
       kairo:
         specifier: 0.6.0-rc.0
         version: 0.6.0-rc.0
+      lite-signals:
+        specifier: ^1.0.4
+        version: 1.0.4
+      mitata:
+        specifier: 1.0.34
+        version: 1.0.34
       mobx:
         specifier: ^6.13.5
         version: 6.15.0
@@ -631,14 +640,18 @@ packages:
   '@vitest/utils@4.1.4':
     resolution: {integrity: sha512-13QMT+eysM5uVGa1rG4kegGYNp6cnQcsTc67ELFbhNLQO+vgsygtYJx2khvdt4gVQqSSpC/KT5FZZxUpP3Oatw==}
 
-  '@volynets/reflex@0.3.3':
-    resolution: {integrity: sha512-s8ZicXB/ppwjj0KOah2D4g3W7aK1VlTPjE6dpjkxoPGrdI/dpJbO1Jt7JI3Sq1VDAVKs+I52O4KxNSX90+Tr9w==}
+  '@volynets/reflex@0.3.6':
+    resolution: {integrity: sha512-AaBVKhp8kPpOTI9tagX9oqT9o4ClEQF1x5zFvd5udAkaxPc60zzAC4Td1RckUhhGnqtHW4AZ9P+mC2ofshzsuw==}
 
   '@vue/reactivity@3.5.32':
     resolution: {integrity: sha512-/ORasxSGvZ6MN5gc+uE364SxFdJ0+WqVG0CENXaGW58TOCdrAW76WWaplDtECeS1qphvtBZtR+3/o1g1zL4xPQ==}
 
   '@vue/shared@3.5.32':
     resolution: {integrity: sha512-ksNyrmRQzWJJ8n3cRDuSF7zNNontuJg1YHnmWRJd2AMu8Ij2bqwiiri2lH5rHtYPZjj4STkNcgcmiQqlOjiYGg==}
+
+  '@zakkster/lite-signal@1.3.0':
+    resolution: {integrity: sha512-OTSAzZxmGU2j6N5NbuMzpFlbAqicv3L3yXw7R4riy7UYS1lUubnrmeHp5gOTYn+aaoOqhBxi5dmdPfG1RlTO7g==}
+    engines: {node: '>=18'}
 
   acorn@8.16.0:
     resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
@@ -732,11 +745,17 @@ packages:
   kairo@0.6.0-rc.0:
     resolution: {integrity: sha512-8yWTOujaeU5a6FtFCQnRhljxo8KaxQVDV6xJFxEpkCKd2azlMBmc5ARazaQUb/KJ2PWzsVdiXRbvFmreP6pbFA==}
 
+  lite-signals@1.0.4:
+    resolution: {integrity: sha512-PK7SadfFtgsw0BzkVay+WNrHG6KIalhU9Scatr0qFhxD8730pHv08RUZnmFz7EDs6M932sthFvXmBcPnpjo2yA==}
+
   locate-character@3.0.0:
     resolution: {integrity: sha512-SW13ws7BjaeJ6p7Q6CO2nchbYEc3X3J6WrmTTDto7yMPqVSZTUyY5Tjbid+Ab8gLnATtygYtiDIJGQRRn2ZOiA==}
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
+
+  mitata@1.0.34:
+    resolution: {integrity: sha512-Mc3zrtNBKIMeHSCQ0XqRLo1vbdIx1wvFV9c8NJAiyho6AjNfMY8bVhbS12bwciUdd1t4rj8099CH3N3NFahaUA==}
 
   mobx@6.15.0:
     resolution: {integrity: sha512-UczzB+0nnwGotYSgllfARAqWCJ5e/skuV2K/l+Zyck/H6pJIhLXuBnz+6vn2i211o7DtbE78HQtsYEKICHGI+g==}
@@ -1292,13 +1311,15 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
-  '@volynets/reflex@0.3.3': {}
+  '@volynets/reflex@0.3.6': {}
 
   '@vue/reactivity@3.5.32':
     dependencies:
       '@vue/shared': 3.5.32
 
   '@vue/shared@3.5.32': {}
+
+  '@zakkster/lite-signal@1.3.0': {}
 
   acorn@8.16.0: {}
 
@@ -1407,11 +1428,15 @@ snapshots:
 
   kairo@0.6.0-rc.0: {}
 
+  lite-signals@1.0.4: {}
+
   locate-character@3.0.0: {}
 
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  mitata@1.0.34: {}
 
   mobx@6.15.0: {}
 

@@ -1,81 +1,52 @@
 // Inspired by https://github.com/solidjs/solid/blob/main/packages/solid/bench/bench.cjs
-import { logPerfResult } from "./util/perfLogging";
+import { registerBenchmark } from "./util/benchmark";
 import { Computed, Signal, ReactiveFramework } from "./util/reactiveFramework";
 
 const COUNT = 1e5;
 
 type Reader = () => number;
 export function sbench(framework: ReactiveFramework) {
-  bench(createDataSignals, COUNT, COUNT);
-  bench(createComputations0to1, COUNT, 0);
-  bench(createComputations1to1, COUNT, COUNT);
-  bench(createComputations2to1, COUNT / 2, COUNT);
-  bench(createComputations4to1, COUNT / 4, COUNT);
-  bench(createComputations1000to1, COUNT / 1000, COUNT);
-  // createTotal += bench(createComputations8to1, COUNT, 8 * COUNT);
-  bench(createComputations1to2, COUNT, COUNT / 2);
-  bench(createComputations1to4, COUNT, COUNT / 4);
-  bench(createComputations1to8, COUNT, COUNT / 8);
-  bench(createComputations1to1000, COUNT, COUNT / 1000);
-  bench(updateComputations1to1, COUNT * 4, 1);
-  bench(updateComputations2to1, COUNT * 2, 2);
-  bench(updateComputations4to1, COUNT, 4);
-  bench(updateComputations1000to1, COUNT / 100, 1000);
-  bench(updateComputations1to2, COUNT * 4, 1);
-  bench(updateComputations1to4, COUNT * 4, 1);
-  bench(updateComputations1to1000, COUNT * 4, 1);
+  register(createDataSignals, COUNT, COUNT);
+  register(createComputations0to1, COUNT, 0);
+  register(createComputations1to1, COUNT, COUNT);
+  register(createComputations2to1, COUNT / 2, COUNT);
+  register(createComputations4to1, COUNT / 4, COUNT);
+  register(createComputations1000to1, COUNT / 1000, COUNT);
+  register(createComputations1to2, COUNT, COUNT / 2);
+  register(createComputations1to4, COUNT, COUNT / 4);
+  register(createComputations1to8, COUNT, COUNT / 8);
+  register(createComputations1to1000, COUNT, COUNT / 1000);
+  register(updateComputations1to1, COUNT * 4, 1);
+  register(updateComputations2to1, COUNT * 2, 2);
+  register(updateComputations4to1, COUNT, 4);
+  register(updateComputations1000to1, COUNT / 100, 1000);
+  register(updateComputations1to2, COUNT * 4, 1);
+  register(updateComputations1to4, COUNT * 4, 1);
+  register(updateComputations1to1000, COUNT * 4, 1);
 
-  function bench(
+  function register(
     fn: (n: number, sources: any[]) => void,
     count: number,
     scount: number
-  ) {
-    const time = run(fn, count, scount);
-    logPerfResult({
+  ): void {
+    registerBenchmark({
       framework: framework.name,
-      test: fn.name,
-      time: time.toFixed(2),
+      name: fn.name,
+      setup: () => {
+        framework.resetBenchmark?.();
+        return framework.withBuild(() => {
+          const sources = createDataSignals(scount, []) as Computed<number>[];
+          for (let i = 0; i < scount; i++) {
+            sources[i].read();
+            sources[i].read();
+            sources[i].read();
+          }
+          return sources;
+        });
+      },
+      benchmark: (sources) => fn(count, sources),
+      gc: "inner",
     });
-  }
-
-  function run(
-    fn: (n: number, sources: Computed<number>[]) => void,
-    n: number,
-    scount: number
-  ) {
-    // prep n * arity sources
-    let start = 0;
-    let end = 0;
-
-    framework.withBuild(() => {
-      // run 3 times to warm up
-      let sources = createDataSignals(scount, []) as Computed<number>[] | null;
-      fn(n / 100, sources!);
-      sources = createDataSignals(scount, []);
-      fn(n / 100, sources);
-      sources = createDataSignals(scount, []);
-      fn(n / 100, sources);
-      sources = createDataSignals(scount, []);
-      for (let i = 0; i < scount; i++) {
-        sources[i].read();
-        sources[i].read();
-        sources[i].read();
-      }
-
-      // start GC clean
-      globalThis.gc?.();
-
-      start = performance.now();
-
-      fn(n, sources);
-
-      // end GC clean
-      sources = null;
-      globalThis.gc?.();
-      end = performance.now();
-    });
-
-    return end - start;
   }
 
   function createDataSignals(n: number, sources: Computed<number>[]) {

@@ -6,8 +6,7 @@ import { mux } from "./kairo/mux";
 import { repeatedObservers } from "./kairo/repeated";
 import { triangle } from "./kairo/triangle";
 import { unstable } from "./kairo/unstable";
-import { fastestTest } from "./util/benchRepeat";
-import { logPerfResult } from "./util/perfLogging";
+import { registerBenchmark } from "./util/benchmark";
 import { ReactiveFramework } from "./util/reactiveFramework";
 
 const cases = [
@@ -21,26 +20,21 @@ const cases = [
   unstable,
 ];
 
-export async function kairoBench(framework: ReactiveFramework) {
+export function kairoBench(framework: ReactiveFramework): void {
   for (const c of cases) {
-    const iter = framework.withBuild(() => {
-      const iter = c(framework);
-      return iter;
-    });
-
-    // warm up
-    iter();
-
-    const { timing } = await fastestTest(10, () => {
-      for (let i = 0; i < 1000; i++) {
-        iter();
-      }
-    });
-
-    logPerfResult({
+    registerBenchmark({
       framework: framework.name,
-      test: c.name,
-      time: timing.time.toFixed(2),
+      name: c.name,
+      setup: () => {
+        framework.resetBenchmark?.();
+        return framework.withBuild(() => {
+          const iter = c(framework);
+          iter();
+          return iter;
+        });
+      },
+      benchmark: (iter) => iter(),
+      gc: "inner",
     });
   }
 }

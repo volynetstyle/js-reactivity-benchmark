@@ -2,9 +2,9 @@ import { dynamicBench } from "./dynamicBench";
 // import { cellxbench } from "./cellxBench";
 import { sbench } from "./sBench";
 import { frameworkInfo } from "./config";
-import { logPerfResult, perfReportHeaders } from "./util/perfLogging";
 import { molBench } from "./molBench";
 import { kairoBench } from "./kairoBench";
+import { runBenchmarks } from "./util/benchmark";
 
 function getSelectedFrameworks() {
   const rawSelection = process.env.BENCH_FRAMEWORK?.trim();
@@ -25,16 +25,13 @@ function getSelectedFrameworks() {
   );
 
   if (filteredFrameworks.length === 0) {
-    throw new Error(
-      `No frameworks matched BENCH_FRAMEWORK="${rawSelection}".`
-    );
+    throw new Error(`No frameworks matched BENCH_FRAMEWORK="${rawSelection}".`);
   }
 
   return filteredFrameworks;
 }
 
 async function main() {
-  logPerfResult(perfReportHeaders());
   (globalThis as any).__DEV__ = true;
 
   const benchOnlyRaw = process.env.BENCH_ONLY?.trim().toLowerCase();
@@ -59,8 +56,8 @@ async function main() {
   for (const frameworkTest of getSelectedFrameworks()) {
     const { framework } = frameworkTest;
 
-    await kairoBench(framework);
-    await molBench(framework);
+    kairoBench(framework);
+    molBench(framework);
     sbench(framework);
 
     // MobX, Valtio, and Svelte fail this test currently, so disabling it for now.
@@ -68,10 +65,10 @@ async function main() {
     // @see https://github.com/sveltejs/svelte/discussions/13277
     // cellxbench(framework);
 
-    await dynamicBench(frameworkTest);
-
-    globalThis.gc?.();
+    dynamicBench(frameworkTest);
   }
+
+  await runBenchmarks();
 }
 
 main();

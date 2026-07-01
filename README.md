@@ -8,6 +8,8 @@ Local benchmark harness for comparing JavaScript reactivity libraries across sev
 
 The project bundles the runner with `esbuild`, runs benchmarks under `node --expose-gc`, saves the raw log, and generates an HTML results page.
 
+Measurement is centralized in [`src/util/benchmark.ts`](/d:/PersonalProjects/js-reactivity-benchmark/src/util/benchmark.ts) and powered by `mitata`. Scenario files only declare fixture setup, the measured operation, and optional validation/reporting. Setup runs outside the timed section, samples do not use mitata's automatic batching, and garbage collection policy is applied consistently by the runner. Regular cases use five samples; expensive dynamic graph cases use three.
+
 ## Quick Start
 
 ```bash
@@ -84,7 +86,7 @@ The repository contains adapters for:
 - Valtio
 - Kairo
 
-The list of adapters enabled in the default run is defined in [src/config.ts](/d:/PersonalProjects/js-reactivity-benchmark/src/config.ts). 
+The list of adapters enabled in the default run is defined in [src/config.ts](/d:/PersonalProjects/js-reactivity-benchmark/src/config.ts).
 
 Two adapter notes are worth calling out explicitly:
 
@@ -103,6 +105,7 @@ Two adapter notes are worth calling out explicitly:
 
 - [src/index.ts](/d:/PersonalProjects/js-reactivity-benchmark/src/index.ts) - runner entry point
 - [src/config.ts](/d:/PersonalProjects/js-reactivity-benchmark/src/config.ts) - active framework list and large-graph test configuration
+- [src/util/benchmark.ts](/d:/PersonalProjects/js-reactivity-benchmark/src/util/benchmark.ts) - centralized mitata registration, sampling, GC, validation, and reporting
 - [scripts/bench-and-update.mjs](/d:/PersonalProjects/js-reactivity-benchmark/scripts/bench-and-update.mjs) - full benchmark-and-refresh pipeline
 - [scripts/render-results-page.mjs](/d:/PersonalProjects/js-reactivity-benchmark/scripts/render-results-page.mjs) - log parser and HTML report generator
 - [src/frameworks.test.ts](/d:/PersonalProjects/js-reactivity-benchmark/src/frameworks.test.ts) - adapter sanity checks with `vitest`
