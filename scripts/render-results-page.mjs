@@ -20,7 +20,16 @@ export function parseBenchOutput(text) {
       continue;
     }
 
-    const [framework, test, timeText, p95Text, p99Text, cvText, group, family] = parts;
+    const [framework, test, timeText] = parts;
+    const expanded = parts.length >= 8;
+    const p95Text = expanded ? parts[3] : "";
+    const p99Text = expanded ? parts[4] : "";
+    const cvText = expanded ? parts[5] : "";
+    const group = expanded ? parts[6] : "baseline";
+    const family = expanded ? parts[7] : "baseline";
+    const metrics = expanded
+      ? parts.slice(8).join(" ")
+      : parts.slice(3).join(" ");
     if (framework === "framework" && test === "test" && timeText === "time") {
       continue;
     }
@@ -39,6 +48,7 @@ export function parseBenchOutput(text) {
       cv: Number.parseFloat(cvText),
       group: group || "baseline",
       family: family || "baseline",
+      capped: metrics.includes("SLOW/CAPPED"),
     });
   }
 
@@ -73,6 +83,7 @@ export function parseBenchOutput(text) {
       cv: row.cv,
       group: row.group,
       family: row.family,
+      capped: row.capped,
     });
     framework.totals += row.time;
   }
@@ -90,7 +101,9 @@ export function parseBenchOutput(text) {
       ...framework,
       average: framework.totals / framework.entries.length,
       relativeScore: geometricMean(
-        framework.entries.map((entry) => entry.time / bestByTest.get(entry.test))
+        framework.entries.map(
+          (entry) => entry.time / bestByTest.get(entry.test)
+        )
       ),
       p95Average: averageFinite(framework.entries.map((entry) => entry.p95)),
       p99Average: averageFinite(framework.entries.map((entry) => entry.p99)),
@@ -98,6 +111,9 @@ export function parseBenchOutput(text) {
       groupScores: computeGroupScores(framework.entries, bestByTest),
       byTest: Object.fromEntries(
         framework.entries.map((entry) => [entry.test, entry.time])
+      ),
+      cappedByTest: Object.fromEntries(
+        framework.entries.map((entry) => [entry.test, entry.capped])
       ),
     }))
     .sort((left, right) => left.relativeScore - right.relativeScore);
@@ -174,7 +190,9 @@ function renderRows(frameworks) {
 }
 
 function renderBars(frameworks) {
-  const maxAverage = Math.max(...frameworks.map((framework) => framework.relativeScore));
+  const maxAverage = Math.max(
+    ...frameworks.map((framework) => framework.relativeScore)
+  );
   const colors = [
     "#0f766e",
     "#1d4ed8",
@@ -188,7 +206,8 @@ function renderBars(frameworks) {
 
   return frameworks
     .map((framework, index) => {
-      const width = maxAverage === 0 ? 0 : (framework.relativeScore / maxAverage) * 100;
+      const width =
+        maxAverage === 0 ? 0 : (framework.relativeScore / maxAverage) * 100;
       const color = colors[index % colors.length];
       return `<div class="bar-row" style="--row-delay:${index * 60}ms"><div class="bar-label" title="${escapeHtml(framework.name)}">${escapeHtml(framework.name)}</div><div class="bar-track"><div class="bar-fill" style="--target-width:${width.toFixed(2)}%;--bar-color:${color}"></div></div><div class="bar-value">${framework.relativeScore.toFixed(2)}x</div></div>`;
     })
@@ -202,6 +221,7 @@ function renderPerTestComparison(frameworks, tests) {
         .map((framework) => ({
           name: framework.name,
           time: framework.byTest[test],
+          capped: framework.cappedByTest[test] === true,
         }))
         .filter((entry) => typeof entry.time === "number")
         .sort((left, right) => left.time - right.time);
@@ -217,10 +237,9 @@ function renderPerTestComparison(frameworks, tests) {
         .map((entry, index) => {
           const relative =
             fastest === 0 ? 0 : ((entry.time - fastest) / fastest) * 100;
-          const width =
-            slowest === 0 ? 0 : (entry.time / slowest) * 100;
+          const width = slowest === 0 ? 0 : (entry.time / slowest) * 100;
 
-          return `<div class="comparison-row" style="--row-delay:${testIndex * 45 + index * 35}ms"><div class="comparison-rank">${index + 1}</div><div class="comparison-name${index === 0 ? " comparison-name-winner" : ""}">${escapeHtml(entry.name)}</div><div class="comparison-bar"><div class="comparison-bar-fill" style="--target-width:${width.toFixed(2)}%"></div></div><div class="comparison-time">${formatTime(entry.time)} ms</div><div class="comparison-delta">${index === 0 ? "best" : `+${relative.toFixed(1)}%`}</div></div>`;
+          return `<div class="comparison-row" style="--row-delay:${testIndex * 45 + index * 35}ms"><div class="comparison-rank">${index + 1}</div><div class="comparison-name${index === 0 ? " comparison-name-winner" : ""}">${escapeHtml(entry.name)}</div><div class="comparison-bar"><div class="comparison-bar-fill" style="--target-width:${width.toFixed(2)}%"></div></div><div class="comparison-time">${formatTime(entry.time)} ms${entry.capped ? " · capped" : ""}</div><div class="comparison-delta">${index === 0 ? "best" : `+${relative.toFixed(1)}%`}</div></div>`;
         })
         .join("");
 
@@ -255,7 +274,9 @@ function renderSpotlight(frameworks, tests) {
   const wins = countWins(frameworks, tests);
   const lead =
     runnerUp && winner.relativeScore > 0
-      ? ((runnerUp.relativeScore - winner.relativeScore) / winner.relativeScore) * 100
+      ? ((runnerUp.relativeScore - winner.relativeScore) /
+          winner.relativeScore) *
+        100
       : 0;
 
   return `
@@ -305,7 +326,8 @@ function renderStatCards(frameworks, tests, generatedAt, sourceLabel) {
       <article class="stat-card">
         <span class="stat-label">Most Wins</span>
         <strong>${escapeHtml(
-          Array.from(wins.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? winner.name
+          Array.from(wins.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ??
+            winner.name
         )}</strong>
         <p>${Array.from(wins.values()).sort((a, b) => b - a)[0] ?? 0} first-place finishes across individual tests.</p>
       </article>
@@ -339,7 +361,7 @@ function renderLeaderboardCards(frameworks, tests) {
           <div class="leader-time">${framework.relativeScore.toFixed(2)}x <span>geomean</span></div>
           <div class="leader-meta">
             <span>${wins.get(framework.name) ?? 0} wins</span>
-            <span>p99 ${Number.isFinite(framework.p99Average) ? formatTime(framework.p99Average) + " ms" : "n/a"}</span>
+            <span>${framework.entries.filter((entry) => entry.capped).length} capped</span>
           </div>
         </article>
       `;
@@ -349,7 +371,9 @@ function renderLeaderboardCards(frameworks, tests) {
 
 function renderGroupProfile(frameworks) {
   const groups = Array.from(
-    new Set(frameworks.flatMap((framework) => Object.keys(framework.groupScores)))
+    new Set(
+      frameworks.flatMap((framework) => Object.keys(framework.groupScores))
+    )
   ).sort();
 
   if (groups.length === 0) {
@@ -423,10 +447,12 @@ function renderBenchmarkInterpretation(frameworks, tests) {
   const runnerUp = frameworks[1];
   const wins = countWins(frameworks, tests);
   const winnerWinCount = wins.get(winner.name) ?? 0;
-  const runnerUpWinCount = runnerUp ? wins.get(runnerUp.name) ?? 0 : 0;
+  const runnerUpWinCount = runnerUp ? (wins.get(runnerUp.name) ?? 0) : 0;
   const averageLead =
     runnerUp && winner.relativeScore > 0
-      ? ((runnerUp.relativeScore - winner.relativeScore) / winner.relativeScore) * 100
+      ? ((runnerUp.relativeScore - winner.relativeScore) /
+          winner.relativeScore) *
+        100
       : 0;
 
   return `
@@ -1296,7 +1322,9 @@ const isDirectRun =
   import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
 
 if (isDirectRun) {
-  const inputPath = process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_INPUT;
+  const inputPath = process.argv[2]
+    ? path.resolve(process.argv[2])
+    : DEFAULT_INPUT;
   const outputPath = process.argv[3]
     ? path.resolve(process.argv[3])
     : DEFAULT_OUTPUT;

@@ -10,6 +10,8 @@ The project bundles the runner with `esbuild`, runs benchmarks under `node --exp
 
 Measurement is centralized in [`src/util/benchmark.ts`](/d:/PersonalProjects/js-reactivity-benchmark/src/util/benchmark.ts) and powered by `mitata`. Scenario files only declare fixture setup, the measured operation, and optional validation/reporting. Setup runs outside the timed section, samples do not use mitata's automatic batching, and garbage collection policy is applied consistently by the runner. Regular cases use five samples; expensive dynamic graph cases use three.
 
+Every case starts with one real pilot run. Results slower than the adaptive performance ceiling (`max(1500 ms, 3x the fastest pilot for that scenario)`) are reported honestly but skip repeated sampling and carry a `SLOW/CAPPED samples=1` marker. Override the policy with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`.
+
 ## Quick Start
 
 ```bash

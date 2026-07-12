@@ -29,6 +29,13 @@ interface RegisteredCase<
 }
 
 const registeredCases: RegisteredCase[] = [];
+const fastestPilotByScenario = new Map<string, number>();
+
+const MIN_PERFORMANCE_CEILING_MS = readPositiveNumber(
+  "BENCH_MIN_CEILING_MS",
+  1500
+);
+const MAX_SLOWDOWN_FACTOR = readPositiveNumber("BENCH_MAX_SLOWDOWN", 3);
 
 /** Register workload and fixture creation without performing any measurement. */
 export function registerBenchmark<TFixture, TResult>(
@@ -56,20 +63,21 @@ export async function runBenchmarks(): Promise<void> {
   const errors: string[] = [];
 
   for (const entry of registeredCases) {
+    const runMeasured = (fixture: unknown) => {
+      const result = entry.benchmark(fixture);
+      entry.result = result;
+      entry.completed = true;
+
+      if (entry.blackhole) {
+        do_not_optimize(result);
+      }
+
+      return result;
+    };
     const target = function* () {
       yield {
         [0]: entry.setup,
-        bench(fixture: unknown) {
-          const result = entry.benchmark(fixture);
-          entry.result = result;
-          entry.completed = true;
-
-          if (entry.blackhole) {
-            do_not_optimize(result);
-          }
-
-          return result;
-        },
+        bench: runMeasured,
       };
     };
 
@@ -77,31 +85,65 @@ export async function runBenchmarks(): Promise<void> {
       const samples = entry.samples ?? 5;
       const gc =
         entry.gc === false || !globalThis.gc ? false : () => globalThis.gc?.();
-      const stats = await mitataMeasure(target as never, {
-        gc,
-        inner_gc: entry.gc === "inner",
-        min_samples: samples,
-        max_samples: samples,
-        min_cpu_time: 0,
-        warmup_samples: 2,
-        batch_samples: 1,
-        batch_unroll: 1,
-        batch_threshold: 0,
-      });
+
+      if (gc) gc();
+      const pilotFixture = entry.setup();
+      const pilotStart = performance.now();
+      runMeasured(pilotFixture);
+      const pilotMs = performance.now() - pilotStart;
 
       if (!entry.completed) {
-        throw new Error("mitata completed without running the benchmark");
+        throw new Error("benchmark completed without producing a result");
       }
 
       entry.validate?.(entry.result);
 
-      const timeMs = stats.avg / 1_000_000;
+      const previousBest = fastestPilotByScenario.get(entry.name);
+      const ceilingMs = performanceCeilingMs(
+        previousBest,
+        MIN_PERFORMANCE_CEILING_MS,
+        MAX_SLOWDOWN_FACTOR
+      );
+      fastestPilotByScenario.set(
+        entry.name,
+        Math.min(previousBest ?? Number.POSITIVE_INFINITY, pilotMs)
+      );
+
+      const capped = pilotMs > ceilingMs;
+      let timeMs = pilotMs;
+
+      if (!capped && samples > 1) {
+        const measuredSamples = samples - 1;
+        const stats = await mitataMeasure(target as never, {
+          gc,
+          inner_gc: entry.gc === "inner",
+          min_samples: measuredSamples,
+          max_samples: measuredSamples,
+          min_cpu_time: 0,
+          warmup_samples: 1,
+          batch_samples: 1,
+          batch_unroll: 1,
+          batch_threshold: 0,
+        });
+        timeMs = median([
+          pilotMs,
+          ...stats.samples.map((ns) => ns / 1_000_000),
+        ]);
+        entry.validate?.(entry.result);
+      }
+
       const row = entry.report?.(entry.result, timeMs) ?? {
         framework: entry.framework,
         test: entry.name,
         time: timeMs.toFixed(2),
         metrics: "",
       };
+
+      if (capped) {
+        const marker = `SLOW/CAPPED samples=1 ceiling=${ceilingMs.toFixed(0)}ms`;
+        row.metrics = row.metrics ? `${marker} ${row.metrics}` : marker;
+      }
+
       logPerfResult(row);
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
@@ -112,4 +154,27 @@ export async function runBenchmarks(): Promise<void> {
   if (errors.length > 0) {
     throw new Error(`Benchmark failures:\n${errors.join("\n")}`);
   }
+}
+
+export function performanceCeilingMs(
+  previousBest: number | undefined,
+  minimumMs = MIN_PERFORMANCE_CEILING_MS,
+  slowdownFactor = MAX_SLOWDOWN_FACTOR
+): number {
+  return previousBest === undefined
+    ? minimumMs
+    : Math.max(minimumMs, previousBest * slowdownFactor);
+}
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[middle - 1] + sorted[middle]) / 2
+    : sorted[middle];
+}
+
+function readPositiveNumber(name: string, fallback: number): number {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
 }

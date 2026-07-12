@@ -92,6 +92,19 @@ The report groups benchmarks into these families:
 
 ## Statistics
 
+### Adaptive performance ceiling
+
+Every row begins with one validated pilot run. The default ceiling is:
+
+```txt
+max(1500 ms, 3 * fastest pilot observed for the same scenario)
+```
+
+If a pilot exceeds that ceiling, its measured time is kept as the score, but
+additional samples are skipped and the row is marked `SLOW/CAPPED samples=1`.
+This is a low-confidence classification, not a timeout or a fabricated result.
+Configure it with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`.
+
 The default local run uses `BENCH_RUNS=1` so the full configuration remains
 fast enough for iteration. Set `BENCH_RUNS=30` or another repeat count when you
 want publication-grade distribution statistics.
