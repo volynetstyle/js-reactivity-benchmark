@@ -88,7 +88,11 @@ function frameworkTests({ framework, testPullCounts }: FrameworkInfo) {
       config.totalLayers = 2;
       const counter = new Counter();
       const graph = makeGraph(framework, config, counter);
-      const sum = runGraph(graph, { iterations: 10, readFraction: 1 }, framework);
+      const sum = runGraph(
+        graph,
+        { iterations: 10, readFraction: 1 },
+        framework
+      );
 
       expect(sum).toEqual(72);
       if (testPullCounts) {
@@ -109,6 +113,47 @@ function frameworkTests({ framework, testPullCounts }: FrameworkInfo) {
     });
 
     expect(r).toEqual(4);
+  });
+
+  test(`${name} | batch delivers only the committed graph value`, () => {
+    const { a, b, values } = framework.withBuild(() => {
+      const a = framework.signal(1);
+      const b = framework.signal(2);
+      const left = framework.computed(() => a.read() * 2);
+      const right = framework.computed(() => b.read() * 3);
+      const joined = framework.computed(() => left.read() + right.read());
+      const values: number[] = [];
+      framework.effect(() => {
+        values.push(joined.read());
+      });
+      return { a, b, values };
+    });
+    framework.withBatch(() => {
+      a.write(3);
+      b.write(4);
+    });
+    expect(values).toEqual([8, 18]);
+  });
+
+  test(`${name} | branch switching detaches the unused source`, () => {
+    const { branch, left, right, values } = framework.withBuild(() => {
+      const branch = framework.signal(false);
+      const left = framework.signal(2);
+      const right = framework.signal(5);
+      const selected = framework.computed(() =>
+        branch.read() ? right.read() : left.read()
+      );
+      const values: number[] = [];
+      framework.effect(() => {
+        values.push(selected.read());
+      });
+      return { branch, left, right, values };
+    });
+    framework.withBatch(() => branch.write(true));
+    framework.withBatch(() => left.write(7));
+    expect(values).toEqual([2, 5]);
+    framework.withBatch(() => right.write(6));
+    expect(values).toEqual([2, 5, 6]);
   });
 
   test(`${name} | effect`, () => {

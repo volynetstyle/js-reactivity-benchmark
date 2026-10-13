@@ -11,7 +11,12 @@ Local benchmark harness for comparing JavaScript reactivity libraries as behavio
 - computation creation and update tests
 - larger static and dynamic dependency graphs
 
-The project bundles the runner with `esbuild`, runs benchmarks under `node --expose-gc`, saves the raw log, and generates an HTML results page. The report ranks by relative geometric mean and keeps per-test medians, p95/p99 tails, and workload families visible.
+The project bundles the runner with `esbuild`, runs benchmarks under `node --expose-gc`, saves the raw log, and generates an HTML results page. Each framework/scenario pair runs in a fresh child process. The report ranks by relative geometric mean and shows per-test medians and capped status.
+
+The current workload contract is **semantics v2**. Creation and update rows,
+transaction boundaries, and some correctness targets changed; compare v2 runs
+with each other. Older logs and the existing results page need a new full run
+before they represent this contract. See [the research and decisions](docs/benchmark-methodology.md).
 
 Measurement is centralized in [`src/util/benchmark.ts`](src/util/benchmark.ts) and powered by `mitata`. Scenario files only declare fixture setup, the measured operation, and optional validation/reporting. Setup runs outside the timed section, samples do not use mitata's automatic batching, and garbage collection policy is applied consistently by the runner. Regular cases use five samples; expensive dynamic graph cases use three.
 
@@ -33,6 +38,11 @@ BENCH_FRAMEWORK=reflex pnpm bench
 ```
 
 You can also pass a comma-separated list such as `BENCH_FRAMEWORK="reflex,alien-signals"`.
+
+Use `BENCH_FILTER` to select scenario names by substring, for example
+`BENCH_FILTER=Computations` or `BENCH_FILTER="dynamic/simple component"`.
+An unmatched selection fails. Use `pnpm build` followed by `pnpm run` for a
+focused check; `pnpm bench` replaces the results page with the selected subset.
 
 On Windows PowerShell:
 
@@ -67,8 +77,8 @@ pnpm results:page
 
 The current default run includes several benchmark groups. They are classified by workload family instead of being treated as one flat race:
 
-- `creation` - signal/computed allocation and setup cost
-- `update` - stable graph writes and invalidation hot paths
+- `creation` - allocation, initial evaluation, and dependency tracking
+- `update` - changed source writes followed by reads of every computed consumer
 - `pull` - dirty reads, aggregation, and chain pulls
 - `push` - fan-out propagation and effect delivery
 - `dynamic` - branch switching, dependency cleanup, and retracking
@@ -87,12 +97,17 @@ The semantics and interpretation rules are documented in [SEMANTICS.md](SEMANTIC
 
 ## Reported Metrics
 
-Rows use the per-case sample counts described above. The primary terminal `time` column is the median, not the fastest run. Rows also emit:
+Rows use the per-case sample counts described above. The primary terminal `time`
+column is the median, including the pilot. Rows emit sample counts and
+benchmark-specific recomputation/traversal counters when available. The log
+header records the semantics version, Node/V8, OS/architecture, CPU, RAM, GC,
+process isolation, and diagnostic mode.
 
-- `p95` and `p99` - tail latency for jitter/outliers
-- `cv` - coefficient of variation for stability
-- `group` and `family` - workload taxonomy
-- benchmark-specific counters such as recomputation, traversal, or checksum data
+The current compact runner does **not** emit p95/p99, CV, or group/family
+columns. The renderer accepts those columns in older expanded logs, but a
+current compact run provides no tail-latency estimates and uses its baseline
+report group. Three to five samples would also be too few to estimate p99
+reliably.
 
 The HTML leaderboard uses:
 
@@ -101,7 +116,8 @@ r(L, test) = median_time(L, test) / best_median_time(test)
 score(L) = geometric_mean(r(L, tests))
 ```
 
-Lower is better. A profile score is more honest than an arithmetic average because a catastrophic slowdown in one workload family is harder to hide.
+Lower is better. The score weights each included scenario equally; use per-row
+results to assess a particular application. Capped rows have only one sample.
 
 ## Framework Adapters
 

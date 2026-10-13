@@ -1,4 +1,6 @@
 import { do_not_optimize, measure as mitataMeasure } from "mitata";
+import { fork } from "node:child_process";
+import { cpus, totalmem } from "node:os";
 import {
   logPerfResult,
   perfReportHeaders,
@@ -42,6 +44,9 @@ export function registerBenchmark<TFixture, TResult>(
   benchmarkCase: BenchmarkCase<TFixture, TResult>
 ): void {
   const id = `${benchmarkCase.framework} :: ${benchmarkCase.name}`;
+  if (process.env.BENCH_CASE && process.env.BENCH_CASE !== id) return;
+  const filter = process.env.BENCH_FILTER?.trim().toLowerCase();
+  if (filter && !benchmarkCase.name.toLowerCase().includes(filter)) return;
 
   if (registeredCases.some((entry) => entry.id === id)) {
     throw new Error(`Duplicate benchmark name: ${id}`);
@@ -59,14 +64,43 @@ export function registerBenchmark<TFixture, TResult>(
  * to the report format consumed by this repository.
  */
 export async function runBenchmarks(): Promise<void> {
-  logPerfResult(perfReportHeaders());
+  if (registeredCases.length === 0)
+    throw new Error("No benchmark cases matched the selection.");
+  if (!process.env.BENCH_CASE) {
+    console.log(
+      `# semantics=v2 node=${process.version} v8=${process.versions.v8} platform=${process.platform}/${process.arch} cpu=${cpus()[0]?.model ?? "unknown"} ram=${totalmem()} gc=${!!globalThis.gc} isolation=${process.env.BENCH_IN_PROCESS === "1" ? "shared" : "row"} instrumented=${process.env.BENCH_INSTRUMENT === "1"}`
+    );
+    logPerfResult(perfReportHeaders());
+    if (process.env.BENCH_IN_PROCESS !== "1") {
+      await runIsolatedBenchmarks();
+      return;
+    }
+  }
   const errors: string[] = [];
 
   for (const entry of registeredCases) {
+    let pendingValidation = false;
+    const validatePending = () => {
+      if (pendingValidation) {
+        entry.validate?.(entry.result);
+        pendingValidation = false;
+      }
+    };
+    const setup = () => {
+      // Validate the preceding sample before a reset can destroy its fixture.
+      // This stays outside the measured callback and catches failures in
+      // intermediate/warmup samples, not just the pilot and final sample.
+      validatePending();
+      if (entry.blackhole && entry.completed) do_not_optimize(undefined);
+      entry.result = undefined;
+      entry.completed = false;
+      return entry.setup();
+    };
     const runMeasured = (fixture: unknown) => {
       const result = entry.benchmark(fixture);
       entry.result = result;
       entry.completed = true;
+      pendingValidation = true;
 
       if (entry.blackhole) {
         do_not_optimize(result);
@@ -76,7 +110,7 @@ export async function runBenchmarks(): Promise<void> {
     };
     const target = function* () {
       yield {
-        [0]: entry.setup,
+        [0]: setup,
         bench: runMeasured,
       };
     };
@@ -87,18 +121,24 @@ export async function runBenchmarks(): Promise<void> {
         entry.gc === false || !globalThis.gc ? false : () => globalThis.gc?.();
 
       if (gc) gc();
-      const pilotFixture = entry.setup();
-      const pilotStart = performance.now();
-      runMeasured(pilotFixture);
-      const pilotMs = performance.now() - pilotStart;
+      let pilotMs: number;
+      {
+        const pilotFixture = setup();
+        const pilotStart = performance.now();
+        runMeasured(pilotFixture);
+        pilotMs = performance.now() - pilotStart;
+      }
 
       if (!entry.completed) {
         throw new Error("benchmark completed without producing a result");
       }
 
-      entry.validate?.(entry.result);
+      validatePending();
+      if (process.send) process.send({ name: entry.name, pilotMs });
 
-      const previousBest = fastestPilotByScenario.get(entry.name);
+      const previousBest = process.env.BENCH_REFERENCE_PILOT_MS
+        ? Number(process.env.BENCH_REFERENCE_PILOT_MS)
+        : fastestPilotByScenario.get(entry.name);
       const ceilingMs = performanceCeilingMs(
         previousBest,
         MIN_PERFORMANCE_CEILING_MS,
@@ -111,6 +151,7 @@ export async function runBenchmarks(): Promise<void> {
 
       const capped = pilotMs > ceilingMs;
       let timeMs = pilotMs;
+      let sampleCount = 1;
 
       if (!capped && samples > 1) {
         const measuredSamples = samples - 1;
@@ -129,7 +170,8 @@ export async function runBenchmarks(): Promise<void> {
           pilotMs,
           ...stats.samples.map((ns) => ns / 1_000_000),
         ]);
-        entry.validate?.(entry.result);
+        sampleCount += stats.samples.length;
+        validatePending();
       }
 
       const row = entry.report?.(entry.result, timeMs) ?? {
@@ -142,18 +184,77 @@ export async function runBenchmarks(): Promise<void> {
       if (capped) {
         const marker = `SLOW/CAPPED samples=1 ceiling=${ceilingMs.toFixed(0)}ms`;
         row.metrics = row.metrics ? `${marker} ${row.metrics}` : marker;
+      } else {
+        row.metrics = `samples=${sampleCount}${row.metrics ? " " + row.metrics : ""}`;
       }
 
       logPerfResult(row);
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       errors.push(`${entry.id}: ${reason}`);
+    } finally {
+      // mitata's sink retains its most recent argument; do not carry the
+      // previous graph into the next fixture's GC/timed allocation work.
+      if (entry.blackhole) do_not_optimize(undefined);
+      entry.result = undefined;
     }
   }
 
   if (errors.length > 0) {
     throw new Error(`Benchmark failures:\n${errors.join("\n")}`);
   }
+}
+
+/** A fresh VM per row prevents caches, subscriptions, and JIT profiles from
+ * earlier framework/scenario pairs affecting later rows. Workers stay serial.
+ */
+async function runIsolatedBenchmarks(): Promise<void> {
+  const errors: string[] = [];
+  for (const entry of registeredCases) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const previousBest = fastestPilotByScenario.get(entry.name);
+        const child = fork(process.argv[1], process.argv.slice(2), {
+          env: {
+            ...process.env,
+            BENCH_CASE: entry.id,
+            BENCH_REFERENCE_PILOT_MS:
+              previousBest === undefined ? "" : String(previousBest),
+          },
+          stdio: ["ignore", "pipe", "pipe", "ipc"],
+        });
+        child.stdout!.on("data", (chunk) => process.stdout.write(chunk));
+        child.stderr!.on("data", (chunk) => process.stderr.write(chunk));
+        child.on("message", (message: unknown) => {
+          const sample = message as { name?: string; pilotMs?: number };
+          if (
+            sample.name === entry.name &&
+            typeof sample.pilotMs === "number" &&
+            Number.isFinite(sample.pilotMs)
+          ) {
+            fastestPilotByScenario.set(
+              entry.name,
+              Math.min(previousBest ?? Infinity, sample.pilotMs)
+            );
+          }
+        });
+        child.on("error", reject);
+        child.on("close", (code, signal) => {
+          if (code === 0) resolve();
+          else
+            reject(
+              new Error(`worker exited with code ${code}, signal ${signal}`)
+            );
+        });
+      });
+    } catch (error) {
+      errors.push(
+        `${entry.id}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+  if (errors.length)
+    throw new Error(`Benchmark worker failures:\n${errors.join("\n")}`);
 }
 
 export function performanceCeilingMs(

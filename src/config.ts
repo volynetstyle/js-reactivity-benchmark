@@ -207,8 +207,8 @@ export const perfTests: TestConfig[] = [
     readFraction: 0.2,
     iterations: 600000,
     expected: {
-      sum: 19199832,
-      count: 2640004,
+      sum: 19200092,
+      count: 3180010,
     },
   },
   {
@@ -220,8 +220,8 @@ export const perfTests: TestConfig[] = [
     readFraction: 0.2,
     iterations: 15000,
     expected: {
-      sum: 302310477864,
-      count: 1125003,
+      sum: 302310877104,
+      count: 1140004,
     },
   },
   {
@@ -234,7 +234,7 @@ export const perfTests: TestConfig[] = [
     iterations: 7000,
     expected: {
       sum: 29355933696000,
-      count: 1473791,
+      count: 1473786,
     },
   },
   {

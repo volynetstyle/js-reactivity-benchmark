@@ -16,19 +16,17 @@ export function verifyBenchResult(
   const { testPullCounts, framework } = perfFramework;
   const { expected } = config;
 
-  if (expected.sum) {
-    console.assert(
-      result.sum == expected.sum,
+  if (expected.sum !== undefined && result.sum !== expected.sum) {
+    throw new Error(
       `sum ${framework.name} ${config.name} result:${result.sum} expected:${expected.sum}`
     );
   }
   if (
-    expected.count &&
-    (config.readFraction === 1 || testPullCounts) &&
-    testPullCounts !== false
+    expected.count !== undefined &&
+    testPullCounts === true &&
+    result.count !== expected.count
   ) {
-    console.assert(
-      result.count === expected.count,
+    throw new Error(
       `count ${framework.name} ${config.name} result:${result.count} expected:${expected.count}`
     );
   }

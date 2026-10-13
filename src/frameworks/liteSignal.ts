@@ -3,10 +3,14 @@ import { ReactiveFramework } from "../util/reactiveFramework";
 
 function createBenchmarkRegistry(): Registry {
   return createRegistry({
-    maxNodes: 131_072,
+    // The largest creation fixture contains 100k sources + 100k computeds.
+    // Lazy allocation still charges first construction to the creation rows.
+    maxNodes: 262_144,
     maxLinks: 1_048_576,
     prealloc: "lazy",
-    onCapacityExceeded: "grow",
+    // Fail if future scenarios outgrow the declared budget; never silently
+    // benchmark capacity growth as part of an ordinary creation/update row.
+    onCapacityExceeded: "throw",
   });
 }
 

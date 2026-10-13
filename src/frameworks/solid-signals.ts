@@ -29,6 +29,9 @@ type SolidSignalsModule = {
 const solidSignals = loadSolidSignalsModule();
 
 function loadSolidSignalsModule(): SolidSignalsModule {
+  if (process.env.BENCH_INSTRUMENT !== "1") {
+    return require("@solidjs/signals") as SolidSignalsModule;
+  }
   const modulePath = require.resolve("@solidjs/signals");
   const source = readFileSync(modulePath, "utf8");
   const instrumentedSource = `${source}
@@ -136,7 +139,8 @@ const benchmarkMetrics: FrameworkBenchmarkMetrics = {
 
 export const solidSignalsFramework: ReactiveFramework = {
   name: "@solidjs/signals",
-  benchmarkMetrics,
+  benchmarkMetrics:
+    process.env.BENCH_INSTRUMENT === "1" ? benchmarkMetrics : undefined,
   signal: (initialValue) => {
     const [getter, setter] = solidSignals.createSignal(initialValue, {
       pureWrite: true,
@@ -165,9 +169,12 @@ export const solidSignalsFramework: ReactiveFramework = {
     };
   },
   effect: (fn) =>
-    solidSignals.createRenderEffect(() => {
-      fn();
-    }, () => {}),
+    solidSignals.createRenderEffect(
+      () => {
+        fn();
+      },
+      () => {}
+    ),
   withBatch: (fn) => {
     fn();
     solidSignals.flush();

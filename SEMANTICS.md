@@ -3,6 +3,11 @@
 This suite compares reactive libraries as runtime profiles, not as one universal
 speed number.
 
+Current measurements follow **semantics v2**. See
+[the researched workload contracts](docs/benchmark-methodology.md) for
+creation, observation, batching, correctness, and diagnostic policies.
+Earlier logs must be rerun to compare with this contract.
+
 Every result should be read as:
 
 ```txt
@@ -15,12 +20,12 @@ Library L + adapter semantics S + workload W + machine M + runtime R
 The benchmark adapter interface is intentionally small:
 
 ```ts
-signal(initial).read()
-signal(initial).write(value)
-computed(fn).read()
-effect(fn)
-withBatch(fn)
-withBuild(fn)
+signal(initial).read();
+signal(initial).write(value);
+computed(fn).read();
+effect(fn);
+withBatch(fn);
+withBuild(fn);
 ```
 
 Adapters should match the closest production semantics of each library while
@@ -33,17 +38,17 @@ dominates another.
 Each adapter should be classified against these questions before its numbers are
 treated as comparable:
 
-| Dimension | Why it matters |
-| --- | --- |
-| Computed lazy or eager | Moves cost between writes and reads |
-| Effects sync or scheduled | Changes latency, batching, and delivery timing |
-| Batching support | Write-heavy tests are unfair without an explicit policy |
-| Equality check | Can block propagation and change dirty marking |
-| Dynamic dependency cleanup | Required for branchy UI-style graphs |
-| Dispose or cleanup support | Determines lifecycle and retained-graph behavior |
-| Nested effects | Changes ownership and cleanup semantics |
-| Glitch-free guarantee | Fast propagation is not useful if intermediate values leak |
-| Error or cycle handling | Unsafe runtimes can look faster by doing less work |
+| Dimension                  | Why it matters                                             |
+| -------------------------- | ---------------------------------------------------------- |
+| Computed lazy or eager     | Moves cost between writes and reads                        |
+| Effects sync or scheduled  | Changes latency, batching, and delivery timing             |
+| Batching support           | Write-heavy tests are unfair without an explicit policy    |
+| Equality check             | Can block propagation and change dirty marking             |
+| Dynamic dependency cleanup | Required for branchy UI-style graphs                       |
+| Dispose or cleanup support | Determines lifecycle and retained-graph behavior           |
+| Nested effects             | Changes ownership and cleanup semantics                    |
+| Glitch-free guarantee      | Fast propagation is not useful if intermediate values leak |
+| Error or cycle handling    | Unsafe runtimes can look faster by doing less work         |
 
 Current adapters implement this through a common wrapper, but not every library
 has identical native semantics. Treat any unknown cell as a limitation of the
@@ -79,16 +84,16 @@ classified by family and dominant operation.
 
 The report groups benchmarks into these families:
 
-| Group | What it emphasizes |
-| --- | --- |
-| `creation` | Signal/computed allocation and object shape cost |
-| `update` | Stable graph write and invalidation hot paths |
-| `pull` | Dirty computed reads, fan-in aggregation, and chain pulls |
-| `push` | Fan-out propagation and effect delivery |
-| `dynamic` | Dependency churn, branch switching, cleanup, and retracking |
-| `large_graph` | Scaling behavior on larger DAGs |
-| `lifecycle` | Create/dispose pressure and retained graph behavior |
-| `baseline` | Small propagation and historical reference cases |
+| Group         | What it emphasizes                                          |
+| ------------- | ----------------------------------------------------------- |
+| `creation`    | Signal/computed allocation and object shape cost            |
+| `update`      | Stable graph write and invalidation hot paths               |
+| `pull`        | Dirty computed reads, fan-in aggregation, and chain pulls   |
+| `push`        | Fan-out propagation and effect delivery                     |
+| `dynamic`     | Dependency churn, branch switching, cleanup, and retracking |
+| `large_graph` | Scaling behavior on larger DAGs                             |
+| `lifecycle`   | Create/dispose pressure and retained graph behavior         |
+| `baseline`    | Small propagation and historical reference cases            |
 
 ## Statistics
 
@@ -110,25 +115,13 @@ The current runner does not read `BENCH_RUNS`. Sample counts are declared by
 each case through the centralized benchmark API. Report those counts and any
 capped rows when publishing distribution statistics.
 
-The primary row score is median wall-clock time. Rows also emit:
-
-```txt
-min
-median
-mean
-p75
-p90
-p95
-p99
-stddev
-MAD
-IQR
-coefficient of variation
-```
-
-The terminal log currently prints median, p95, p99, CV, group, family, and
-benchmark-specific counters. The HTML report ranks libraries by geometric mean
-of relative slowdown:
+The primary row score is median wall-clock time, including the pilot. The
+compact runner emits actual sample counts and benchmark-specific counters.
+It does not emit distribution statistics, tail percentiles, or taxonomy
+columns. The HTML parser can read p95/p99, CV, group, and family from older
+expanded logs; these are unavailable in current compact runs, which use the
+baseline report group. Three to five samples cannot establish a reliable p99.
+The HTML report ranks libraries by geometric mean of relative slowdown:
 
 ```txt
 r(L, test) = median_time(L, test) / best_median_time(test)
@@ -141,6 +134,9 @@ Lower is better. A score of `1.00x` means best on every included row.
 
 Performance rows must keep a validation sink alive. Dynamic graph rows check the
 observed sum and, when adapter semantics allow it, recomputation counts.
+The numeric oracle covers every active graph scenario. Every produced result
+is validated outside timing before a fixture reset; a mismatch throws and
+prevents that row from receiving a score.
 
 The intended gate before trusting performance results is:
 
@@ -177,6 +173,12 @@ GC policy
 This project runs under `node --expose-gc` and isolates each framework/scenario
 pair in a child process so V8 state, heap state, subscriptions, and library
 caches do not leak between rows.
+Samples within a row share a VM and use fresh fixtures. The log header records
+Node/V8, platform, CPU, RAM, GC, semantics version, isolation, and whether
+diagnostic instrumentation is enabled. The lockfile records package versions.
+`BENCH_IN_PROCESS=1` disables row isolation for diagnosis; `BENCH_INSTRUMENT=1`
+adds internal instrumentation to `@solidjs/signals`. Do not combine those
+diagnostic results with a default run.
 
 ## Interpretation
 

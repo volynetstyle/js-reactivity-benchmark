@@ -284,7 +284,7 @@ function renderSpotlight(frameworks, tests) {
       <div class="hero-copy">
         <span class="eyebrow">Benchmark Overview</span>
         <h1>JS Reactivity Benchmark</h1>
-        <p class="subtitle">Reactive graph benchmarks reported as topology profiles. Lower relative score and tighter p95/p99 tails are better.</p>
+        <p class="subtitle">Reactive graph benchmarks reported as topology profiles. Lower relative score means lower median times across the included scenarios.</p>
         <div class="hero-notes">
           <div class="hero-chip">Leader: ${escapeHtml(winner.name)}</div>
           <div class="hero-chip">Tests: ${tests.length}</div>
@@ -460,7 +460,7 @@ function renderBenchmarkInterpretation(frameworks, tests) {
       <h2>How To Read This</h2>
       <div class="interpretation-copy">
         <p>${escapeHtml(winner.name)} has the strongest relative profile in this run${runnerUp ? `, ${averageLead.toFixed(1)}% ahead of ${escapeHtml(runnerUp.name)} by geometric mean` : ""}. It also takes ${winnerWinCount} of ${tests.length} scenario wins${runnerUp ? `, while ${escapeHtml(runnerUp.name)} takes ${runnerUpWinCount}` : ""}.</p>
-        <p>This page intentionally treats benchmarks as workload families rather than a single universal speed claim. Median is the primary row score; p95/p99 and CV show predictability.</p>
+        <p>Median is the primary row score. Capped rows use one sample; tail and variability metrics are available only when supplied by the source log.</p>
         <p>Interpret wins through the scenario taxonomy: creation, update, pull/push propagation, dynamic dependency churn, large graphs, lifecycle pressure, and memory behavior can favor different runtimes.</p>
       </div>
     </section>

@@ -82,15 +82,15 @@ function trimColumns(row: PerfRowStrings): PerfRowStrings {
   const trimmed = { ...row };
   for (const key of keys) {
     const length = columnWidth[key];
-    const value = (row[key] || "").slice(0, length).padEnd(length);
+    // Truncated scenario/framework identifiers can merge different workloads
+    // in the report parser. Width is padding only; preserve the full value.
+    const value = (row[key] || "").padEnd(length);
     trimmed[key] = value;
   }
   return trimmed;
 }
 
-function formatMetrics(
-  metrics: TestResult["metrics"]
-): string {
+function formatMetrics(metrics: TestResult["metrics"]): string {
   if (!metrics) {
     return "";
   }

@@ -7,8 +7,22 @@ import {
 } from "@vue/reactivity";
 import { ReactiveFramework } from "../util/reactiveFramework";
 
-let scheduled = [] as ReactiveEffect[];
+const scheduled = new Set<ReactiveEffect>();
 let batching = false;
+
+function flushEffects() {
+  if (batching) return;
+  batching = true;
+  try {
+    for (const pending of scheduled) {
+      scheduled.delete(pending);
+      // Match Vue's native dirty check when the custom scheduler flushes.
+      if (pending.dirty) pending.run();
+    }
+  } finally {
+    batching = false;
+  }
+}
 
 export const vueReactivityFramework: ReactiveFramework = {
   name: "@vue/reactivity",
@@ -26,9 +40,10 @@ export const vueReactivityFramework: ReactiveFramework = {
     };
   },
   effect: (fn) => {
-    let t = effect(() => fn(), {
+    const t = effect(() => fn(), {
       scheduler: () => {
-        scheduled.push(t.effect);
+        scheduled.add(t.effect);
+        flushEffects();
       },
     });
   },
@@ -37,11 +52,12 @@ export const vueReactivityFramework: ReactiveFramework = {
       fn();
     } else {
       batching = true;
-      fn();
-      while (scheduled.length) {
-        scheduled.pop()!.run();
+      try {
+        fn();
+      } finally {
+        batching = false;
+        flushEffects();
       }
-      batching = false;
     }
   },
   withBuild: (fn) => {

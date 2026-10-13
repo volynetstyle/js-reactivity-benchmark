@@ -4,8 +4,6 @@ import {
   computed,
   effect,
   batch,
-  memo,
-  flush,
 } from "@volynets/reflex";
 import { ReactiveFramework } from "../util/reactiveFramework";
 
@@ -16,10 +14,10 @@ createRuntime({ effectStrategy: "sab" });
 export const reflexFramework: ReactiveFramework = {
   name: "reflex",
   signal: (initial) => {
-    const data = signal(initial);
+    const [read, write] = signal(initial);
     return {
-      read: data,
-      write: data.set,
+      read,
+      write,
     };
   },
   computed: (fn) => {

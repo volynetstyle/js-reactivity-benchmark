@@ -94,116 +94,65 @@ export function runGraph(
       sinkReadMode = "per-update",
       startTick = 0,
     } = config;
-    const rand = new Random("seed");
     const { sources, layers } = graph;
+    if (
+      updatesPerIteration > sources.length &&
+      (mode !== "mixed" || sinkReadMode !== "per-update")
+    ) {
+      throw new Error(
+        "A transaction must write each source at most once (S.js freeze contract)."
+      );
+    }
     const leaves = layers[layers.length - 1];
-    const skipCount = Math.round(leaves.length * (1 - readFraction));
-    const readLeaves = removeElems(leaves, skipCount, rand);
-    const frameworkName = framework.name.toLowerCase();
-    const batchPerIteration =
-      frameworkName === "s-js" || frameworkName === "solidjs";
-
-    const writeIteration = (iteration: number, updateDex: number) => {
-      const tick = startTick + iteration * updatesPerIteration + updateDex;
-      const sourceDex = tick % sources.length;
-      sources[sourceDex].write(tick + sourceDex);
+    const readLeaves = removeElems(
+      leaves,
+      Math.round(leaves.length * (1 - readFraction)),
+      new Random("seed")
+    );
+    const write = (iteration: number, update: number) => {
+      const tick = startTick + iteration * updatesPerIteration + update;
+      const sourceIndex = tick % sources.length;
+      sources[sourceIndex].write(tick + sourceIndex);
+    };
+    const read = () => {
+      let sum = 0;
+      for (const leaf of readLeaves) sum += trackedRead(leaf);
+      return sum;
     };
 
-    const sumLeaves = () => {
-      let total = 0;
-      for (const leaf of readLeaves) {
-        total += trackedRead(leaf);
+    if (mode === "push") {
+      const latestValues = new Array<number>(readLeaves.length).fill(0);
+      for (const [index, leaf] of readLeaves.entries()) {
+        framework.effect(() => {
+          latestValues[index] = trackedRead(leaf);
+        });
       }
-      return total;
-    };
-
-    const flushPerIteration = (iteration: number) => {
-      if (sinkReadMode === "final-only") {
-        for (let updateDex = 0; updateDex < updatesPerIteration; updateDex++) {
-          writeIteration(iteration, updateDex);
-        }
-        return;
-      }
-
-      if (sinkReadMode === "per-update") {
-        for (let updateDex = 0; updateDex < updatesPerIteration; updateDex++) {
-          writeIteration(iteration, updateDex);
-          readLeaves.forEach(trackedRead);
-        }
-        return;
-      }
-
-      for (let updateDex = 0; updateDex < updatesPerIteration; updateDex++) {
-        writeIteration(iteration, updateDex);
-      }
-      readLeaves.forEach(trackedRead);
-    };
-
-    const writeOnlyIteration = (iteration: number) => {
-      for (let updateDex = 0; updateDex < updatesPerIteration; updateDex++) {
-        writeIteration(iteration, updateDex);
-      }
-    };
-
-    if (mode === "pull") {
-      if (batchPerIteration) {
-        for (let i = 0; i < iterations; i++) {
-          framework.withBatch(() => {
-            writeOnlyIteration(i);
-          });
-        }
-      } else {
+      for (let iteration = 0; iteration < iterations; iteration++) {
         framework.withBatch(() => {
-          for (let i = 0; i < iterations; i++) {
-            writeOnlyIteration(i);
+          for (let update = 0; update < updatesPerIteration; update++) {
+            write(iteration, update);
           }
         });
       }
-
-      return sumLeaves();
+      return latestValues.reduce((sum, value) => sum + value, 0);
     }
 
-    if (mode === "push") {
-      const latestValues = new Array(readLeaves.length).fill(0);
-
-      for (const [i, leaf] of readLeaves.entries()) {
-        framework.effect(() => {
-          latestValues[i] = trackedRead(leaf);
-        });
-      }
-
-      for (let i = 0; i < iterations; i++) {
-        framework.withBatch(() => {
-          writeOnlyIteration(i);
-        });
-      }
-
-      return latestValues.reduce((total, value) => total + value, 0);
-    }
-
-    let sum = 0;
-
-    if (batchPerIteration) {
-      // [S.js freeze](https://github.com/adamhaile/S#sdatavalue) doesn't allow different
-      // values to be set during a single batch, so special case it.
-      for (let i = 0; i < iterations; i++) {
-        framework.withBatch(() => {
-          flushPerIteration(i);
-        });
-      }
-
-      sum = sumLeaves();
-    } else {
-      framework.withBatch(() => {
-        for (let i = 0; i < iterations; i++) {
-          flushPerIteration(i);
+    for (let iteration = 0; iteration < iterations; iteration++) {
+      if (mode === "mixed" && sinkReadMode === "per-update") {
+        for (let update = 0; update < updatesPerIteration; update++) {
+          framework.withBatch(() => write(iteration, update));
+          read();
         }
-
-        sum = sumLeaves();
-      });
+      } else {
+        framework.withBatch(() => {
+          for (let update = 0; update < updatesPerIteration; update++) {
+            write(iteration, update);
+          }
+        });
+        if (mode === "mixed" && sinkReadMode === "per-batch") read();
+      }
     }
-
-    return sum;
+    return read();
   });
 }
 
@@ -281,19 +230,21 @@ function makeLayeredRows(
   const rows = [];
 
   for (let layer = 0; layer < numRows; layer++) {
-    const row = new Array(width).fill(0).map((_, nodeDex) =>
-      makeLayeredNode(
-        prevRow,
-        nodeDex,
-        layer,
-        counter,
-        staticFraction,
-        fanIn,
-        framework,
-        graphKind,
-        rand
-      )
-    );
+    const row = new Array(width)
+      .fill(0)
+      .map((_, nodeDex) =>
+        makeLayeredNode(
+          prevRow,
+          nodeDex,
+          layer,
+          counter,
+          staticFraction,
+          fanIn,
+          framework,
+          graphKind,
+          rand
+        )
+      );
     rows.push(row);
     prevRow = row;
   }
