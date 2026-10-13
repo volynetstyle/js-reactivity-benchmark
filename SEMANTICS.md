@@ -105,9 +105,10 @@ additional samples are skipped and the row is marked `SLOW/CAPPED samples=1`.
 This is a low-confidence classification, not a timeout or a fabricated result.
 Configure it with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`.
 
-The default local run uses `BENCH_RUNS=1` so the full configuration remains
-fast enough for iteration. Set `BENCH_RUNS=30` or another repeat count when you
-want publication-grade distribution statistics.
+Regular cases use five samples; expensive dynamic graph cases use three.
+The current runner does not read `BENCH_RUNS`. Sample counts are declared by
+each case through the centralized benchmark API. Report those counts and any
+capped rows when publishing distribution statistics.
 
 The primary row score is median wall-clock time. Rows also emit:
 
@@ -169,7 +170,7 @@ package versions
 build mode
 power mode
 thermal state
-BENCH_RUNS
+per-case sample counts and capped rows
 GC policy
 ```
 

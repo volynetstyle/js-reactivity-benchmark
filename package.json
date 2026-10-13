@@ -1,7 +1,7 @@
 {
   "name": "js-reactivity-benchmark",
   "version": "1.0.0",
-  "description": "",
+  "description": "JavaScript reactivity benchmarks with configurable workloads, framework adapters, and HTML performance reports.",
   "main": "index.js",
   "scripts": {
     "test": "vitest run --pool=threads",
@@ -10,8 +10,16 @@
     "bench": "npm run build && node scripts/bench-and-update.mjs",
     "results:page": "node scripts/render-results-page.mjs"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["benchmark", "reactivity", "signals", "javascript", "performance"],
+  "author": "Andrii Volynets (https://github.com/volynetstyle)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/volynetstyle/js-reactivity-benchmark.git"
+  },
+  "homepage": "https://github.com/volynetstyle/js-reactivity-benchmark#readme",
+  "bugs": {
+    "url": "https://github.com/volynetstyle/js-reactivity-benchmark/issues"
+  },
   "license": "MIT",
   "dependencies": {
     "@amadeus-it-group/tansu": "^2.0.0",
