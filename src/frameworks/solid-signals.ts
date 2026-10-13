@@ -9,7 +9,7 @@ import {
 type SolidSignalsModule = {
   createMemo: <T>(fn: () => T) => () => T;
   createRenderEffect: (fn: () => void, initial: () => void) => void;
-  createRoot: <T>(fn: () => T) => T;
+  createRoot: <T>(fn: (dispose: () => void) => T) => T;
   createSignal: <T>(
     initialValue: T,
     options?: { pureWrite?: boolean }
@@ -180,4 +180,12 @@ export const solidSignalsFramework: ReactiveFramework = {
     solidSignals.flush();
   },
   withBuild: (fn) => solidSignals.createRoot(fn),
+  createScope(fn) {
+    let dispose!: () => void;
+    const value = solidSignals.createRoot((stop) => {
+      dispose = stop;
+      return fn();
+    });
+    return { value, dispose };
+  },
 };

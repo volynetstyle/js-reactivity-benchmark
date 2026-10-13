@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest run --pool=threads",
-    "build": "esbuild src/index.ts --bundle --format=cjs --platform=node --outdir=dist --sourcemap=external --external:bun:jsc --external:@mitata/counters --external:@solidjs/signals",
+    "build": "node scripts/build.mjs",
     "run": "node --expose-gc dist/index.js",
     "bench": "npm run build && node scripts/bench-and-update.mjs",
+    "bench:smoke": "node scripts/benchmark-smoke.mjs",
     "results:page": "node scripts/render-results-page.mjs"
   },
   "keywords": ["benchmark", "reactivity", "signals", "javascript", "performance"],

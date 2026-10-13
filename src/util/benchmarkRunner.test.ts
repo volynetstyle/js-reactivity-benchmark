@@ -17,6 +17,10 @@ beforeEach(() => {
   vi.stubEnv("BENCH_IN_PROCESS", "1");
   vi.stubEnv("BENCH_CASE", "");
   vi.stubEnv("BENCH_FILTER", "");
+  vi.stubEnv("BENCH_PROFILE", "quick");
+  vi.stubEnv("BENCH_SAMPLES", "");
+  vi.stubEnv("BENCH_SAMPLES_FILE", "");
+  vi.stubEnv("BENCH_ASSERT_NO_CONSOLE", "");
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -33,7 +37,7 @@ test("validates every sample outside timing and before the next fixture reset", 
       task.bench(fixture);
       measured = false;
     }
-    return { samples: [1_000_000, 2_000_000] };
+    return { samples: [1_000_000, 2_000_000, 3_000_000] };
   });
   registerBenchmark({
     framework: "probe",
@@ -66,7 +70,10 @@ test("validates every sample outside timing and before the next fixture reset", 
     sink.mock.calls.filter(([result]) => result !== undefined)
   ).toHaveLength(4);
   expect(sink.mock.calls.at(-1)).toEqual([undefined]);
-  expect(log.mock.calls.at(-1)![0].metrics).toBe("samples=3");
+  expect(log.mock.calls.at(-1)![0].metrics).toContain(
+    "samples=3 profile=quick pilot=excluded"
+  );
+  expect(log.mock.calls.at(-1)![0].time).toBe("2.000000");
 });
 
 test("an incorrect intermediate sample fails the row before it is reported", async () => {
@@ -101,4 +108,58 @@ test("an unmatched selection fails instead of producing an empty successful run"
     benchmark: () => 1,
   });
   await expect(runBenchmarks()).rejects.toThrow("No benchmark cases matched");
+});
+
+test("warm fixtures are restored outside timing and disposed once", async () => {
+  const { registerBenchmark, runBenchmarks } = await import("./benchmark");
+  let measured = false;
+  const setup = vi.fn(() => ({ value: 0 }));
+  const teardown = vi.fn();
+  const prepareSample = vi.fn((fixture) => {
+    expect(measured).toBe(false);
+    fixture.value = 0;
+  });
+  measure.mockImplementation(async (target) => {
+    const task = target().next().value;
+    for (let i = 0; i < 3; i++) {
+      const fixture = task[0]();
+      measured = true;
+      task.bench(fixture);
+      measured = false;
+    }
+    return { samples: [1_000_000, 2_000_000, 3_000_000] };
+  });
+  registerBenchmark({
+    framework: "probe",
+    name: "warm",
+    samples: 3,
+    setup,
+    prepareSample,
+    teardown,
+    reuseFixture: true,
+    benchmark: (fixture) => ++fixture.value,
+    validate: (value) => expect(value).toBe(1),
+  });
+  await runBenchmarks();
+  expect(setup).toHaveBeenCalledTimes(1);
+  expect(prepareSample).toHaveBeenCalledTimes(3);
+  expect(teardown).toHaveBeenCalledTimes(1);
+});
+
+test("CI console guard rejects output from a measured callback", async () => {
+  const { registerBenchmark, runBenchmarks } = await import("./benchmark");
+  vi.stubEnv("BENCH_ASSERT_NO_CONSOLE", "1");
+  registerBenchmark({
+    framework: "probe",
+    name: "logging",
+    setup: () => null,
+    benchmark: () => {
+      console.log("unwanted hot-path output");
+      return 1;
+    },
+    validate: () => {},
+  });
+  await expect(runBenchmarks()).rejects.toThrow(
+    "console.log called inside measured workload"
+  );
 });

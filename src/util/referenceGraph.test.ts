@@ -3,6 +3,7 @@ import { expectedGraphSum } from "./referenceGraph";
 import { perfTests, frameworkInfo } from "../config";
 import { Counter, makeGraph, runGraph } from "./dependencyGraph";
 import { verifyBenchResult } from "./perfTests";
+import { restoreWarmGraph } from "../dynamicBench";
 
 test("historical expected sums agree with the numerical oracle", () => {
   const failures = perfTests.flatMap((config) => {
@@ -15,6 +16,31 @@ test("historical expected sums agree with the numerical oracle", () => {
 });
 
 for (const { framework } of frameworkInfo) {
+  test(`${framework.name} | warm graph checkpoint preserves values and work counts`, () => {
+    framework.resetBenchmark?.();
+    const config = {
+      width: 8,
+      totalLayers: 4,
+      staticFraction: 1,
+      nSources: 3,
+      readFraction: 1,
+      iterations: 12,
+      warmupIterations: 5,
+      measureBuild: false,
+      expected: {},
+    };
+    const counter = new Counter();
+    const graph = makeGraph(framework, config, counter);
+    runGraph(graph, { ...config, iterations: 5 }, framework);
+    const values = graph.sources.map((source) => source.read());
+    counter.reset();
+    const first = runGraph(graph, { ...config, startTick: 5 }, framework);
+    const firstCount = counter.count;
+    restoreWarmGraph(graph, values, framework);
+    const second = runGraph(graph, { ...config, startTick: 5 }, framework);
+    expect(second).toBe(first);
+    expect(counter.count).toBe(firstCount);
+  });
   for (const graphKind of ["rect", "layered-dag", "diamond-mesh"] as const) {
     test(`${framework.name} | ${graphKind} sums independent of transaction/read policy`, () => {
       for (const mode of ["mixed", "pull", "push"] as const) {

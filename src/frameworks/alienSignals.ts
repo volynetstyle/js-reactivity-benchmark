@@ -1,4 +1,11 @@
-import { computed, effect, endBatch, signal, startBatch } from "alien-signals";
+import {
+  computed,
+  effect,
+  effectScope,
+  endBatch,
+  signal,
+  startBatch,
+} from "alien-signals";
 import { ReactiveFramework } from "../util/reactiveFramework";
 
 export const alienFramework: ReactiveFramework = {
@@ -16,7 +23,7 @@ export const alienFramework: ReactiveFramework = {
     };
   },
   effect: (fn) => {
-    effect(() => {
+    return effect(() => {
       fn();
     });
   },
@@ -29,4 +36,11 @@ export const alienFramework: ReactiveFramework = {
     }
   },
   withBuild: (fn) => fn(),
+  createScope(fn) {
+    let value!: ReturnType<typeof fn>;
+    const dispose = effectScope(() => {
+      value = fn();
+    });
+    return { value, dispose };
+  },
 };

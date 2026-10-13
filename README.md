@@ -13,12 +13,12 @@ Local benchmark harness for comparing JavaScript reactivity libraries as behavio
 
 The project bundles the runner with `esbuild`, runs benchmarks under `node --expose-gc`, saves the raw log, and generates an HTML results page. Each framework/scenario pair runs in a fresh child process. The report ranks by relative geometric mean and shows per-test medians and capped status.
 
-The current workload contract is **semantics v2**. Creation and update rows,
-transaction boundaries, and some correctness targets changed; compare v2 runs
-with each other. Older logs and the existing results page need a new full run
-before they represent this contract. See [the research and decisions](docs/benchmark-methodology.md).
+The current workload contract is **semantics v3**: validated values and effect
+delivery, native lifecycle workloads, untrimmed samples, and an excluded cold
+pilot. Compare runs with the same version and profile. Older logs need a fresh
+run. See [the research and decisions](docs/benchmark-methodology.md).
 
-Measurement is centralized in [`src/util/benchmark.ts`](src/util/benchmark.ts) and powered by `mitata`. Scenario files only declare fixture setup, the measured operation, and optional validation/reporting. Setup runs outside the timed section, samples do not use mitata's automatic batching, and garbage collection policy is applied consistently by the runner. Regular cases use five samples; expensive dynamic graph cases use three.
+Measurement is centralized in [`src/util/benchmark.ts`](src/util/benchmark.ts) and powered by `mitata`. Preparation, validation, cleanup, and reporting stay outside timing. No automatic batching or sample trimming is used. Dedicated workers load only the selected library. Creation fixtures stay fresh; explicitly warm static graphs restore an exact checkpoint between samples.
 
 Every case starts with one real pilot run. Results slower than the adaptive performance ceiling (`max(1500 ms, 3x the fastest pilot for that scenario)`) are reported honestly but skip repeated sampling and carry a `SLOW/CAPPED samples=1` marker. Override the policy with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`.
 
@@ -41,6 +41,7 @@ You can also pass a comma-separated list such as `BENCH_FRAMEWORK="reflex,alien-
 
 Use `BENCH_FILTER` to select scenario names by substring, for example
 `BENCH_FILTER=Computations` or `BENCH_FILTER="dynamic/simple component"`.
+Comma-separated filters select their union.
 An unmatched selection fails. Use `pnpm build` followed by `pnpm run` for a
 focused check; `pnpm bench` replaces the results page with the selected subset.
 
@@ -52,11 +53,33 @@ pnpm bench
 Remove-Item Env:BENCH_FRAMEWORK
 ```
 
-Regular cases collect five samples; expensive dynamic graph cases collect three. Slow cases may be capped after the pilot run. `BENCH_RUNS` is not supported by the current runner.
+The default `BENCH_PROFILE=quick` collects five measured samples (three for
+expensive graph/fan cases). `BENCH_PROFILE=tails` collects 1000 untrimmed
+samples per uncapped row after additional warmup. `BENCH_SAMPLES` explicitly
+overrides that count. p95 is reported at 200 samples and p99 at 1000, with
+95% order-statistic intervals. These are workload-duration distributions.
+Slow rows retain one pilot and cannot establish tails. `BENCH_RUNS` is unsupported.
+
+For a focused tail run in PowerShell:
+
+```powershell
+$env:BENCH_PROFILE = "tails"
+$env:BENCH_FRAMEWORK = "lite-signal"
+$env:BENCH_FILTER = "molBench"
+pnpm.cmd build
+pnpm.cmd run run
+```
+
+CI executes `pnpm test`, `pnpm build`, and `pnpm bench:smoke`. The smoke
+checks 21 isolated rows and saved validation evidence with two samples per row;
+it is a correctness check, not a performance publication. A static check and
+a runtime guard (`BENCH_ASSERT_NO_CONSOLE=1`) reject console calls on the hot
+path. The full benchmark workflow uses the exact tested commit.
 
 After the run, these files are updated:
 
 - `bench-results/latest.log` - raw runner output
+- `bench-results/latest.samples.json` - all timing samples, pilots, statistics, and validation status
 - `index.html` - generated summary page with rankings and per-test comparisons
 
 If you already have a log and only want to rebuild the results page:
@@ -72,6 +95,7 @@ pnpm results:page
 - `pnpm run` - execute the built runner with `node --expose-gc`
 - `pnpm bench` - build, run benchmarks, save `bench-results/latest.log`, and refresh `index.html`
 - `pnpm results:page` - rebuild `index.html` from an existing log
+- `pnpm bench:smoke` - verify the built workers and their correctness gates
 
 ## What Gets Measured
 
@@ -97,17 +121,15 @@ The semantics and interpretation rules are documented in [SEMANTICS.md](SEMANTIC
 
 ## Reported Metrics
 
-Rows use the per-case sample counts described above. The primary terminal `time`
-column is the median, including the pilot. Rows emit sample counts and
-benchmark-specific recomputation/traversal counters when available. The log
-header records the semantics version, Node/V8, OS/architecture, CPU, RAM, GC,
-process isolation, and diagnostic mode.
+The primary `time` is the median of measured samples, excluding the pilot unless
+the row is capped. Expanded output includes p95/p99 when supported, CV, group,
+family, and counters. The log header records the semantics version, profile,
+runtime, machine, GC, isolation, and diagnostic mode.
 
-The current compact runner does **not** emit p95/p99, CV, or group/family
-columns. The renderer accepts those columns in older expanded logs, but a
-current compact run provides no tail-latency estimates and uses its baseline
-report group. Three to five samples would also be too few to estimate p99
-reliably.
+Every observed duration is preserved; mitata's default removal of the fastest
+and slowest samples is disabled. `pnpm run run` saves
+`bench-results/last-run.samples.json`; `BENCH_SAMPLES_FILE` chooses another path.
+Samples are stored sorted by duration, as returned by mitata.
 
 The HTML leaderboard uses:
 
@@ -118,6 +140,9 @@ score(L) = geometric_mean(r(L, tests))
 
 Lower is better. The score weights each included scenario equally; use per-row
 results to assess a particular application. Capped rows have only one sample.
+Overall scores use the same scenario intersection for every framework.
+Lifecycle is compared within its supported group; unsupported ownership is
+absent, never a fabricated zero.
 
 ## Framework Adapters
 

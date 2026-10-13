@@ -18,7 +18,10 @@ export const reactivelyFramework: ReactiveFramework = {
   },
   effect: (fn) => {
     fn();
-    return new Reactive(fn, true);
+    const observer = new Reactive(fn, true);
+    // Public set(value) converts a computation into a value and detaches its
+    // parent observers. Use that path to release benchmark consumers.
+    return () => observer.set(undefined);
   },
   withBatch: (fn) => {
     fn();

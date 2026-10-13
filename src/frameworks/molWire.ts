@@ -18,7 +18,11 @@ export const molWireFramework: ReactiveFramework = {
       read: () => atom.sync(),
     };
   },
-  effect: (fn) => new Atom("", fn).sync(),
+  effect: (fn) => {
+    const observer = new Atom("", fn);
+    observer.sync();
+    return () => observer.destructor();
+  },
   withBatch: (fn) => {
     fn();
     Atom.sync();

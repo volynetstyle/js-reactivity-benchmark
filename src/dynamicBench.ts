@@ -1,4 +1,4 @@
-import { perfTests } from "./config";
+import { perfTests } from "./workloads";
 import { registerBenchmark } from "./util/benchmark";
 import { Counter, Graph, makeGraph, runGraph } from "./util/dependencyGraph";
 import { FrameworkInfo } from "./util/frameworkTypes";
@@ -10,6 +10,7 @@ interface DynamicFixture {
   counter: Counter;
   graph?: Graph;
   startTick: number;
+  warmSources?: number[];
 }
 
 /** Register all dependency-graph scenarios for one reactive framework. */
@@ -23,10 +24,29 @@ export function dynamicBench(frameworkInfo: FrameworkInfo): void {
     };
     const { warmupIterations = 0, measureBuild = warmupIterations === 0 } =
       config;
+    const reuseFixture =
+      !measureBuild &&
+      warmupIterations > 0 &&
+      config.staticFraction === 1 &&
+      config.readFraction === 1;
 
     registerBenchmark<DynamicFixture, TestResult>({
       framework: framework.name,
       name: `dynamic/${config.name ?? "unnamed"}`,
+      group:
+        config.mode === "push"
+          ? "push"
+          : config.mode === "pull"
+            ? "pull"
+            : "large_graph",
+      family: config.graphKind ?? "rect",
+      reuseFixture,
+      prepareSample(fixture) {
+        if (!fixture.graph || !fixture.warmSources)
+          throw new Error("Missing warm graph checkpoint");
+        restoreWarmGraph(fixture.graph, fixture.warmSources, framework);
+        framework.benchmarkMetrics?.reset();
+      },
       setup() {
         // Compute a library-independent target only for selected cases,
         // outside measurement, including rows with no historical target.
@@ -56,6 +76,9 @@ export function dynamicBench(frameworkInfo: FrameworkInfo): void {
           counter,
           graph,
           startTick: warmupIterations * (config.updatesPerIteration ?? 1),
+          warmSources: reuseFixture
+            ? graph.sources.map((source) => source.read())
+            : undefined,
         };
       },
       benchmark(fixture) {
@@ -85,4 +108,16 @@ export function dynamicBench(frameworkInfo: FrameworkInfo): void {
       samples: 3,
     });
   }
+}
+
+export function restoreWarmGraph(
+  graph: Graph,
+  values: readonly number[],
+  framework: FrameworkInfo["framework"]
+): void {
+  framework.withBatch(() => {
+    for (let i = 0; i < values.length; i++) graph.sources[i].write(values[i]);
+  });
+  for (const leaf of graph.layers[graph.layers.length - 1]) leaf.read();
+  graph.counter.reset();
 }

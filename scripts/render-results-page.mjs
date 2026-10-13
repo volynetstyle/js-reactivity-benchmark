@@ -13,8 +13,10 @@ export function parseBenchOutput(text) {
     .filter(Boolean);
 
   const rows = [];
+  const seenPairs = new Set();
 
   for (const line of lines) {
+    if (line.startsWith("#")) continue;
     const parts = line.split(/\s*,\s*/);
     if (parts.length < 3) {
       continue;
@@ -38,6 +40,32 @@ export function parseBenchOutput(text) {
     if (!framework || !test || Number.isNaN(time)) {
       continue;
     }
+    if (!Number.isFinite(time) || time <= 0)
+      throw new Error(`Invalid duration for ${framework} / ${test}`);
+    const pair = JSON.stringify([framework, test]);
+    if (seenPairs.has(pair))
+      throw new Error(`Duplicate result for ${framework} / ${test}`);
+    seenPairs.add(pair);
+    const sampleMatch = metrics.match(/samples=(\d+)/);
+    const samples = sampleMatch ? Number(sampleMatch[1]) : undefined;
+    const interval = (key) => {
+      const prefix = `${key}_ci95=`;
+      const token = metrics
+        .split(/\s+/)
+        .find((token) => token.startsWith(prefix));
+      const values = token?.slice(prefix.length).split("..").map(Number);
+      return values?.length === 2 && values.every(Number.isFinite)
+        ? values
+        : undefined;
+    };
+    if (
+      samples !== undefined &&
+      ((samples < 200 && Number.isFinite(Number.parseFloat(p95Text))) ||
+        (samples < 1000 && Number.isFinite(Number.parseFloat(p99Text))))
+    )
+      throw new Error(
+        `Insufficient samples for reported tails: ${framework} / ${test}`
+      );
 
     rows.push({
       framework,
@@ -49,6 +77,9 @@ export function parseBenchOutput(text) {
       group: group || "baseline",
       family: family || "baseline",
       capped: metrics.includes("SLOW/CAPPED"),
+      samples,
+      p95Interval: interval("p95"),
+      p99Interval: interval("p99"),
     });
   }
 
@@ -84,6 +115,9 @@ export function parseBenchOutput(text) {
       group: row.group,
       family: row.family,
       capped: row.capped,
+      samples: row.samples,
+      p95Interval: row.p95Interval,
+      p99Interval: row.p99Interval,
     });
     framework.totals += row.time;
   }
@@ -96,19 +130,51 @@ export function parseBenchOutput(text) {
     bestByTest.set(test, best);
   }
 
+  const commonTests = tests.filter((test) =>
+    Array.from(byFramework.values()).every((framework) =>
+      framework.entries.some((entry) => entry.test === test)
+    )
+  );
+  if (!commonTests.length)
+    throw new Error(
+      "No shared scenarios: frameworks cannot be ranked together"
+    );
+  const groupTests = new Map();
+  for (const group of new Set(rows.map((row) => row.group))) {
+    const participants = Array.from(byFramework.values()).filter((framework) =>
+      framework.entries.some((entry) => entry.group === group)
+    );
+    groupTests.set(
+      group,
+      tests.filter((test) =>
+        participants.every((framework) =>
+          framework.entries.some(
+            (entry) => entry.test === test && entry.group === group
+          )
+        )
+      )
+    );
+  }
+
   const frameworks = Array.from(byFramework.values())
     .map((framework) => ({
       ...framework,
       average: framework.totals / framework.entries.length,
       relativeScore: geometricMean(
-        framework.entries.map(
-          (entry) => entry.time / bestByTest.get(entry.test)
-        )
+        framework.entries
+          .filter((entry) => commonTests.includes(entry.test))
+          .map((entry) => entry.time / bestByTest.get(entry.test))
       ),
       p95Average: averageFinite(framework.entries.map((entry) => entry.p95)),
       p99Average: averageFinite(framework.entries.map((entry) => entry.p99)),
       cvAverage: averageFinite(framework.entries.map((entry) => entry.cv)),
-      groupScores: computeGroupScores(framework.entries, bestByTest),
+      scoredTests: commonTests.length,
+      groupScores: computeGroupScores(
+        framework.entries.filter((entry) =>
+          groupTests.get(entry.group)?.includes(entry.test)
+        ),
+        bestByTest
+      ),
       byTest: Object.fromEntries(
         framework.entries.map((entry) => [entry.test, entry.time])
       ),
@@ -118,7 +184,7 @@ export function parseBenchOutput(text) {
     }))
     .sort((left, right) => left.relativeScore - right.relativeScore);
 
-  return { rows, tests, frameworks };
+  return { rows, tests, commonTests, frameworks };
 }
 
 function averageFinite(values) {
@@ -222,6 +288,7 @@ function renderPerTestComparison(frameworks, tests) {
           name: framework.name,
           time: framework.byTest[test],
           capped: framework.cappedByTest[test] === true,
+          evidence: framework.entries.find((entry) => entry.test === test),
         }))
         .filter((entry) => typeof entry.time === "number")
         .sort((left, right) => left.time - right.time);
@@ -238,8 +305,18 @@ function renderPerTestComparison(frameworks, tests) {
           const relative =
             fastest === 0 ? 0 : ((entry.time - fastest) / fastest) * 100;
           const width = slowest === 0 ? 0 : (entry.time / slowest) * 100;
+          const evidence = entry.evidence;
+          const tails = ["p95", "p99"]
+            .filter((key) => Number.isFinite(evidence[key]))
+            .map((key) => {
+              const interval = evidence[`${key}Interval`];
+              return `${key} ${evidence[key].toFixed(6)} ms${interval ? ` (95% interval ${interval[0].toFixed(6)}..${interval[1].toFixed(6)} ms)` : ""}`;
+            });
+          const title = escapeHtml(
+            `samples=${evidence.samples ?? "unknown"}; ${tails.join("; ") || "insufficient samples for tail estimates"}`
+          );
 
-          return `<div class="comparison-row" style="--row-delay:${testIndex * 45 + index * 35}ms"><div class="comparison-rank">${index + 1}</div><div class="comparison-name${index === 0 ? " comparison-name-winner" : ""}">${escapeHtml(entry.name)}</div><div class="comparison-bar"><div class="comparison-bar-fill" style="--target-width:${width.toFixed(2)}%"></div></div><div class="comparison-time">${formatTime(entry.time)} ms${entry.capped ? " · capped" : ""}</div><div class="comparison-delta">${index === 0 ? "best" : `+${relative.toFixed(1)}%`}</div></div>`;
+          return `<div class="comparison-row" title="${title}" style="--row-delay:${testIndex * 45 + index * 35}ms"><div class="comparison-rank">${index + 1}</div><div class="comparison-name${index === 0 ? " comparison-name-winner" : ""}">${escapeHtml(entry.name)}</div><div class="comparison-bar"><div class="comparison-bar-fill" style="--target-width:${width.toFixed(2)}%"></div></div><div class="comparison-time">${formatTime(entry.time)} ms${entry.capped ? " · capped" : ""}</div><div class="comparison-delta">${index === 0 ? "best" : `+${relative.toFixed(1)}%`}</div></div>`;
         })
         .join("");
 
@@ -1229,7 +1306,7 @@ export function renderResultsPage(parsed, options = {}) {
     <article class="card">
       <h2>Visual Comparison</h2>
       ${renderBars(frameworks)}
-      <p class="meta">Each bar shows geometric mean slowdown relative to the per-test winner. Lower is better.</p>
+      <p class="meta">Each bar scores the same ${frameworks[0].scoredTests} shared scenarios against their per-test winners. Workloads missing from some adapters are compared separately within their group. Lower is better.</p>
     </article>
   </section>
 

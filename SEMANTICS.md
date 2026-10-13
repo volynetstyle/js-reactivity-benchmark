@@ -3,7 +3,7 @@
 This suite compares reactive libraries as runtime profiles, not as one universal
 speed number.
 
-Current measurements follow **semantics v2**. See
+Current measurements follow **semantics v3**. See
 [the researched workload contracts](docs/benchmark-methodology.md) for
 creation, observation, batching, correctness, and diagnostic policies.
 Earlier logs must be rerun to compare with this contract.
@@ -110,22 +110,24 @@ additional samples are skipped and the row is marked `SLOW/CAPPED samples=1`.
 This is a low-confidence classification, not a timeout or a fabricated result.
 Configure it with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`.
 
-Regular cases use five samples; expensive dynamic graph cases use three.
+The quick profile uses five measured samples; expensive graph/fan cases use three.
+The tails profile uses 1000 samples and additional warmup. An explicit
+`BENCH_SAMPLES` overrides the target.
 The current runner does not read `BENCH_RUNS`. Sample counts are declared by
 each case through the centralized benchmark API. Report those counts and any
 capped rows when publishing distribution statistics.
 
-The primary row score is median wall-clock time, including the pilot. The
-compact runner emits actual sample counts and benchmark-specific counters.
-It does not emit distribution statistics, tail percentiles, or taxonomy
-columns. The HTML parser can read p95/p99, CV, group, and family from older
-expanded logs; these are unavailable in current compact runs, which use the
-baseline report group. Three to five samples cannot establish a reliable p99.
+The pilot is validated but excluded from an uncapped distribution. A capped row
+uses its pilot alone and remains visibly low confidence. Samples are untrimmed:
+slow observations are never discarded. The runner emits median, CV, group,
+family, and counters. p95 requires 200 samples; p99 requires 1000. Tail intervals
+use 95% order-statistic bounds under an iid assumption; correlated runtime or
+thermal behavior limits that interpretation. Saved JSON contains every duration.
 The HTML report ranks libraries by geometric mean of relative slowdown:
 
 ```txt
 r(L, test) = median_time(L, test) / best_median_time(test)
-score(L) = exp(mean(log(r(L, test))))
+score(L) = exp(mean(log(r(L, shared_test))))
 ```
 
 Lower is better. A score of `1.00x` means best on every included row.
@@ -173,12 +175,20 @@ GC policy
 This project runs under `node --expose-gc` and isolates each framework/scenario
 pair in a child process so V8 state, heap state, subscriptions, and library
 caches do not leak between rows.
-Samples within a row share a VM and use fresh fixtures. The log header records
+Samples within a row share a VM. Creation fixtures remain fresh. Declared warm
+static full-read graphs keep their fixture and restore initial source values,
+flush all leaves, and reset counters outside timing; tests verify the same
+measured values and recomputation counts. The log header records
 Node/V8, platform, CPU, RAM, GC, semantics version, isolation, and whether
 diagnostic instrumentation is enabled. The lockfile records package versions.
 `BENCH_IN_PROCESS=1` disables row isolation for diagnosis; `BENCH_INSTRUMENT=1`
 adds internal instrumentation to `@solidjs/signals`. Do not combine those
 diagnostic results with a default run.
+
+Measured workload files contain no console calls. CI additionally guards all
+console methods at runtime during measured callbacks. Reports are emitted after
+timing. Native lifecycle support is explicit; absent ownership is not scored as
+zero, and the overall ranking uses the shared scenario intersection.
 
 ## Interpretation
 

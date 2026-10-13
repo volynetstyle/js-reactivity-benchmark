@@ -25,4 +25,12 @@ export const obyFramework: ReactiveFramework = {
     $.tick();
   },
   withBuild: (fn) => $.root(fn),
+  createScope(fn) {
+    let dispose!: () => void;
+    const value = $.root((stop) => {
+      dispose = stop;
+      return fn();
+    });
+    return { value, dispose };
+  },
 };

@@ -1,11 +1,8 @@
-import { dynamicBench } from "./dynamicBench";
-// import { cellxbench } from "./cellxBench";
-import { sbench } from "./sBench";
+import path from "node:path";
+import catalog from "./frameworkCatalog.json";
+import { registerFrameworkBenchmarks } from "./suite";
 import { frameworkInfo } from "./config";
-import { molBench } from "./molBench";
-import { kairoBench } from "./kairoBench";
-import { runBenchmarks } from "./util/benchmark";
-import { fanBench } from "./fanBench";
+import { runBenchmarks, registerFrameworkWorker } from "./util/benchmark";
 
 function getSelectedFrameworks() {
   const rawSelection = process.env.BENCH_FRAMEWORK?.trim();
@@ -57,20 +54,20 @@ async function main() {
   for (const frameworkTest of getSelectedFrameworks()) {
     const { framework } = frameworkTest;
 
-    kairoBench(framework);
-    fanBench(framework);
-    molBench(framework);
-    sbench(framework);
-
-    // MobX, Valtio, and Svelte fail this test currently, so disabling it for now.
-    // @see https://github.com/mobxjs/mobx/issues/3926
-    // @see https://github.com/sveltejs/svelte/discussions/13277
-    // cellxbench(framework);
-
-    dynamicBench(frameworkTest);
+    const entry = catalog.find((entry) => entry.name === framework.name);
+    if (!entry)
+      throw new Error(`Missing worker catalog entry for ${framework.name}`);
+    registerFrameworkWorker(
+      framework.name,
+      path.join(__dirname, "workers", `${entry.id}.cjs`)
+    );
+    registerFrameworkBenchmarks(frameworkTest);
   }
 
   await runBenchmarks();
 }
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

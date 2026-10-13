@@ -12,10 +12,16 @@ on:
   workflow_dispatch:
     inputs:
       framework:
-        description: "Optional framework name to benchmark, e.g. ripple"
+        description: "Optional framework name to benchmark, e.g. reflex"
         required: false
         type: string
         default: ""
+      profile:
+        description: "quick for medians; tails for 1000 untrimmed samples per uncapped row"
+        required: false
+        type: choice
+        options: [quick, tails]
+        default: quick
 
 permissions:
   contents: write
@@ -33,8 +39,8 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          ref: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+          fetch-depth: 1
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -54,6 +60,9 @@ jobs:
       - name: Run benchmarks
         env:
           BENCH_FRAMEWORK: ${{ github.event.inputs.framework }}
+          BENCH_PROFILE: ${{ github.event.inputs.profile || 'quick' }}
+          BENCH_ASSERT_NO_CONSOLE: "1"
+          BENCH_SOURCE_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: pnpm bench
 
       - name: Archive benchmark output
@@ -67,9 +76,11 @@ jobs:
           archive_dir="bench-results/history"
           archive_log="$archive_dir/${timestamp}-${short_sha}.log"
           archive_meta="$archive_dir/${timestamp}-${short_sha}.json"
+          archive_samples="$archive_dir/${timestamp}-${short_sha}.samples.json"
 
           mkdir -p "$archive_dir"
           cp bench-results/latest.log "$archive_log"
+          cp bench-results/latest.samples.json "$archive_samples"
 
           cat > "$archive_meta" <<EOF
           {
@@ -79,13 +90,16 @@ jobs:
             "runId": "${GITHUB_RUN_ID}",
             "runNumber": "${GITHUB_RUN_NUMBER}",
             "generatedAtUtc": "${timestamp}",
-            "logPath": "${archive_log}"
+            "logPath": "${archive_log}",
+            "samplesPath": "${archive_samples}",
+            "profile": "${{ github.event.inputs.profile || 'quick' }}"
           }
           EOF
 
           {
             echo "archive_log=$archive_log"
             echo "archive_meta=$archive_meta"
+            echo "archive_samples=$archive_samples"
             echo "timestamp=$timestamp"
             echo "short_sha=$short_sha"
           } >> "$GITHUB_OUTPUT"
@@ -96,12 +110,29 @@ jobs:
           name: benchmark-${{ steps.archive.outputs.timestamp }}-${{ steps.archive.outputs.short_sha }}
           path: |
             bench-results/latest.log
+            bench-results/latest.samples.json
             ${{ steps.archive.outputs.archive_log }}
             ${{ steps.archive.outputs.archive_meta }}
+            ${{ steps.archive.outputs.archive_samples }}
             index.html
 
+      - name: Check that the tested commit is still the branch head
+        id: publication
+        env:
+          TARGET_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          remote_head="$(git ls-remote origin "refs/heads/$TARGET_BRANCH" | cut -f1)"
+          if [ "$remote_head" = "$TESTED_SHA" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Commit benchmark results
+        if: steps.publication.outputs.current == 'true'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: update benchmark results [skip ci]"
           file_pattern: bench-results index.html
+          branch: ${{ github.event.workflow_run.head_branch || github.ref_name }}

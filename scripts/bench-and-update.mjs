@@ -14,6 +14,9 @@ async function runBench() {
       cwd: process.cwd(),
       env: {
         ...process.env,
+        BENCH_SAMPLES_FILE:
+          process.env.BENCH_SAMPLES_FILE ??
+          path.join(LOG_DIR, "latest.samples.json"),
         ...(benchFramework ? { BENCH_FRAMEWORK: benchFramework } : {}),
       },
       stdio: ["inherit", "pipe", "pipe"],

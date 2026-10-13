@@ -49,14 +49,16 @@ export function cellxbench(framework: ReactiveFramework): void {
         return [before, after];
       },
       validate([before, after]) {
-        console.assert(
-          arraysEqual(before, expectedResult[0]),
-          `Expected first layer ${expectedResult[0]}, found ${before}`
-        );
-        console.assert(
-          arraysEqual(after, expectedResult[1]),
-          `Expected last layer ${expectedResult[1]}, found ${after}`
-        );
+        if (!arraysEqual(before, expectedResult[0])) {
+          throw new Error(
+            `Expected first layer ${expectedResult[0]}, found ${before}`
+          );
+        }
+        if (!arraysEqual(after, expectedResult[1])) {
+          throw new Error(
+            `Expected last layer ${expectedResult[1]}, found ${after}`
+          );
+        }
       },
       gc: "inner",
       blackhole: true,

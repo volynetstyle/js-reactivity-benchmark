@@ -2,7 +2,10 @@ import { TestConfig } from "./frameworkTypes";
 import { TestResult } from "./perfTests";
 
 export function logPerfResult(row: PerfRowStrings): void {
-  const line = Object.values(trimColumns(row)).join(" , ");
+  const padded = trimColumns(row);
+  const line = Object.keys(columnWidth)
+    .map((key) => padded[key as keyof PerfRowStrings])
+    .join(" , ");
   console.log(line);
 }
 
@@ -11,12 +14,22 @@ export interface PerfRowStrings {
   test: string;
   time: string;
   metrics: string;
+  p95?: string;
+  p99?: string;
+  cv?: string;
+  group?: string;
+  family?: string;
 }
 
 const columnWidth = {
   framework: 22,
   test: 60,
   time: 8,
+  p95: 8,
+  p99: 8,
+  cv: 8,
+  group: 12,
+  family: 24,
   metrics: 96,
 };
 

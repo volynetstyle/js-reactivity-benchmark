@@ -30,12 +30,19 @@ export const liteSignalFramework: ReactiveFramework = {
     return { read: value };
   },
   effect(fn) {
-    registry.effect(fn);
+    return registry.effect(fn);
   },
   withBatch(fn) {
     registry.batch(fn);
   },
   withBuild: (fn) => fn(),
+  createScope(fn) {
+    let value!: ReturnType<typeof fn>;
+    const dispose = registry.effect(() => {
+      value = registry.untrack(fn);
+    });
+    return { value, dispose };
+  },
   resetBenchmark() {
     registry.destroy();
     registry = createBenchmarkRegistry();

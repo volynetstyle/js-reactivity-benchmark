@@ -19,4 +19,12 @@ export const sFramework: ReactiveFramework = {
   effect: (fn) => S(fn),
   withBatch: (fn) => S.freeze(fn),
   withBuild: (fn) => S.root(fn),
+  createScope(fn) {
+    let dispose!: () => void;
+    const value = S.root((stop) => {
+      dispose = stop;
+      return fn();
+    });
+    return { value, dispose };
+  },
 };

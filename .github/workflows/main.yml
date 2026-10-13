@@ -32,3 +32,6 @@ jobs:
 
       - name: Run build
         run: pnpm build
+
+      - name: Verify isolated benchmark runner
+        run: pnpm bench:smoke

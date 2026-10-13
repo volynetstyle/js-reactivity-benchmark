@@ -1,0 +1,92 @@
+[
+  {
+    "id": "reflex",
+    "name": "reflex",
+    "module": "reflex",
+    "export": "reflexFramework",
+    "pullCounts": true
+  },
+  {
+    "id": "alien",
+    "name": "alien-signals",
+    "module": "alienSignals",
+    "export": "alienFramework",
+    "pullCounts": true
+  },
+  {
+    "id": "lite",
+    "name": "lite-signal",
+    "module": "liteSignal",
+    "export": "liteSignalFramework",
+    "pullCounts": true
+  },
+  {
+    "id": "solid-signals",
+    "name": "@solidjs/signals",
+    "module": "solid-signals",
+    "export": "solidSignalsFramework"
+  },
+  {
+    "id": "preact",
+    "name": "Preact Signals",
+    "module": "preactSignals",
+    "export": "preactSignalFramework",
+    "pullCounts": true
+  },
+  {
+    "id": "reactively",
+    "name": "@reactively",
+    "module": "reactively",
+    "export": "reactivelyFramework",
+    "pullCounts": true
+  },
+  { "id": "s", "name": "s-js", "module": "s", "export": "sFramework" },
+  {
+    "id": "tansu",
+    "name": "@amadeus-it-group/tansu",
+    "module": "tansu",
+    "export": "tansuFramework",
+    "pullCounts": true
+  },
+  {
+    "id": "mol",
+    "name": "$mol_wire",
+    "module": "molWire",
+    "export": "molWireFramework",
+    "pullCounts": true
+  },
+  {
+    "id": "oby",
+    "name": "Oby",
+    "module": "oby",
+    "export": "obyFramework",
+    "pullCounts": true
+  },
+  {
+    "id": "signia",
+    "name": "Signia",
+    "module": "signia",
+    "export": "signiaFramework",
+    "pullCounts": true
+  },
+  {
+    "id": "solid",
+    "name": "SolidJS",
+    "module": "solid",
+    "export": "solidFramework"
+  },
+  {
+    "id": "usignal",
+    "name": "uSignal",
+    "module": "uSignal",
+    "export": "usignalFramework",
+    "pullCounts": true
+  },
+  {
+    "id": "vue",
+    "name": "@vue/reactivity",
+    "module": "vueReactivity",
+    "export": "vueReactivityFramework",
+    "pullCounts": true
+  }
+]
