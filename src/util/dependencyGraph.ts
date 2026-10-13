@@ -1,11 +1,13 @@
 import { TestConfig } from "./frameworkTypes";
 import { Computed, ReactiveFramework, Signal } from "./reactiveFramework";
 import { Random } from "random";
+import { fixtureScope } from "./fixtureScope";
 
 export interface Graph {
   sources: Signal<number>[];
   layers: Computed<number>[][];
   counter: Counter;
+  disposePushEffects?: () => void;
 }
 
 export interface BenchCountersSnapshot {
@@ -122,11 +124,14 @@ export function runGraph(
 
     if (mode === "push") {
       const latestValues = new Array<number>(readLeaves.length).fill(0);
-      for (const [index, leaf] of readLeaves.entries()) {
-        framework.effect(() => {
-          latestValues[index] = trackedRead(leaf);
-        });
-      }
+      const scope = fixtureScope(framework, () => {
+        for (const [index, leaf] of readLeaves.entries()) {
+          framework.effect(() => {
+            latestValues[index] = trackedRead(leaf);
+          });
+        }
+      });
+      graph.disposePushEffects = scope.dispose;
       for (let iteration = 0; iteration < iterations; iteration++) {
         framework.withBatch(() => {
           for (let update = 0; update < updatesPerIteration; update++) {

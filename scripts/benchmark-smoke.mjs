@@ -12,6 +12,7 @@ const selections = [
       "diamond,manySourcesIntoOneComputedEffect,molBench,mutable-object/,lifecycle/,createComputations1to1",
   },
   { framework: "alien-signals", filter: "dynamic/layered full-drain warm" },
+  { framework: "s-js,SolidJS", filter: "dynamic/pure push" },
 ];
 let checked = 0;
 for (const selection of selections) {

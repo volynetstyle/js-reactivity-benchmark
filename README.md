@@ -71,7 +71,7 @@ pnpm.cmd run run
 ```
 
 CI executes `pnpm test`, `pnpm build`, and `pnpm bench:smoke`. The smoke
-checks 21 isolated rows and saved validation evidence with two samples per row;
+checks 23 isolated rows and saved validation evidence with two samples per row;
 it is a correctness check, not a performance publication. A static check and
 a runtime guard (`BENCH_ASSERT_NO_CONSOLE=1`) reject console calls on the hot
 path. The full benchmark workflow uses the exact tested commit.

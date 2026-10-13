@@ -84,6 +84,7 @@ export function dynamicBench(frameworkInfo: FrameworkInfo): void {
       benchmark(fixture) {
         const graph =
           fixture.graph ?? makeGraph(framework, config, fixture.counter);
+        fixture.graph = graph;
         const sum = runGraph(
           graph,
           { ...config, startTick: fixture.startTick },
@@ -101,6 +102,7 @@ export function dynamicBench(frameworkInfo: FrameworkInfo): void {
       },
       validate: (result) =>
         verifyBenchResult(frameworkInfo, checkedConfig, result),
+      teardown: (fixture) => fixture.graph?.disposePushEffects?.(),
       report: (result, timeMs) =>
         perfRowStrings(framework.name, config, timeMs, result),
       gc: "inner",

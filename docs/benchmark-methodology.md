@@ -152,7 +152,7 @@ Neither quick runs nor capped rows claim a p99.
 ### CI and reproducibility
 
 CI runs the complete adapter/workload tests, builds dedicated workers once,
-and verifies 21 isolated rows plus saved samples. Timing values are not pass/fail
+and verifies 23 isolated rows plus saved samples. Timing values are not pass/fail
 thresholds on shared CI machines. Static and runtime checks reject console
 calls during measurement; report output occurs after timing.
 
