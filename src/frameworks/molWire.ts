@@ -1,23 +1,19 @@
 import { ReactiveFramework, Signal } from "../util/reactiveFramework";
 import $ from "mol_wire_lib";
 
-const Atom = $.$mol_wire_atom; // fix a bug in mol exports
+class Atom<T> extends $.$mol_wire_atom<null, [], T> {
+  read() {
+    return this.sync();
+  }
+  write(v:T) {
+    return this.put(v);
+  }
+}
 
 export const molWireFramework: ReactiveFramework = {
   name: "$mol_wire",
-  signal: <T>(initialValue: T): Signal<T> => {
-    const atom = new Atom("", (next: T = initialValue) => next);
-    return {
-      write: (v: T) => atom.put(v),
-      read: () => atom.sync(),
-    };
-  },
-  computed: (fn) => {
-    const atom = new Atom("", fn);
-    return {
-      read: () => atom.sync(),
-    };
-  },
+  signal: <T>(initialValue: T): Signal<T> => new Atom("", (next: T = initialValue) => next),
+  computed: (fn) => new Atom("", fn),
   effect: (fn) => new Atom("", fn).sync(),
   withBatch: (fn) => {
     fn();
