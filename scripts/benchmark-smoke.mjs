@@ -20,6 +20,12 @@ const selections = [
   },
   { framework: "s-js,SolidJS", filter: "dynamic/pure push" },
   {
+    // Native nodes with prototype accessors require the harness to preserve
+    // `this` in one-source creation and update rows (including 1-to-1000).
+    framework: "$mol_wire",
+    filter: "createComputations1to1,updateComputations1to1",
+  },
+  {
     // Production builds and native effect wiring for every adapter.
     framework:
       "@vue/reactivity,Preact Signals,Oby,@reactively,@solidjs/signals,$mol_wire,Signia,uSignal,@amadeus-it-group/tansu",

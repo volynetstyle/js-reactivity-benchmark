@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { commitBatch } from "./commitBatch";
 
 import {
   FrameworkBenchmarkMetrics,
@@ -27,6 +28,7 @@ type SolidSignalsModule = {
 };
 
 const solidSignals = loadSolidSignalsModule();
+const ignore = () => {};
 
 function loadSolidSignalsModule(): SolidSignalsModule {
   if (process.env.BENCH_INSTRUMENT !== "1") {
@@ -150,9 +152,7 @@ export const solidSignalsFramework: ReactiveFramework = {
       pureWrite: true,
     });
     return {
-      write: (v) => {
-        setter(v as any);
-      },
+      write: setter,
       read: () => {
         if (!solidSignals.getObserver()) {
           solidSignals.flush();
@@ -173,17 +173,9 @@ export const solidSignalsFramework: ReactiveFramework = {
     };
   },
   effect: (fn) =>
-    solidSignals.createRenderEffect(
-      () => {
-        fn();
-      },
-      () => {}
-    ),
-  withBatch: (fn) => {
-    fn();
-    solidSignals.flush();
-  },
-  withBuild: (fn) => solidSignals.createRoot(fn),
+    solidSignals.createRenderEffect(fn, ignore),
+  withBatch: commitBatch(solidSignals.flush),
+  withBuild: solidSignals.createRoot,
   createScope(fn) {
     let dispose!: () => void;
     const value = solidSignals.createRoot((stop) => {

@@ -7,8 +7,6 @@ import {
 } from "@volynets/reflex";
 import { ReactiveFramework } from "../util/reactiveFramework";
 
-const fn = (fn: any) => fn();
-
 createRuntime({ effectStrategy: "sab" });
 
 export const reflexFramework: ReactiveFramework = {
@@ -25,9 +23,7 @@ export const reflexFramework: ReactiveFramework = {
       read: computed(fn),
     };
   },
-  effect: effect,
-  withBatch: (fn) => {
-    batch(fn);
-  },
-  withBuild: fn,
+  effect,
+  withBatch: batch,
+  withBuild: (fn) => fn(),
 };

@@ -22,18 +22,20 @@ export const cellxFramework: ReactiveFramework = {
     const cell: Cell = computed(fn);
     return { read: () => cell.get() };
   },
-  effect: (fn) =>
-    autorun(() => {
-      fn();
-    }),
+  effect: autorun,
   withBatch: (fn) => {
+    // Cellx's native batch releases on every call, including nested ones.
+    if (depth > 0) {
+      fn();
+      return;
+    }
     depth++;
     try {
       batch(fn);
     } finally {
       depth--;
+      release();
     }
-    if (depth === 0) release();
   },
   withBuild: (fn) => fn(),
 };

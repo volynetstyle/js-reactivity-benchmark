@@ -1,31 +1,31 @@
 import { ReactiveFramework, Signal } from "../util/reactiveFramework";
 import $ from "mol_wire_lib";
+import { commitBatch } from "./commitBatch";
 
-const Atom = $.$mol_wire_atom; // fix a bug in mol exports
+// Return the native node itself. Shared prototype methods avoid an adapter
+// object and read/write closures for every source and computation.
+// Based on nin-jin's https://github.com/volynetstyle/js-reactivity-benchmark/pull/5.
+class Atom<T> extends $.$mol_wire_atom<null, [], T> {
+  read() {
+    return this.sync();
+  }
+
+  write(value: T) {
+    this.put(value);
+  }
+}
 
 export const molWireFramework: ReactiveFramework = {
   name: "$mol_wire",
-  signal: <T>(initialValue: T): Signal<T> => {
-    const atom = new Atom("", (next: T = initialValue) => next);
-    return {
-      write: (v: T) => atom.put(v),
-      read: () => atom.sync(),
-    };
-  },
-  computed: (fn) => {
-    const atom = new Atom("", fn);
-    return {
-      read: () => atom.sync(),
-    };
-  },
+  signal: <T>(initialValue: T): Signal<T> =>
+    new Atom("", (next: T = initialValue) => next),
+  computed: (fn) => new Atom("", fn),
   effect: (fn) => {
     const observer = new Atom("", fn);
     observer.sync();
     return () => observer.destructor();
   },
-  withBatch: (fn) => {
-    fn();
-    Atom.sync();
-  },
+  // Static sync uses its class as `this`.
+  withBatch: commitBatch(() => Atom.sync()),
   withBuild: (fn) => fn(),
 };

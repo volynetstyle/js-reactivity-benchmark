@@ -22,8 +22,8 @@ function makeComputation(
 ): Computed<number> {
   if (fanIn === 0) return framework.computed(() => constant);
   if (fanIn === 1) {
-    const read = sources[offset].read;
-    return framework.computed(() => read());
+    const source = sources[offset];
+    return framework.computed(() => source.read());
   }
   return framework.computed(() => {
     let sum = 0;

@@ -9,24 +9,22 @@ export const reatomFramework: ReactiveFramework = {
   signal: (initial) => {
     const node = atom(initial);
     return {
-      read: () => node(),
-      write: (value) => {
-        batch(() => node.set(value), true);
-      },
+      read: node,
+      // The harness commits through withBatch; wrapping every write in another
+      // batch adds a callback allocation without changing that commit.
+      write: node.set,
     };
   },
   computed: (fn) => {
     const node = computed(fn);
-    return { read: () => node() };
+    return { read: node };
   },
   effect: (fn) => {
     let instance!: { unsubscribe: () => void };
     batch(() => {
-      instance = effect(() => {
-        fn();
-      });
+      instance = effect(fn);
     }, true);
-    return () => instance.unsubscribe();
+    return instance.unsubscribe;
   },
   withBatch: (fn) => {
     batch(fn, true);

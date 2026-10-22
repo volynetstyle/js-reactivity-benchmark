@@ -21,12 +21,15 @@ export const rescriptSignalsFramework: ReactiveFramework = {
     return { read: () => Signal.get(node) };
   },
   effect: (fn) => {
+    // ReScript treats every non-undefined return as a cleanup function.
+    // Convert the harness's void callback to unit (even an ignored number
+    // returned by Array.push must not become a disposer).
     const handle = Effect.runWithDisposer(() => {
       fn();
       return undefined;
     });
-    return () => handle.dispose();
+    return handle.dispose;
   },
-  withBatch: (fn) => Signal.batch(fn),
+  withBatch: Signal.batch,
   withBuild: (fn) => fn(),
 };

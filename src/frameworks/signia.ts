@@ -17,6 +17,6 @@ export const signiaFramework: ReactiveFramework = {
     };
   },
   effect: (fn) => react("r", fn),
-  withBatch: (fn) => transact(fn),
+  withBatch: transact,
   withBuild: (fn) => fn(),
 };

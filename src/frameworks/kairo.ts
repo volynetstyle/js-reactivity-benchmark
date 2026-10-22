@@ -10,7 +10,7 @@ export const kairoFramework: ReactiveFramework = {
     const [get, write] = mutValue(initialValue);
     return {
       read: () => get.value,
-      write: (v) => write(v),
+      write,
     };
   },
   computed: (fn) => {
@@ -19,12 +19,14 @@ export const kairoFramework: ReactiveFramework = {
       read: () => c.value,
     };
   },
-  effect: (fn) => effect(fn),
-  withBatch: (fn) => batch(fn),
+  effect,
+  withBatch: batch,
   withBuild: (fn) => {
     const endCollectScope = collectScope();
-    let out = fn();
-    endCollectScope();
-    return out;
+    try {
+      return fn();
+    } finally {
+      endCollectScope();
+    }
   },
 };

@@ -16,12 +16,14 @@ export interface ReactiveFramework {
   benchmarkMetrics?: FrameworkBenchmarkMetrics;
 }
 
+/** Accessors are methods: callers must preserve the node receiver (`this`). */
 export interface Signal<T> {
   read(): T;
   write(v: T): void;
 }
 
 export interface Computed<T> {
+  /** Call on the node; implementations may use prototype methods and `this`. */
   read(): T;
 }
 

@@ -22,11 +22,11 @@ export const alienFramework: ReactiveFramework = {
       read: computed(fn),
     };
   },
-  effect: (fn) => {
-    return effect(() => {
+  // Native effects interpret a return value as cleanup; the harness ignores it.
+  effect: (fn) =>
+    effect(() => {
       fn();
-    });
-  },
+    }),
   withBatch: (fn) => {
     startBatch();
     try {

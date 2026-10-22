@@ -214,40 +214,56 @@ depend on its exact sequence, and `random@5.5` changed that sequence.
 
 ## Framework Adapters
 
-The repository contains adapters for:
+The default run contains 24 library/version rows. Library links point to the
+upstream projects; credits name their authors or authoring teams, with
+contributors acknowledged collectively. They describe the libraries, not the
+authors of these benchmark adapters.
 
-- Reflex
-- Alien Signals
-- Dalien Signals (alien-signals over an `Int32Array` arena)
-- [Reactive Engine](https://github.com/garage-13/reactive-engine) (synchronous graph core)
-- Anod (async-native, explicit dependency reads)
-- Reatom (`@reatom/core` 1001)
-- Maverick Signals
-- Cellx
-- ReScript Signals
-- Angular Signals
-- MobX
-- mol_wire
-- Oby
-- Preact Signals (`@preact/signals-core`)
-- Reactively
-- S.js
-- Signia
-- Solid 1.9 and Solid 2.0 RC
-- @solidjs/signals 0.13 and 2.0 RC
-- Svelte
-- TC39 Signals Proposal polyfill
-- Tansu
-- uSignal
-- Vue Reactivity 3.5 and 3.6 RC
-- Compostate
-- Valtio
-- Kairo
-- Lite Signal
+| Library / measured line                                                                | Author / team                                                                          | Adapter                                                 |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [Reflex](https://github.com/volynetstyle/Reflex)                                       | [Andrii Volynets](https://github.com/volynetstyle) and contributors                    | [reflex.ts](src/frameworks/reflex.ts)                   |
+| [Alien Signals](https://github.com/stackblitz/alien-signals)                           | [Johnson Chu](https://github.com/johnsoncodehk) and contributors                       | [alienSignals.ts](src/frameworks/alienSignals.ts)       |
+| [Reactive Engine](https://github.com/garage-13/reactive-engine)                        | [Den Pol](https://pravosleva.pro) and contributors                                     | [reactiveEngine.ts](src/frameworks/reactiveEngine.ts)   |
+| [Lite Signal](https://gitlab.com/zakkster/lite-signal)                                 | Zahary Shinikchiev (`zakkster`) and contributors                                       | [liteSignal.ts](src/frameworks/liteSignal.ts)           |
+| [@solidjs/signals 0.13](https://github.com/solidjs/signals)                            | [Ryan Carniato](https://github.com/ryansolid) and contributors                         | [solid-signals.ts](src/frameworks/solid-signals.ts)     |
+| [Preact Signals Core](https://github.com/preactjs/signals)                             | [Preact team](https://github.com/preactjs) and contributors                            | [preactSignals.ts](src/frameworks/preactSignals.ts)     |
+| [Reactively](https://github.com/milomg/reactively)                                     | [Milo M](https://github.com/milomg) and contributors                                   | [reactively.ts](src/frameworks/reactively.ts)           |
+| [S.js](https://github.com/adamhaile/S)                                                 | [Adam Haile](https://github.com/adamhaile) and contributors                            | [s.ts](src/frameworks/s.ts)                             |
+| [Tansu](https://github.com/AmadeusITGroup/tansu)                                       | [Amadeus IT Group](https://github.com/AmadeusITGroup) and contributors                 | [tansu.ts](src/frameworks/tansu.ts)                     |
+| [$mol_wire](https://github.com/hyoo-ru/mam_mol/tree/master/wire)                       | [nin-jin](https://github.com/nin-jin), HYOO team and contributors                      | [molWire.ts](src/frameworks/molWire.ts)                 |
+| [Oby](https://github.com/vobyjs/oby)                                                   | [Fabio Spampinato](https://github.com/fabiospampinato) and contributors                | [oby.ts](src/frameworks/oby.ts)                         |
+| [Signia](https://github.com/tldraw/signia)                                             | [tldraw](https://github.com/tldraw) and contributors                                   | [signia.ts](src/frameworks/signia.ts)                   |
+| [SolidJS 1.9](https://github.com/solidjs/solid)                                        | [Ryan Carniato](https://github.com/ryansolid) and contributors                         | [solid.ts](src/frameworks/solid.ts)                     |
+| [uSignal](https://github.com/WebReflection/usignal)                                    | [Andrea Giammarchi](https://github.com/WebReflection) and contributors                 | [uSignal.ts](src/frameworks/uSignal.ts)                 |
+| [Vue Reactivity 3.5](https://github.com/vuejs/core/tree/main/packages/reactivity)      | [Evan You](https://github.com/yyx990803) and Vue contributors                          | [vueReactivity.ts](src/frameworks/vueReactivity.ts)     |
+| [@solidjs/signals 2.0 RC](https://github.com/solidjs/solid/tree/main/packages/signals) | [Ryan Carniato](https://github.com/ryansolid) and contributors                         | [solidSignals2.ts](src/frameworks/solidSignals2.ts)     |
+| [SolidJS 2.0 RC](https://github.com/solidjs/solid)                                     | [Ryan Carniato](https://github.com/ryansolid) and contributors                         | [solidJs2.ts](src/frameworks/solidJs2.ts)               |
+| [Vue Reactivity 3.6 RC](https://github.com/vuejs/core/tree/main/packages/reactivity)   | [Evan You](https://github.com/yyx990803) and Vue contributors                          | [vueReactivity36.ts](src/frameworks/vueReactivity36.ts) |
+| [Dalien Signals](https://github.com/justjake/dalien-signals)                           | [Jake Teton-Landis](https://github.com/justjake); based on Johnson Chu's Alien Signals | [dalien.ts](src/frameworks/dalien.ts)                   |
+| [Anod](https://github.com/visj/anod)                                                   | [Vilhelm Sjölund](https://github.com/visj) and contributors                            | [anod.ts](src/frameworks/anod.ts)                       |
+| [Reatom 1001](https://github.com/reatom/reatom)                                        | [artalar](https://github.com/artalar) and contributors                                 | [reatom.ts](src/frameworks/reatom.ts)                   |
+| [Maverick Signals](https://github.com/maverick-js/signals)                             | [Rahim Alwer](https://github.com/mihar-22) and contributors                            | [maverick.ts](src/frameworks/maverick.ts)               |
+| [Cellx](https://github.com/Riim/cellx)                                                 | [Dmitry Vibe](https://github.com/Riim) and contributors                                | [cellx.ts](src/frameworks/cellx.ts)                     |
+| [ReScript Signals](https://github.com/brnrdog/rescript-signals)                        | [Bernardo Gurgel](https://github.com/brnrdog) and contributors                         | [rescriptSignals.ts](src/frameworks/rescriptSignals.ts) |
 
-The list of adapters enabled in the default run is defined in [src/config.ts](src/config.ts).
+Additional adapters remain in the repository, outside the default comparison:
 
-`Svelte`, `TC39 Signals Proposal polyfill`, and `Angular Signals` are currently disabled from the default benchmark set because it was too slow for the current suite, especially once the larger graph scenarios were added.
+| Library                                                                      | Author / team                                                                         | Adapter / current limitation                                                                                                                            |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Angular Signals](https://github.com/angular/angular)                        | Angular team at Google and contributors                                               | [angularSignals.ts](src/frameworks/angularSignals.ts); low-level Watch primitive, custom effect queue; disabled                                         |
+| [MobX](https://github.com/mobxjs/mobx)                                       | [Michel Weststrate](https://github.com/mweststrate) and contributors                  | [mobx.ts](src/frameworks/mobx.ts); known hangs on some dynamic/cellx workloads ([upstream issue](https://github.com/mobxjs/mobx/issues/3926))           |
+| [Svelte](https://github.com/sveltejs/svelte)                                 | [Rich Harris](https://github.com/Rich-Harris) and Svelte contributors                 | [svelte.ts](src/frameworks/svelte.ts); private compiler/runtime APIs; disabled                                                                          |
+| [TC39 Signals polyfill](https://github.com/proposal-signals/signal-polyfill) | [Rob Eisenberg](https://github.com/EisenbergEffect) and proposal-signals contributors | [tc39-proposal-signals-stage-0.ts](src/frameworks/tc39-proposal-signals-stage-0.ts); custom watcher queue; disabled                                     |
+| [Compostate](https://github.com/lxsmnsyc/compostate)                         | [Alexis Munsayac](https://github.com/lxsmnsyc) and contributors                       | [compostate.ts](src/frameworks/compostate.ts); incompatible adapter; disabled                                                                           |
+| [Valtio](https://github.com/pmndrs/valtio)                                   | [Daishi Kato](https://github.com/dai-shi) and contributors                            | [valtio.ts](src/frameworks/valtio.ts); known dynamic-workload hangs ([upstream discussion](https://github.com/pmndrs/valtio/discussions/949)); disabled |
+| [Kairo](https://github.com/3Shain/kairo)                                     | [3Shain](https://github.com/3Shain) and contributors                                  | [kairo.ts](src/frameworks/kairo.ts); incompatible adapter; disabled                                                                                     |
+
+The active list is defined in [src/config.ts](src/config.ts) and checked against
+[the isolated-worker catalog](src/frameworkCatalog.json). See the
+[adapter audit](docs/adapter-audit.md) for native API mappings, necessary
+wrappers, scheduling differences, and comparison limits. Disabling an adapter
+is not a current speed measurement; the seven inactive adapters are not covered
+by the active adapter contract tests.
 
 ## Artifacts
 

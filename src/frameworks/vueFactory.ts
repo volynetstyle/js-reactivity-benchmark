@@ -47,7 +47,7 @@ export function createVueReactivityFramework(
       };
     },
     effect: (fn) => {
-      const t = vue.effect(() => fn(), {
+      const t = vue.effect(fn, {
         scheduler: () => {
           scheduled.add(t.effect);
           flushEffects();

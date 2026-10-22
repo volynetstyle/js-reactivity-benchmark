@@ -33,6 +33,19 @@ making the measured operation comparable. Where semantics differ, the result is
 a profile of that adapter and policy, not a proof that one library universally
 dominates another.
 
+The [adapter audit](docs/adapter-audit.md) records the native mappings, retained
+wrappers and limitations for every integration. Native callable getters/setters
+are passed through directly where possible; property/receiver/context bridges
+remain measured. Explicit scheduler adapters commit only at the outermost
+`withBatch` boundary. Writes in measured update phases use that commit boundary;
+standalone writes need not drain a library's asynchronous effects.
+
+`read()` and `write()` are node methods, not necessarily bound callbacks.
+Workloads call `node.read()` / `node.write(value)` with the node receiver intact.
+Adapters may return native nodes with shared prototype methods, avoiding a
+separate object and accessor closures per node. In particular, `$mol_wire`
+uses the approach proposed by [nin-jin in PR #5](https://github.com/volynetstyle/js-reactivity-benchmark/pull/5).
+
 ## Semantics Matrix
 
 The `reactive-engine` adapter uses the public `ReactiveEngineCore` export from

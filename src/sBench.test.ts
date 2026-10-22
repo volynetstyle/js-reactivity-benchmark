@@ -9,6 +9,43 @@ vi.mock("./util/benchmark", () => ({ registerBenchmark: vi.fn() }));
 const register = vi.mocked(registerBenchmark);
 beforeEach(() => register.mockClear());
 
+test("computation workloads preserve receivers for prototype accessors", () => {
+  class Source<T> {
+    constructor(private value: T) {}
+    read() {
+      return this.value;
+    }
+    write(value: T) {
+      this.value = value;
+    }
+  }
+  class Derived<T> {
+    constructor(private compute: () => T) {}
+    read() {
+      return this.compute();
+    }
+  }
+  sbench(
+    {
+      name: "prototype methods",
+      signal: <T>(value: T) => new Source(value),
+      computed: <T>(fn: () => T) => new Derived(fn),
+      effect: () => {},
+      withBuild: (fn) => fn(),
+      withBatch: (fn) => {
+        fn();
+      },
+    },
+    2000
+  );
+  expect(register).toHaveBeenCalledTimes(17);
+  for (const [row] of register.mock.calls) {
+    const fixture = row.setup();
+    const result = row.benchmark(fixture);
+    row.validate!(result);
+  }
+});
+
 for (const { framework } of frameworkInfo) {
   test(`${framework.name} | all computation rows produce verified work`, () => {
     sbench(framework, 2000);

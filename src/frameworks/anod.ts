@@ -58,7 +58,7 @@ export const anodFramework: ReactiveFramework = {
     );
     return () => node.dispose();
   },
-  withBatch: (fn) => batch(fn),
+  withBatch: batch,
   withBuild: (fn) => fn(),
   createScope(fn) {
     let value!: ReturnType<typeof fn>;

@@ -1,5 +1,6 @@
 import { Reactive, stabilize } from "@reactively/core";
 import { ReactiveFramework } from "../util/reactiveFramework";
+import { commitBatch } from "./commitBatch";
 
 export const reactivelyFramework: ReactiveFramework = {
   name: "@reactively",
@@ -25,9 +26,6 @@ export const reactivelyFramework: ReactiveFramework = {
     // parent observers. Use that path to release benchmark consumers.
     return () => observer.set(undefined);
   },
-  withBatch: (fn) => {
-    fn();
-    stabilize();
-  },
+  withBatch: commitBatch(stabilize),
   withBuild: (fn) => fn(),
 };

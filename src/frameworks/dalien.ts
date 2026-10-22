@@ -23,6 +23,7 @@ export const dalienFramework: ReactiveFramework = {
     };
   },
   computed: (fn) => ({ read: computed(fn) }),
+  // Keep the same void-to-cleanup boundary as the alien-signals adapter.
   effect: (fn) =>
     effect(() => {
       fn();

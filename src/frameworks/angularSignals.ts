@@ -7,17 +7,17 @@ export const angularFramework: ReactiveFramework = {
   signal: (initialValue) => {
     const s = signal(initialValue);
     return {
-      write: (v) => s.set(v),
-      read: () => s(),
+      write: s.set,
+      read: s,
     };
   },
   computed: (fn) => {
     const c = computed(fn);
     return {
-      read: () => c(),
+      read: c,
     };
   },
-  effect: (fn) => effect(fn),
+  effect,
   withBatch: (fn) => {
     fn();
     flushEffects();

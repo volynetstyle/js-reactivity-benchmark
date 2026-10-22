@@ -1,5 +1,6 @@
 import { computed, effect, root, signal, tick } from "@maverick-js/signals";
 import { ReactiveFramework } from "../util/reactiveFramework";
+import { commitBatch } from "./commitBatch";
 
 // Lazy computeds, microtask-batched effects flushed synchronously by `tick()`
 // at each commit, and a native `root` with disposal.
@@ -8,22 +9,16 @@ export const maverickFramework: ReactiveFramework = {
   signal: (initial) => {
     const node = signal(initial);
     return {
-      read: () => node(),
-      write: (value) => node.set(value),
+      read: node,
+      write: node.set,
     };
   },
   computed: (fn) => {
     const node = computed(fn);
-    return { read: () => node() };
+    return { read: node };
   },
-  effect: (fn) =>
-    effect(() => {
-      fn();
-    }),
-  withBatch: (fn) => {
-    fn();
-    tick();
-  },
+  effect,
+  withBatch: commitBatch(tick),
   withBuild: (fn) => {
     const value = root(fn);
     tick();

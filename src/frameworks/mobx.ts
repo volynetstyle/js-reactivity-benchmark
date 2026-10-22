@@ -16,7 +16,7 @@ export const mobxFramework: ReactiveFramework = {
       read: () => read.get(),
     };
   },
-  effect: (fn) => autorun(fn),
-  withBatch: (fn) => runInAction(fn),
+  effect: autorun,
+  withBatch: runInAction,
   withBuild: (fn) => fn(),
 };
