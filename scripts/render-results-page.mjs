@@ -14,9 +14,25 @@ export function parseBenchOutput(text) {
 
   const rows = [];
   const seenPairs = new Set();
+  const meta = {};
+  const packages = {};
 
   for (const line of lines) {
-    if (line.startsWith("#")) continue;
+    if (line.startsWith("# package ")) {
+      const [framework, versions = ""] = line
+        .slice("# package ".length)
+        .split(" | ");
+      packages[framework.trim()] = versions.split(/\s+/).filter(Boolean);
+      continue;
+    }
+    if (line.startsWith("#")) {
+      for (const token of line.slice(1).trim().split(/\s+/)) {
+        const separator = token.indexOf("=");
+        if (separator > 0)
+          meta[token.slice(0, separator)] = token.slice(separator + 1);
+      }
+      continue;
+    }
     const parts = line.split(/\s*,\s*/);
     if (parts.length < 3) {
       continue;
@@ -49,7 +65,7 @@ export function parseBenchOutput(text) {
     const sampleMatch = metrics.match(/samples=(\d+)/);
     const samples = sampleMatch ? Number(sampleMatch[1]) : undefined;
     const interval = (key) => {
-      const prefix = `${key}_ci95=`;
+      const prefix = `${key}=`;
       const token = metrics
         .split(/\s+/)
         .find((token) => token.startsWith(prefix));
@@ -78,8 +94,11 @@ export function parseBenchOutput(text) {
       family: family || "baseline",
       capped: metrics.includes("SLOW/CAPPED"),
       samples,
-      p95Interval: interval("p95"),
-      p99Interval: interval("p99"),
+      // Uncertainty of the primary score: a 95% order-statistic interval
+      // for the median, or the range of round medians for multi-round runs.
+      interval: interval("median_ci95") ?? interval("round_range"),
+      p95Interval: interval("p95_ci95"),
+      p99Interval: interval("p99_ci95"),
     });
   }
 
@@ -116,6 +135,7 @@ export function parseBenchOutput(text) {
       family: row.family,
       capped: row.capped,
       samples: row.samples,
+      interval: row.interval,
       p95Interval: row.p95Interval,
       p99Interval: row.p99Interval,
     });
@@ -184,7 +204,26 @@ export function parseBenchOutput(text) {
     }))
     .sort((left, right) => left.relativeScore - right.relativeScore);
 
-  return { rows, tests, commonTests, frameworks };
+  return { rows, tests, commonTests, frameworks, meta, packages };
+}
+
+/**
+ * Two results are distinguishable only when their intervals are disjoint.
+ * Rows without an interval (too few samples, capped) are never called ties,
+ * but they also never make a win decisive.
+ */
+export function intervalsOverlap(left, right) {
+  if (!left?.interval || !right?.interval) return false;
+  return (
+    left.interval[0] <= right.interval[1] &&
+    right.interval[0] <= left.interval[1]
+  );
+}
+
+function decisive(left, right) {
+  if (!right) return true;
+  if (!left?.interval || !right?.interval) return false;
+  return left.interval[1] < right.interval[0];
 }
 
 function averageFinite(values) {
@@ -299,6 +338,7 @@ function renderPerTestComparison(frameworks, tests) {
 
       const fastest = ranked[0].time;
       const slowest = ranked[ranked.length - 1].time;
+      const leader = ranked[0].evidence;
 
       const rows = ranked
         .map((entry, index) => {
@@ -312,11 +352,17 @@ function renderPerTestComparison(frameworks, tests) {
               const interval = evidence[`${key}Interval`];
               return `${key} ${evidence[key].toFixed(6)} ms${interval ? ` (95% interval ${interval[0].toFixed(6)}..${interval[1].toFixed(6)} ms)` : ""}`;
             });
+          const median = evidence.interval
+            ? `median 95% interval ${evidence.interval[0].toFixed(6)}..${evidence.interval[1].toFixed(6)} ms`
+            : "no median interval (fewer than 6 samples or capped)";
           const title = escapeHtml(
-            `samples=${evidence.samples ?? "unknown"}; ${tails.join("; ") || "insufficient samples for tail estimates"}`
+            `samples=${evidence.samples ?? "unknown"}; ${median}; ${tails.join("; ") || "insufficient samples for tail estimates"}`
           );
+          const tie = index > 0 && intervalsOverlap(leader, evidence);
+          const delta =
+            index === 0 ? "best" : `+${relative.toFixed(1)}%${tie ? " ≈" : ""}`;
 
-          return `<div class="comparison-row" title="${title}" style="--row-delay:${testIndex * 45 + index * 35}ms"><div class="comparison-rank">${index + 1}</div><div class="comparison-name${index === 0 ? " comparison-name-winner" : ""}">${escapeHtml(entry.name)}</div><div class="comparison-bar"><div class="comparison-bar-fill" style="--target-width:${width.toFixed(2)}%"></div></div><div class="comparison-time">${formatTime(entry.time)} ms${entry.capped ? " · capped" : ""}</div><div class="comparison-delta">${index === 0 ? "best" : `+${relative.toFixed(1)}%`}</div></div>`;
+          return `<div class="comparison-row" title="${title}" style="--row-delay:${testIndex * 45 + index * 35}ms"><div class="comparison-rank">${index + 1}</div><div class="comparison-name${index === 0 ? " comparison-name-winner" : ""}">${escapeHtml(entry.name)}</div><div class="comparison-bar"><div class="comparison-bar-fill" style="--target-width:${width.toFixed(2)}%"></div></div><div class="comparison-time">${formatTime(entry.time)} ms${entry.capped ? " · capped" : ""}</div><div class="comparison-delta">${delta}</div></div>`;
         })
         .join("");
 
@@ -333,11 +379,17 @@ function countWins(frameworks, tests) {
       .map((framework) => ({
         name: framework.name,
         time: framework.byTest[test],
+        evidence: framework.entries.find((entry) => entry.test === test),
       }))
       .filter((entry) => typeof entry.time === "number")
       .sort((left, right) => left.time - right.time);
 
-    if (ranked.length > 0) {
+    // A win counts only when the leader's median interval lies entirely
+    // below the runner-up's; a statistical tie is nobody's win.
+    if (
+      ranked.length > 0 &&
+      decisive(ranked[0].evidence, ranked[1]?.evidence)
+    ) {
       wins.set(ranked[0].name, (wins.get(ranked[0].name) ?? 0) + 1);
     }
   }
@@ -372,7 +424,7 @@ function renderSpotlight(frameworks, tests) {
         <p class="spotlight-label">Best Geomean Profile</p>
         <h2>${escapeHtml(winner.name)}</h2>
         <div class="spotlight-metric">${winner.relativeScore.toFixed(2)}x<span> relative</span></div>
-        <p class="spotlight-copy">${wins.get(winner.name) ?? 0} test wins${runnerUp ? ` and ${lead.toFixed(1)}% ahead of ${escapeHtml(runnerUp.name)}` : ""}.</p>
+        <p class="spotlight-copy">${wins.get(winner.name) ?? 0} decisive test wins${runnerUp ? ` and ${lead.toFixed(1)}% ahead of ${escapeHtml(runnerUp.name)}` : ""}.</p>
       </aside>
     </section>
   `;
@@ -406,7 +458,7 @@ function renderStatCards(frameworks, tests, generatedAt, sourceLabel) {
           Array.from(wins.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ??
             winner.name
         )}</strong>
-        <p>${Array.from(wins.values()).sort((a, b) => b - a)[0] ?? 0} first-place finishes across individual tests.</p>
+        <p>${Array.from(wins.values()).sort((a, b) => b - a)[0] ?? 0} decisive first places: the leader's median interval lies below the runner-up's.</p>
       </article>
       <article class="stat-card">
         <span class="stat-label">Tail Snapshot</span>
@@ -437,7 +489,7 @@ function renderLeaderboardCards(frameworks, tests) {
           <h3>${escapeHtml(framework.name)}</h3>
           <div class="leader-time">${framework.relativeScore.toFixed(2)}x <span>geomean</span></div>
           <div class="leader-meta">
-            <span>${wins.get(framework.name) ?? 0} wins</span>
+            <span>${wins.get(framework.name) ?? 0} decisive wins</span>
             <span>${framework.entries.filter((entry) => entry.capped).length} capped</span>
           </div>
         </article>
@@ -536,10 +588,56 @@ function renderBenchmarkInterpretation(frameworks, tests) {
     <section class="card interpretation-card">
       <h2>How To Read This</h2>
       <div class="interpretation-copy">
-        <p>${escapeHtml(winner.name)} has the strongest relative profile in this run${runnerUp ? `, ${averageLead.toFixed(1)}% ahead of ${escapeHtml(runnerUp.name)} by geometric mean` : ""}. It also takes ${winnerWinCount} of ${tests.length} scenario wins${runnerUp ? `, while ${escapeHtml(runnerUp.name)} takes ${runnerUpWinCount}` : ""}.</p>
-        <p>Median is the primary row score. Capped rows use one sample; tail and variability metrics are available only when supplied by the source log.</p>
+        <p>${escapeHtml(winner.name)} has the strongest relative profile in this run${runnerUp ? `, ${averageLead.toFixed(1)}% ahead of ${escapeHtml(runnerUp.name)} by geometric mean` : ""}. It takes ${winnerWinCount} of ${tests.length} scenarios decisively${runnerUp ? `, while ${escapeHtml(runnerUp.name)} takes ${runnerUpWinCount}` : ""}.</p>
+        <p>Median is the primary row score; with several rounds it is the median of per-process medians. Each row carries a 95% interval for that median (hover a row). A ≈ mark means the interval overlaps the leader's, so the gap is not distinguishable from noise in this run; such scenarios count as nobody's win. Capped rows use one cold sample and have no interval.</p>
         <p>Interpret wins through the scenario taxonomy: creation, update, pull/push propagation, dynamic dependency churn, large graphs, lifecycle pressure, and memory behavior can favor different runtimes.</p>
       </div>
+    </section>
+  `;
+}
+
+function renderEnvironment({ meta = {}, packages = {} }) {
+  const keys = [
+    "semantics",
+    "profile",
+    "rounds",
+    "warmup",
+    "max_samples",
+    "min_time_ms",
+    "node",
+    "v8",
+    "platform",
+    "cpu",
+    "cores",
+    "gc",
+    "isolation",
+    "order",
+    "node_env",
+  ].filter((key) => meta[key] !== undefined);
+  const settings = keys
+    .map(
+      (key) =>
+        `<tr><td>${escapeHtml(key)}</td><td>${escapeHtml(meta[key].replaceAll("_", " "))}</td></tr>`
+    )
+    .join("");
+  const versions = Object.entries(packages)
+    .map(
+      ([framework, list]) =>
+        `<tr><td class="framework">${escapeHtml(framework)}</td><td>${list.map(escapeHtml).join("<br>")}</td></tr>`
+    )
+    .join("");
+  if (!settings && !versions) return "";
+  const warning =
+    meta.semantics && meta.semantics !== "v4"
+      ? `<p class="note">This log uses semantics ${escapeHtml(meta.semantics)}; do not compare it with v4 runs.</p>`
+      : "";
+  return `
+    <section class="card detail-only">
+      <h2>Run Environment</h2>
+      ${warning}
+      <table><tbody>${settings}</tbody></table>
+      ${versions ? `<h2>Measured Versions</h2><table><thead><tr><th>Framework</th><th>Bundled packages</th></tr></thead><tbody>${versions}</tbody></table>` : ""}
+      <p class="note">Libraries are bundled with process.env.NODE_ENV = "production" and run one framework/scenario pair per fresh process.</p>
     </section>
   `;
 }
@@ -1295,7 +1393,7 @@ export function renderResultsPage(parsed, options = {}) {
           </thead>
           <tbody>${renderRows(frameworks)}</tbody>
         </table>
-        <p class="note">Geometric mean of relative slowdown across ${tests.length} tests for ${frameworks.length} frameworks.</p>
+        <p class="note">Geometric mean of relative slowdown across the ${parsed.commonTests.length} scenarios shared by all ${frameworks.length} frameworks.</p>
       </article>
       <section class="leader-grid">
         ${renderLeaderboardCards(frameworks, tests)}
@@ -1317,6 +1415,7 @@ export function renderResultsPage(parsed, options = {}) {
   </section>
 
   ${renderBenchmarkInterpretation(frameworks, tests)}
+  ${renderEnvironment(parsed)}
 </main>
 <script>
   (() => {

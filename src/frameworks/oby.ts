@@ -16,10 +16,10 @@ export const obyFramework: ReactiveFramework = {
       read: () => memo(),
     };
   },
-  effect: (fn) => {
-    fn();
-    return $.effect(fn);
-  },
+  // Native synchronous first run; later runs use Oby's scheduler, flushed by
+  // `tick()` at the commit. Calling `fn()` up front would run every effect
+  // twice on installation (once untracked, once tracked).
+  effect: (fn) => $.effect(fn, { sync: "init" }),
   withBatch: (fn) => {
     fn();
     $.tick();

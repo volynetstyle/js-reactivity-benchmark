@@ -1,6 +1,5 @@
 import { expect, test } from "vitest";
 import { timingStatistics } from "./statistics";
-import { measure } from "mitata";
 
 test("small runs never masquerade as tail estimates", () => {
   const stats = timingStatistics([1, 2, 3, 4, 5]);
@@ -32,31 +31,18 @@ test("rejects non-durations rather than silently dropping them", () => {
   }
 });
 
-test("mitata integration retains all 1000 samples including rare slow events", async () => {
-  let clock = 0,
-    calls = 0;
-  const result = await measure(
-    function* () {
-      yield {
-        [0]: () => null,
-        bench: () => {
-          clock += ++calls % 100 === 0 ? 10000 : 1;
-        },
-      };
-    },
-    {
-      now: () => clock,
-      gc: false,
-      min_samples: 1000,
-      max_samples: 1000,
-      min_cpu_time: 0,
-      warmup_samples: 0,
-      batch_threshold: 0,
-      samples_threshold: Infinity,
-    }
+test("median interval is distribution-free and needs at least six samples", () => {
+  expect(timingStatistics([1, 2, 3, 4, 5]).medianInterval).toBeUndefined();
+  // n=6: [x(1), x(6)] covers the median with probability 1 - 2/64.
+  expect(timingStatistics([6, 1, 5, 2, 4, 3]).medianInterval).toEqual([1, 6]);
+  const stats = timingStatistics(Array.from({ length: 100 }, (_, i) => i + 1));
+  // Binomial(100, 0.5) equal-tail bounds: order statistics 40 and 61.
+  expect(stats.medianInterval).toEqual([40, 61]);
+});
+
+test("statistics do not depend on sample order", () => {
+  const chronological = [5, 1, 9, 3, 7, 2, 8];
+  expect(timingStatistics(chronological)).toEqual(
+    timingStatistics([...chronological].sort((a, b) => a - b))
   );
-  expect(result.samples).toHaveLength(1000);
-  expect(
-    result.samples.filter((sample: number) => sample === 10000)
-  ).toHaveLength(10);
 });

@@ -5,7 +5,7 @@ reporting improvements are welcome.
 
 ## Local Setup
 
-Use a current Node.js LTS release and pnpm 9, then run:
+Use the Node.js version in `.nvmrc` and pnpm 10, then run:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -38,7 +38,7 @@ produced. Avoid drawing conclusions from runs with different configurations.
 
 Describe the problem, the resulting behavior, and how you validated the change.
 Run `pnpm test` and `pnpm build` for code changes. For report generator changes,
-also run `node --test scripts/render-results-page.test.mjs`.
+the same `pnpm test` run covers `scripts/render-results-page.test.mjs`.
 
 Preserve existing attribution and third-party notices. Contributions are provided
 under the repository's [MIT License](LICENSE).

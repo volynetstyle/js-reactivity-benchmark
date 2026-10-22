@@ -14,6 +14,13 @@
     "pullCounts": true
   },
   {
+    "id": "reactive-engine",
+    "name": "reactive-engine",
+    "module": "reactiveEngine",
+    "export": "reactiveEngineFramework",
+    "pullCounts": true
+  },
+  {
     "id": "lite",
     "name": "lite-signal",
     "module": "liteSignal",

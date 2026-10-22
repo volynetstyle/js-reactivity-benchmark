@@ -22,6 +22,11 @@ on:
         type: choice
         options: [quick, tails]
         default: quick
+      rounds:
+        description: "Fresh-process repetitions per row; >1 reports the median of round medians and their range"
+        required: false
+        type: string
+        default: "1"
 
 permissions:
   contents: write
@@ -37,21 +42,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
-          version: 9
+          version: 10
           run_install: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: lts/*
+          # Pinned: lts/* would silently change the runtime between runs.
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install dependencies
@@ -61,6 +67,7 @@ jobs:
         env:
           BENCH_FRAMEWORK: ${{ github.event.inputs.framework }}
           BENCH_PROFILE: ${{ github.event.inputs.profile || 'quick' }}
+          BENCH_ROUNDS: ${{ github.event.inputs.rounds || '1' }}
           BENCH_ASSERT_NO_CONSOLE: "1"
           BENCH_SOURCE_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: pnpm bench
@@ -92,7 +99,8 @@ jobs:
             "generatedAtUtc": "${timestamp}",
             "logPath": "${archive_log}",
             "samplesPath": "${archive_samples}",
-            "profile": "${{ github.event.inputs.profile || 'quick' }}"
+            "profile": "${{ github.event.inputs.profile || 'quick' }}",
+            "rounds": "${{ github.event.inputs.rounds || '1' }}"
           }
           EOF
 
@@ -105,7 +113,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Upload benchmark artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: benchmark-${{ steps.archive.outputs.timestamp }}-${{ steps.archive.outputs.short_sha }}
           path: |
@@ -129,9 +137,17 @@ jobs:
             echo "current=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # The tested SHA was checked out detached; it is still the branch head,
+      # so attach the branch there before committing (required by v6+).
+      - name: Attach the branch at the tested commit
+        if: steps.publication.outputs.current == 'true'
+        env:
+          TARGET_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+        run: git checkout -B "$TARGET_BRANCH"
+
       - name: Commit benchmark results
         if: steps.publication.outputs.current == 'true'
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "chore: update benchmark results [skip ci]"
           file_pattern: bench-results index.html

@@ -14,10 +14,10 @@ createRuntime({ effectStrategy: "sab" });
 export const reflexFramework: ReactiveFramework = {
   name: "reflex",
   signal: (initial) => {
-    const [read, write] = signal(initial);
+    const data = signal(initial);
     return {
-      read,
-      write,
+      read: data,
+      write: data.set,
     };
   },
   computed: (fn) => {

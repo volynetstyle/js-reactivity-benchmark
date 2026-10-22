@@ -162,6 +162,7 @@ export function fanBench(framework: ReactiveFramework): void {
       teardown: (fixture) => fixture.dispose(),
       gc: "inner",
       blackhole: true,
-      samples: 3,
+      // Six samples are the minimum for a 95% order-statistic median interval.
+      samples: 6,
     });
 }

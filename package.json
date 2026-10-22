@@ -11,7 +11,13 @@
     "bench:smoke": "node scripts/benchmark-smoke.mjs",
     "results:page": "node scripts/render-results-page.mjs"
   },
-  "keywords": ["benchmark", "reactivity", "signals", "javascript", "performance"],
+  "keywords": [
+    "benchmark",
+    "reactivity",
+    "signals",
+    "javascript",
+    "performance"
+  ],
   "author": "Andrii Volynets (https://github.com/volynetstyle)",
   "repository": {
     "type": "git",
@@ -23,38 +29,37 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@amadeus-it-group/tansu": "^2.0.0",
-    "@angular/core": "22.0.4",
-    "@preact/signals": "^2.0.0",
-    "@reactively/core": "^0.0.8",
-    "@solidjs/signals": "^0.13.11",
-    "@volynets/reflex": "^1.0.0",
-    "@vue/reactivity": "^3.5.13",
-    "@zakkster/lite-signal": "1.3.0",
+    "@amadeus-it-group/tansu": "2.0.0",
+    "@angular/core": "22.2.3",
+    "@pravosleva/reactive-engine": "2.6.0-beta.2",
+    "@preact/signals-core": "1.14.4",
+    "@reactively/core": "0.0.8",
+    "@solidjs/signals": "0.13.13",
+    "@volynets/reflex": "3.0.1",
+    "@vue/reactivity": "3.5.44",
+    "@zakkster/lite-signal": "1.5.2",
     "alien-signals": "3.2.1",
-    "compostate": "0.6.0-alpha.1",
+    "compostate": "1.0.0",
     "kairo": "0.6.0-rc.0",
-    "lite-signals": "^1.0.4",
-    "mitata": "1.0.34",
-    "mobx": "^6.13.5",
-    "mol_wire_lib": "^1.0.1259",
+    "mobx": "7.1.0",
+    "mol_wire_lib": "1.0.1820",
     "oby": "15.1.2",
-    "preact": "^10.25.4",
-    "random": "^5.1.1",
-    "react": "^19.0.0",
-    "s-js": "^0.4.9",
-    "signal-polyfill": "^0.2.1",
-    "signia": "^0.1.5",
-    "solid-js": "^1.9.4",
-    "svelte": "5.56.4",
-    "usignal": "^0.10.0",
-    "valtio": "^2.1.2"
+    "s-js": "0.4.9",
+    "signal-polyfill": "0.2.2",
+    "signia": "0.1.5",
+    "solid-js": "1.9.17",
+    "svelte": "5.57.2",
+    "usignal": "0.10.0",
+    "valtio": "2.3.2"
   },
   "devDependencies": {
-    "@types/node": "^26.1.0",
-    "esbuild": "^0.28.1",
-    "prettier": "^3.4.2",
-    "vite": "^8.1.2",
-    "vitest": "^4.1.4"
+    "@types/node": "26.6.5",
+    "esbuild": "0.28.2",
+    "prettier": "3.9.10",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

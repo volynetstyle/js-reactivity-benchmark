@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { parseBenchOutput } from "./render-results-page.mjs";
+import {
+  intervalsOverlap,
+  parseBenchOutput,
+  renderResultsPage,
+} from "./render-results-page.mjs";
 
 describe("benchmark result quality", () => {
   test("reads capped status from the compact mitata format", () => {
@@ -55,4 +59,39 @@ test("tail evidence is retained and insufficient claims are rejected", () => {
       "a , common , 1 , 2 , 3 , 0.1 , update , stable , samples=5"
     )
   ).toThrow("Insufficient samples");
+});
+
+test("run metadata and measured package versions are parsed from the header", () => {
+  const parsed = parseBenchOutput(
+    [
+      "# semantics=v4 profile=quick rounds=1 node=v24.0.0 node_env=production",
+      "# package Preact Signals | @preact/signals-core@1.14.4",
+      "a , common , 1 , , , , update , stable , samples=10",
+    ].join("\n")
+  );
+  expect(parsed.meta).toMatchObject({
+    semantics: "v4",
+    node_env: "production",
+  });
+  expect(parsed.packages).toEqual({
+    "Preact Signals": ["@preact/signals-core@1.14.4"],
+  });
+  expect(renderResultsPage(parsed)).toContain("@preact/signals-core@1.14.4");
+});
+
+test("overlapping median intervals are ties, not wins", () => {
+  const log = (bInterval) =>
+    [
+      "a , t , 1.00 , , , , update , stable , samples=10 median_ci95=0.9..1.1",
+      `b , t , 1.05 , , , , update , stable , samples=10 median_ci95=${bInterval}`,
+    ].join("\n");
+  const tied = parseBenchOutput(log("1.0..1.2"));
+  expect(intervalsOverlap(tied.rows[0], tied.rows[1])).toBe(true);
+  const tiedPage = renderResultsPage(tied);
+  expect(tiedPage).toContain("+5.0% ≈");
+  expect(tiedPage).toContain("0 decisive test wins");
+
+  const clear = parseBenchOutput(log("1.2..1.3"));
+  expect(intervalsOverlap(clear.rows[0], clear.rows[1])).toBe(false);
+  expect(renderResultsPage(clear)).toContain("1 decisive test wins");
 });

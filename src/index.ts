@@ -30,8 +30,6 @@ function getSelectedFrameworks() {
 }
 
 async function main() {
-  (globalThis as any).__DEV__ = true;
-
   const benchOnlyRaw = process.env.BENCH_ONLY?.trim().toLowerCase();
   const benchOnly = benchOnlyRaw?.replace(/\s+/g, "");
   const runCompareDeep =

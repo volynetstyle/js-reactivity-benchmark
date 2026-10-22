@@ -107,7 +107,8 @@ export function dynamicBench(frameworkInfo: FrameworkInfo): void {
         perfRowStrings(framework.name, config, timeMs, result),
       gc: "inner",
       blackhole: true,
-      samples: 3,
+      // Six samples are the minimum for a 95% order-statistic median interval.
+      samples: 6,
     });
   }
 }

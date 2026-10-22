@@ -17,8 +17,10 @@ export const reactivelyFramework: ReactiveFramework = {
     };
   },
   effect: (fn) => {
-    fn();
     const observer = new Reactive(fn, true);
+    // Evaluate once, tracked, instead of an untracked `fn()` followed by a
+    // second queued run; `stabilize()` then skips the clean effect.
+    observer.get();
     // Public set(value) converts a computation into a value and detaches its
     // parent observers. Use that path to release benchmark consumers.
     return () => observer.set(undefined);

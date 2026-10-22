@@ -1,4 +1,4 @@
-import { Random } from "random";
+import { SeededRandom } from "./seededRandom";
 import { TestConfig } from "./frameworkTypes";
 
 /**
@@ -32,7 +32,7 @@ export function expectedGraphSum(config: TestConfig): number {
     previous[index] = tick + index;
   }
 
-  const random = new Random("seed");
+  const random = new SeededRandom("seed");
   const layers = graphKind === "rect" ? totalLayers - 1 : totalLayers;
   for (let layer = 0; layer < layers; layer++) {
     const size = graphKind === "rect" ? previous.length : width;
@@ -80,7 +80,7 @@ export function expectedGraphSum(config: TestConfig): number {
     previous = next;
   }
 
-  const selectionRandom = new Random("seed");
+  const selectionRandom = new SeededRandom("seed");
   const skip = Math.round(previous.length * (1 - readFraction));
   for (let i = 0; i < skip; i++) {
     previous.splice(selectionRandom.int(0, previous.length - 1), 1);

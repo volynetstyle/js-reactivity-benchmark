@@ -1,6 +1,6 @@
 import { TestConfig } from "./frameworkTypes";
 import { Computed, ReactiveFramework, Signal } from "./reactiveFramework";
-import { Random } from "random";
+import { SeededRandom } from "./seededRandom";
 import { fixtureScope } from "./fixtureScope";
 
 export interface Graph {
@@ -109,7 +109,7 @@ export function runGraph(
     const readLeaves = removeElems(
       leaves,
       Math.round(leaves.length * (1 - readFraction)),
-      new Random("seed")
+      new SeededRandom("seed")
     );
     const write = (iteration: number, update: number) => {
       const tick = startTick + iteration * updatesPerIteration + update;
@@ -161,7 +161,7 @@ export function runGraph(
   });
 }
 
-function removeElems<T>(src: T[], rmCount: number, rand: Random): T[] {
+function removeElems<T>(src: T[], rmCount: number, rand: SeededRandom): T[] {
   const copy = src.slice();
   for (let i = 0; i < rmCount; i++) {
     const rmDex = rand.int(0, copy.length - 1);
@@ -202,7 +202,7 @@ function makeDependentRows(
   framework: ReactiveFramework
 ): Computed<number>[][] {
   let prevRow = sources;
-  const rand = new Random("seed");
+  const rand = new SeededRandom("seed");
   const rows = [];
   for (let l = 0; l < numRows; l++) {
     const row = makeRow(
@@ -231,7 +231,7 @@ function makeLayeredRows(
   graphKind: "layered-dag" | "diamond-mesh"
 ): Computed<number>[][] {
   let prevRow = initialSources;
-  const rand = new Random("seed");
+  const rand = new SeededRandom("seed");
   const rows = [];
 
   for (let layer = 0; layer < numRows; layer++) {
@@ -264,7 +264,7 @@ function makeRow(
   nSources: number,
   framework: ReactiveFramework,
   _layer: number,
-  random: Random
+  random: SeededRandom
 ): Computed<number>[] {
   return sources.map((_, myDex) => {
     const mySources = pickRectSources(sources, myDex, nSources);
@@ -309,7 +309,7 @@ function makeLayeredNode(
   fanIn: number,
   framework: ReactiveFramework,
   graphKind: "layered-dag" | "diamond-mesh",
-  random: Random
+  random: SeededRandom
 ): Computed<number> {
   const mySources =
     graphKind === "diamond-mesh"

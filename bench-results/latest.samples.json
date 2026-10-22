@@ -1,0 +1,2529 @@
+{
+  "semantics": "v3",
+  "profile": "quick",
+  "node": "v25.2.0",
+  "v8": "14.1.146.11-node.13",
+  "gc": true,
+  "isolation": "row",
+  "rows": [
+    {
+      "id": "reflex :: avoidablePropagation",
+      "framework": "reflex",
+      "name": "avoidablePropagation",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 1.5383000000000067,
+      "samplesMs": [
+        0.3171999999999851,
+        0.3537,
+        0.3623,
+        0.396,
+        1.1557
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.3171999999999851,
+        "median": 0.3623,
+        "mean": 0.516979999999997,
+        "max": 1.1557,
+        "cv": 0.692781528196512
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: broadPropagation",
+      "framework": "reflex",
+      "name": "broadPropagation",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 0.7530000000000001,
+      "samplesMs": [
+        0.3728,
+        0.4045,
+        0.5658,
+        0.5758,
+        0.9183
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.3728,
+        "median": 0.5658,
+        "mean": 0.56744,
+        "max": 0.9183,
+        "cv": 0.3816607164735078
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: deepPropagation",
+      "framework": "reflex",
+      "name": "deepPropagation",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 0.47639999999999816,
+      "samplesMs": [
+        0.1688,
+        0.2257,
+        0.259,
+        0.3102,
+        0.529
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.1688,
+        "median": 0.259,
+        "mean": 0.29854,
+        "max": 0.529,
+        "cv": 0.4645899880052765
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: diamond",
+      "framework": "reflex",
+      "name": "diamond",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 1.2198000000000064,
+      "samplesMs": [
+        0.2689,
+        0.2759,
+        0.3317,
+        0.6533,
+        0.7453
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.2689,
+        "median": 0.3317,
+        "mean": 0.4550199999999999,
+        "max": 0.7453,
+        "cv": 0.4981451192384053
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: mux",
+      "framework": "reflex",
+      "name": "mux",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 1.089500000000001,
+      "samplesMs": [
+        0.4014,
+        0.4127,
+        0.5138,
+        0.6779,
+        0.8598
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.4014,
+        "median": 0.5138,
+        "mean": 0.57312,
+        "max": 0.8598,
+        "cv": 0.3400252304970274
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: repeatedObservers",
+      "framework": "reflex",
+      "name": "repeatedObservers",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 0.39339999999999975,
+      "samplesMs": [
+        0.0596,
+        0.0628,
+        0.075,
+        0.1424,
+        0.7116
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.0596,
+        "median": 0.075,
+        "mean": 0.21028000000000002,
+        "max": 0.7116,
+        "cv": 1.3423099150144782
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: triangle",
+      "framework": "reflex",
+      "name": "triangle",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 0.5527000000000015,
+      "samplesMs": [
+        0.1203,
+        0.1545,
+        0.2211,
+        0.3462,
+        0.4515
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.1203,
+        "median": 0.2211,
+        "mean": 0.25872,
+        "max": 0.4515,
+        "cv": 0.5336683578896142
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: unstable",
+      "framework": "reflex",
+      "name": "unstable",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 0.7424999999999926,
+      "samplesMs": [
+        0.1435000000000149,
+        0.174,
+        0.2425,
+        0.3584,
+        0.4705
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.1435000000000149,
+        "median": 0.2425,
+        "mean": 0.27778000000000297,
+        "max": 0.4705,
+        "cv": 0.4886112815408085
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: manyEffectsFromOneSource",
+      "framework": "reflex",
+      "name": "manyEffectsFromOneSource",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 168.2964,
+      "samplesMs": [
+        166.2872,
+        184.599,
+        203.2384
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 166.2872,
+        "median": 184.599,
+        "mean": 184.70820000000003,
+        "max": 203.2384,
+        "cv": 0.1000271890111795
+      },
+      "validation": "passed",
+      "group": "push",
+      "family": "fan",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: manySourcesIntoOneComputedEffectWithDirect",
+      "framework": "reflex",
+      "name": "manySourcesIntoOneComputedEffectWithDirect",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 63.60330000000002,
+      "samplesMs": [
+        57.1442,
+        64.5529,
+        67.47600000000003
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 57.1442,
+        "median": 64.5529,
+        "mean": 63.05770000000001,
+        "max": 67.47600000000003,
+        "cv": 0.08445780584963779
+      },
+      "validation": "passed",
+      "group": "push",
+      "family": "fan",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: manySourcesIntoOneComputedEffect",
+      "framework": "reflex",
+      "name": "manySourcesIntoOneComputedEffect",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 58.88990000000001,
+      "samplesMs": [
+        57.1193,
+        59.4745,
+        69.0693
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 57.1193,
+        "median": 59.4745,
+        "mean": 61.887699999999995,
+        "max": 69.0693,
+        "cv": 0.10228123981715133
+      },
+      "validation": "passed",
+      "group": "push",
+      "family": "fan",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: manySourcesIntoOneDirectEffect",
+      "framework": "reflex",
+      "name": "manySourcesIntoOneDirectEffect",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 17.2187,
+      "samplesMs": [
+        10.544,
+        12.9351,
+        13.5124
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 10.544,
+        "median": 12.9351,
+        "mean": 12.3305,
+        "max": 13.5124,
+        "cv": 0.12763882536033708
+      },
+      "validation": "passed",
+      "group": "push",
+      "family": "fan",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: molBench",
+      "framework": "reflex",
+      "name": "molBench",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 0.33149999999999835,
+      "samplesMs": [
+        0.0697,
+        0.0938,
+        0.1006,
+        0.1122,
+        0.1228
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.0697,
+        "median": 0.1006,
+        "mean": 0.09981999999999999,
+        "max": 0.1228,
+        "cv": 0.20194524664923272
+      },
+      "validation": "passed",
+      "group": "dynamic",
+      "family": "object publication",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: mutable-object/immutable replacement",
+      "framework": "reflex",
+      "name": "mutable-object/immutable replacement",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 6.961100000000009,
+      "samplesMs": [
+        0.5725,
+        0.6728,
+        1.0963,
+        1.424,
+        1.6187
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.5725,
+        "median": 1.0963,
+        "mean": 1.07686,
+        "max": 1.6187,
+        "cv": 0.4235486112828015
+      },
+      "validation": "passed",
+      "group": "dynamic",
+      "family": "object publication",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: mutable-object/in-place versioned",
+      "framework": "reflex",
+      "name": "mutable-object/in-place versioned",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 6.487899999999996,
+      "samplesMs": [
+        0.8661,
+        0.886,
+        1.2422,
+        1.4784,
+        1.5558
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.8661,
+        "median": 1.2422,
+        "mean": 1.2056999999999998,
+        "max": 1.5558,
+        "cv": 0.2674083537914661
+      },
+      "validation": "passed",
+      "group": "dynamic",
+      "family": "object publication",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: createDataSignals",
+      "framework": "reflex",
+      "name": "createDataSignals",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 40.7117,
+      "samplesMs": [
+        7.4182,
+        8.4141,
+        10.4688,
+        13.0867,
+        17.105
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 7.4182,
+        "median": 10.4688,
+        "mean": 11.29856,
+        "max": 17.105,
+        "cv": 0.3455679672381042
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: createComputations0to1",
+      "framework": "reflex",
+      "name": "createComputations0to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 42.252700000000004,
+      "samplesMs": [
+        7.5236,
+        9.4444,
+        9.8904,
+        12.1853,
+        14.2581
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 7.5236,
+        "median": 9.8904,
+        "mean": 10.66036,
+        "max": 14.2581,
+        "cv": 0.24452403040896914
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: createComputations1to1",
+      "framework": "reflex",
+      "name": "createComputations1to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 36.934799999999996,
+      "samplesMs": [
+        14.4152,
+        17.7459,
+        17.8475,
+        19.0491,
+        27.1189
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 14.4152,
+        "median": 17.8475,
+        "mean": 19.235319999999998,
+        "max": 27.1189,
+        "cv": 0.2460005509453554
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: createComputations2to1",
+      "framework": "reflex",
+      "name": "createComputations2to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 34.787400000000005,
+      "samplesMs": [
+        12.0583,
+        13.7047,
+        17.1338,
+        18.7107,
+        18.9755
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 12.0583,
+        "median": 17.1338,
+        "mean": 16.1166,
+        "max": 18.9755,
+        "cv": 0.19180813885199038
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: createComputations4to1",
+      "framework": "reflex",
+      "name": "createComputations4to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 27.59620000000001,
+      "samplesMs": [
+        9.0398,
+        9.3445,
+        9.3681,
+        10.4153,
+        13.2656
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 9.0398,
+        "median": 9.3681,
+        "mean": 10.286660000000001,
+        "max": 13.2656,
+        "cv": 0.1696135690069846
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: createComputations1000to1",
+      "framework": "reflex",
+      "name": "createComputations1000to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 6.5257000000000005,
+      "samplesMs": [
+        7.3194,
+        7.813,
+        8.2558,
+        8.4472,
+        10.7164
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 7.3194,
+        "median": 8.2558,
+        "mean": 8.51036,
+        "max": 10.7164,
+        "cv": 0.15365732600695386
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: createComputations1to2",
+      "framework": "reflex",
+      "name": "createComputations1to2",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 28.508799999999994,
+      "samplesMs": [
+        13.2224,
+        14.9137,
+        15.7523,
+        17.3465,
+        18.907
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 13.2224,
+        "median": 15.7523,
+        "mean": 16.02838,
+        "max": 18.907,
+        "cv": 0.13674565994028814
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: createComputations1to4",
+      "framework": "reflex",
+      "name": "createComputations1to4",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 46.155,
+      "samplesMs": [
+        11.8086,
+        12.3736,
+        14.516,
+        15.7968,
+        26.8629
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 11.8086,
+        "median": 14.516,
+        "mean": 16.27158,
+        "max": 26.8629,
+        "cv": 0.3770916891759742
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: createComputations1to8",
+      "framework": "reflex",
+      "name": "createComputations1to8",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 56.0265,
+      "samplesMs": [
+        13.3789,
+        13.7989,
+        15.2947,
+        15.4819,
+        24.2864
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 13.3789,
+        "median": 15.2947,
+        "mean": 16.448159999999998,
+        "max": 24.2864,
+        "cv": 0.2721323995441785
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: createComputations1to1000",
+      "framework": "reflex",
+      "name": "createComputations1to1000",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 54.09080000000001,
+      "samplesMs": [
+        9.9007,
+        11.28,
+        14.4796,
+        19.23559999999994,
+        20.6165
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 9.9007,
+        "median": 14.4796,
+        "mean": 15.10247999999999,
+        "max": 20.6165,
+        "cv": 0.31328692737779723
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: updateComputations1to1",
+      "framework": "reflex",
+      "name": "updateComputations1to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 20.697899999999997,
+      "samplesMs": [
+        13.9969,
+        14.1385,
+        14.6326,
+        14.694,
+        14.8783
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 13.9969,
+        "median": 14.6326,
+        "mean": 14.46806,
+        "max": 14.8783,
+        "cv": 0.02625157694622374
+      },
+      "validation": "passed",
+      "group": "update",
+      "family": "write and pull",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: updateComputations2to1",
+      "framework": "reflex",
+      "name": "updateComputations2to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 17.0276,
+      "samplesMs": [
+        9.174100000000015,
+        9.296,
+        9.5201,
+        9.6601,
+        9.7564
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 9.174100000000015,
+        "median": 9.5201,
+        "mean": 9.481340000000003,
+        "max": 9.7564,
+        "cv": 0.025719561393571153
+      },
+      "validation": "passed",
+      "group": "update",
+      "family": "write and pull",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: updateComputations4to1",
+      "framework": "reflex",
+      "name": "updateComputations4to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 13.133400000000002,
+      "samplesMs": [
+        6.4686,
+        6.6488,
+        6.6549,
+        6.7063,
+        7.219599999999985
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 6.4686,
+        "median": 6.6549,
+        "mean": 6.739639999999997,
+        "max": 7.219599999999985,
+        "cv": 0.041991199918177416
+      },
+      "validation": "passed",
+      "group": "update",
+      "family": "write and pull",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: updateComputations1000to1",
+      "framework": "reflex",
+      "name": "updateComputations1000to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 8.645399999999995,
+      "samplesMs": [
+        7.6238,
+        7.6489,
+        7.6873,
+        7.7288,
+        7.8759
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 7.6238,
+        "median": 7.6873,
+        "mean": 7.712940000000001,
+        "max": 7.8759,
+        "cv": 0.012885889537347315
+      },
+      "validation": "passed",
+      "group": "update",
+      "family": "write and pull",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: updateComputations1to2",
+      "framework": "reflex",
+      "name": "updateComputations1to2",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 17.667399999999994,
+      "samplesMs": [
+        11.5608,
+        12.043,
+        12.3044,
+        12.409999999999986,
+        12.595
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 11.5608,
+        "median": 12.3044,
+        "mean": 12.182639999999997,
+        "max": 12.595,
+        "cv": 0.03290389590421276
+      },
+      "validation": "passed",
+      "group": "update",
+      "family": "write and pull",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: updateComputations1to4",
+      "framework": "reflex",
+      "name": "updateComputations1to4",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 16.51359999999999,
+      "samplesMs": [
+        9.5212,
+        9.7279,
+        9.8312,
+        9.909699999999985,
+        9.9728
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 9.5212,
+        "median": 9.8312,
+        "mean": 9.792559999999998,
+        "max": 9.9728,
+        "cv": 0.018089541128966016
+      },
+      "validation": "passed",
+      "group": "update",
+      "family": "write and pull",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: updateComputations1to1000",
+      "framework": "reflex",
+      "name": "updateComputations1to1000",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 19.969699999999996,
+      "samplesMs": [
+        8.4202,
+        8.6812,
+        8.8683,
+        9.1418,
+        9.9487
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 8.4202,
+        "median": 8.8683,
+        "mean": 9.012039999999999,
+        "max": 9.9487,
+        "cv": 0.06504723226576853
+      },
+      "validation": "passed",
+      "group": "update",
+      "family": "write and pull",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: dynamic/dashboard selective reads",
+      "framework": "reflex",
+      "name": "dynamic/dashboard selective reads",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 249.39649999999997,
+      "samplesMs": [
+        222.6995,
+        230.8325,
+        234.4396
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 222.6995,
+        "median": 230.8325,
+        "mean": 229.3238666666667,
+        "max": 234.4396,
+        "cv": 0.02622356812625849
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: dynamic/editor derived state",
+      "framework": "reflex",
+      "name": "dynamic/editor derived state",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 371.9397,
+      "samplesMs": [
+        358.7171,
+        362.4859,
+        388.2781
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 358.7171,
+        "median": 362.4859,
+        "mean": 369.8270333333333,
+        "max": 388.2781,
+        "cv": 0.04350634256745544
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: dynamic/kanban board",
+      "framework": "reflex",
+      "name": "dynamic/kanban board",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 279.5539,
+      "samplesMs": [
+        188.6311999999999,
+        206.33779999999987,
+        207.8906
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 188.6311999999999,
+        "median": 206.33779999999987,
+        "mean": 200.95319999999992,
+        "max": 207.8906,
+        "cv": 0.0532431030822856
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: dynamic/entity detail page",
+      "framework": "reflex",
+      "name": "dynamic/entity detail page",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 379.84470000000005,
+      "samplesMs": [
+        338.0561,
+        340.122,
+        362.6679
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 338.0561,
+        "median": 340.122,
+        "mean": 346.94866666666667,
+        "max": 362.6679,
+        "cv": 0.03934987990844982
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: dynamic/layered full-drain cold",
+      "framework": "reflex",
+      "name": "dynamic/layered full-drain cold",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 149.19549999999998,
+      "samplesMs": [
+        92.04199999999994,
+        95.0142,
+        104.4612
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 92.04199999999994,
+        "median": 95.0142,
+        "mean": 97.17246666666665,
+        "max": 104.4612,
+        "cv": 0.06673502237028596
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "layered-dag",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: dynamic/layered full-drain warm",
+      "framework": "reflex",
+      "name": "dynamic/layered full-drain warm",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 123.15220000000005,
+      "samplesMs": [
+        99.1032,
+        101.3809,
+        105.5981
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 99.1032,
+        "median": 101.3809,
+        "mean": 102.0274,
+        "max": 105.5981,
+        "cv": 0.03229878306066645
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "layered-dag",
+      "fixture": "warm-reused"
+    },
+    {
+      "id": "reflex :: dynamic/layered burst flush warm",
+      "framework": "reflex",
+      "name": "dynamic/layered burst flush warm",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 971.1129000000001,
+      "samplesMs": [
+        812.3484,
+        820.2044,
+        1025.3345
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 812.3484,
+        "median": 820.2044,
+        "mean": 885.9624333333333,
+        "max": 1025.3345,
+        "cv": 0.13630786635251196
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "layered-dag",
+      "fixture": "warm-reused"
+    },
+    {
+      "id": "reflex :: dynamic/stable diamond mesh warm",
+      "framework": "reflex",
+      "name": "dynamic/stable diamond mesh warm",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 17.284999999999968,
+      "samplesMs": [
+        12.21409999999994,
+        12.2461,
+        35.2631
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 12.21409999999994,
+        "median": 12.2461,
+        "mean": 19.907766666666646,
+        "max": 35.2631,
+        "cv": 0.6679864496270339
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "diamond-mesh",
+      "fixture": "warm-reused"
+    },
+    {
+      "id": "reflex :: dynamic/pure pull",
+      "framework": "reflex",
+      "name": "dynamic/pure pull",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 23.222499999999997,
+      "samplesMs": [
+        2.4418,
+        2.4672,
+        3.6822
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 2.4418,
+        "median": 2.4672,
+        "mean": 2.8637333333333337,
+        "max": 3.6822,
+        "cv": 0.24755331889099105
+      },
+      "validation": "passed",
+      "group": "pull",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: dynamic/pure push",
+      "framework": "reflex",
+      "name": "dynamic/pure push",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 289.54409999999996,
+      "samplesMs": [
+        135.1729999999999,
+        140.2707,
+        154.2104
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 135.1729999999999,
+        "median": 140.2707,
+        "mean": 143.2180333333333,
+        "max": 154.2104,
+        "cv": 0.06881106243941833
+      },
+      "validation": "passed",
+      "group": "push",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: dynamic/simple component",
+      "framework": "reflex",
+      "name": "dynamic/simple component",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 232.9459,
+      "samplesMs": [
+        214.71530000000013,
+        246.61430000000013,
+        273.7411000000001
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 214.71530000000013,
+        "median": 246.61430000000013,
+        "mean": 245.02356666666677,
+        "max": 273.7411000000001,
+        "cv": 0.12058038074610407
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: dynamic/dynamic component",
+      "framework": "reflex",
+      "name": "dynamic/dynamic component",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 204.2751,
+      "samplesMs": [
+        173.41400000000013,
+        177.161,
+        180.8344
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 173.41400000000013,
+        "median": 177.161,
+        "mean": 177.1364666666667,
+        "max": 180.8344,
+        "cv": 0.020945776459344898
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: dynamic/large web app",
+      "framework": "reflex",
+      "name": "dynamic/large web app",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 363.3466,
+      "samplesMs": [
+        271.7348,
+        282.2485,
+        287.0028
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 271.7348,
+        "median": 282.2485,
+        "mean": 280.32869999999997,
+        "max": 287.0028,
+        "cv": 0.02787067292427872
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: dynamic/wide dense",
+      "framework": "reflex",
+      "name": "dynamic/wide dense",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 431.59430000000003,
+      "samplesMs": [
+        327.213,
+        327.9648,
+        364.5759
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 327.213,
+        "median": 327.9648,
+        "mean": 339.9179,
+        "max": 364.5759,
+        "cv": 0.0628321209693736
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "reflex :: dynamic/deep",
+      "framework": "reflex",
+      "name": "dynamic/deep",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 130.6573,
+      "samplesMs": [
+        109.0409,
+        109.7426,
+        115.1036
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 109.0409,
+        "median": 109.7426,
+        "mean": 111.29570000000001,
+        "max": 115.1036,
+        "cv": 0.029797640676535564
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: avoidablePropagation",
+      "framework": "alien-signals",
+      "name": "avoidablePropagation",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 0.9647000000000006,
+      "samplesMs": [
+        0.2958,
+        0.3079,
+        0.4468,
+        0.5443,
+        1.0937
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.2958,
+        "median": 0.4468,
+        "mean": 0.5377,
+        "max": 1.0937,
+        "cv": 0.6088918314115834
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: broadPropagation",
+      "framework": "alien-signals",
+      "name": "broadPropagation",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 0.96159999999999,
+      "samplesMs": [
+        0.3358,
+        0.4304,
+        0.4947,
+        0.6608,
+        0.8988
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.3358,
+        "median": 0.4947,
+        "mean": 0.5641,
+        "max": 0.8988,
+        "cv": 0.3925997656294505
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: deepPropagation",
+      "framework": "alien-signals",
+      "name": "deepPropagation",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 0.5754000000000019,
+      "samplesMs": [
+        0.1608,
+        0.1634,
+        0.3242,
+        0.4101,
+        0.4243
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.1608,
+        "median": 0.3242,
+        "mean": 0.29656000000000005,
+        "max": 0.4243,
+        "cv": 0.43358442669150554
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: diamond",
+      "framework": "alien-signals",
+      "name": "diamond",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 1.7781000000000091,
+      "samplesMs": [
+        0.3935,
+        0.5648,
+        0.5774,
+        0.8322,
+        0.9152
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.3935,
+        "median": 0.5774,
+        "mean": 0.65662,
+        "max": 0.9152,
+        "cv": 0.32452686546051346
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: mux",
+      "framework": "alien-signals",
+      "name": "mux",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 1.1617999999999995,
+      "samplesMs": [
+        0.5054,
+        0.5489,
+        0.5969,
+        0.7864000000000149,
+        0.7972
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.5054,
+        "median": 0.5969,
+        "mean": 0.646960000000003,
+        "max": 0.7972,
+        "cv": 0.2104873273429905
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: repeatedObservers",
+      "framework": "alien-signals",
+      "name": "repeatedObservers",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 0.40050000000000807,
+      "samplesMs": [
+        0.0555,
+        0.0825,
+        0.1345,
+        0.1963,
+        0.3258
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.0555,
+        "median": 0.1345,
+        "mean": 0.15892,
+        "max": 0.3258,
+        "cv": 0.6775613384222738
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: triangle",
+      "framework": "alien-signals",
+      "name": "triangle",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 0.403100000000002,
+      "samplesMs": [
+        0.1872,
+        0.2126,
+        0.2142,
+        0.2616,
+        0.2716
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.1872,
+        "median": 0.2142,
+        "mean": 0.22944000000000003,
+        "max": 0.2716,
+        "cv": 0.15580717645367057
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: unstable",
+      "framework": "alien-signals",
+      "name": "unstable",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 0.6877999999999957,
+      "samplesMs": [
+        0.2118,
+        0.2197,
+        0.2778,
+        0.3099,
+        0.7102
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.2118,
+        "median": 0.2778,
+        "mean": 0.34588,
+        "max": 0.7102,
+        "cv": 0.6004976094134579
+      },
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: manyEffectsFromOneSource",
+      "framework": "alien-signals",
+      "name": "manyEffectsFromOneSource",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 195.57540000000003,
+      "samplesMs": [
+        204.27889999999988,
+        214.1436,
+        230.0882
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 204.27889999999988,
+        "median": 214.1436,
+        "mean": 216.1702333333333,
+        "max": 230.0882,
+        "cv": 0.0602462997273817
+      },
+      "validation": "passed",
+      "group": "push",
+      "family": "fan",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: manySourcesIntoOneComputedEffectWithDirect",
+      "framework": "alien-signals",
+      "name": "manySourcesIntoOneComputedEffectWithDirect",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 159.1382,
+      "samplesMs": [
+        104.5648,
+        105.0378,
+        128.4075
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 104.5648,
+        "median": 105.0378,
+        "mean": 112.67003333333332,
+        "max": 128.4075,
+        "cv": 0.12098245928517025
+      },
+      "validation": "passed",
+      "group": "push",
+      "family": "fan",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: manySourcesIntoOneComputedEffect",
+      "framework": "alien-signals",
+      "name": "manySourcesIntoOneComputedEffect",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 106.4984,
+      "samplesMs": [
+        86.5216,
+        89.4387,
+        101.8546
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 86.5216,
+        "median": 89.4387,
+        "mean": 92.60496666666667,
+        "max": 101.8546,
+        "cv": 0.08792317089035771
+      },
+      "validation": "passed",
+      "group": "push",
+      "family": "fan",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: manySourcesIntoOneDirectEffect",
+      "framework": "alien-signals",
+      "name": "manySourcesIntoOneDirectEffect",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 14.211699999999993,
+      "samplesMs": [
+        10.7544,
+        13.9587,
+        18.4592
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 10.7544,
+        "median": 13.9587,
+        "mean": 14.390766666666666,
+        "max": 18.4592,
+        "cv": 0.2689592137018624
+      },
+      "validation": "passed",
+      "group": "push",
+      "family": "fan",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: molBench",
+      "framework": "alien-signals",
+      "name": "molBench",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 0.29220000000000823,
+      "samplesMs": [
+        0.0834,
+        0.084,
+        0.1143,
+        0.1286,
+        0.1584
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.0834,
+        "median": 0.1143,
+        "mean": 0.11374,
+        "max": 0.1584,
+        "cv": 0.2787429826581295
+      },
+      "validation": "passed",
+      "group": "dynamic",
+      "family": "object publication",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: mutable-object/immutable replacement",
+      "framework": "alien-signals",
+      "name": "mutable-object/immutable replacement",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 5.4476999999999975,
+      "samplesMs": [
+        1.1267,
+        1.1352,
+        1.2224,
+        1.648299999999985,
+        2.3584
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 1.1267,
+        "median": 1.2224,
+        "mean": 1.498199999999997,
+        "max": 2.3584,
+        "cv": 0.3513443555947613
+      },
+      "validation": "passed",
+      "group": "dynamic",
+      "family": "object publication",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: mutable-object/in-place versioned",
+      "framework": "alien-signals",
+      "name": "mutable-object/in-place versioned",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 8.7637,
+      "samplesMs": [
+        1.2704,
+        1.3063,
+        1.5539,
+        1.938,
+        2.0959
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 1.2704,
+        "median": 1.5539,
+        "mean": 1.6328999999999998,
+        "max": 2.0959,
+        "cv": 0.22745180438344909
+      },
+      "validation": "passed",
+      "group": "dynamic",
+      "family": "object publication",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: createDataSignals",
+      "framework": "alien-signals",
+      "name": "createDataSignals",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 33.5925,
+      "samplesMs": [
+        5.0963,
+        6.2085,
+        7.8346,
+        8.2552,
+        8.5317
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 5.0963,
+        "median": 7.8346,
+        "mean": 7.185260000000001,
+        "max": 8.5317,
+        "cv": 0.20521800660613262
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: createComputations0to1",
+      "framework": "alien-signals",
+      "name": "createComputations0to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 43.70660000000001,
+      "samplesMs": [
+        8.0228,
+        9.5824,
+        10.8248,
+        12.0135,
+        19.5984
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 8.0228,
+        "median": 10.8248,
+        "mean": 12.008379999999999,
+        "max": 19.5984,
+        "cv": 0.37422794213035804
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: createComputations1to1",
+      "framework": "alien-signals",
+      "name": "createComputations1to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 56.04170000000002,
+      "samplesMs": [
+        14.5308,
+        16.8568,
+        18.2901,
+        21.7641,
+        22.4262
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 14.5308,
+        "median": 18.2901,
+        "mean": 18.7736,
+        "max": 22.4262,
+        "cv": 0.1770529762670108
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: createComputations2to1",
+      "framework": "alien-signals",
+      "name": "createComputations2to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 40.22030000000001,
+      "samplesMs": [
+        9.4987,
+        9.57759999999994,
+        14.3643,
+        15.7767,
+        17.5157
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 9.4987,
+        "median": 14.3643,
+        "mean": 13.346599999999986,
+        "max": 17.5157,
+        "cv": 0.27359125366238746
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: createComputations4to1",
+      "framework": "alien-signals",
+      "name": "createComputations4to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 30.0745,
+      "samplesMs": [
+        8.1104,
+        8.4889,
+        9.39,
+        11.8966,
+        15.5605
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 8.1104,
+        "median": 9.39,
+        "mean": 10.68928,
+        "max": 15.5605,
+        "cv": 0.2897340264670603
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: createComputations1000to1",
+      "framework": "alien-signals",
+      "name": "createComputations1000to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 23.130700000000004,
+      "samplesMs": [
+        5.3914,
+        5.93799999999997,
+        6.7267,
+        6.8457,
+        12.0337
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 5.3914,
+        "median": 6.7267,
+        "mean": 7.387099999999995,
+        "max": 12.0337,
+        "cv": 0.3607255735647278
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: createComputations1to2",
+      "framework": "alien-signals",
+      "name": "createComputations1to2",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 42.157700000000006,
+      "samplesMs": [
+        13.8336,
+        13.86080000000006,
+        16.0627,
+        16.4687,
+        27.8284
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 13.8336,
+        "median": 16.0627,
+        "mean": 17.61084000000001,
+        "max": 27.8284,
+        "cv": 0.33162329084812053
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: createComputations1to4",
+      "framework": "alien-signals",
+      "name": "createComputations1to4",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 56.32299999999999,
+      "samplesMs": [
+        14.3438,
+        14.6525,
+        15.5643,
+        16.3776,
+        23.69029999999997
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 14.3438,
+        "median": 15.5643,
+        "mean": 16.925699999999992,
+        "max": 23.69029999999997,
+        "cv": 0.22834023525124553
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: createComputations1to8",
+      "framework": "alien-signals",
+      "name": "createComputations1to8",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 49.607699999999994,
+      "samplesMs": [
+        9.8303,
+        12.0614,
+        12.8475,
+        17.2223,
+        22.4135
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 9.8303,
+        "median": 12.8475,
+        "mean": 14.875,
+        "max": 22.4135,
+        "cv": 0.3358232153017384
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: createComputations1to1000",
+      "framework": "alien-signals",
+      "name": "createComputations1to1000",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 39.9297,
+      "samplesMs": [
+        10.5623,
+        11.6335,
+        11.9321,
+        20.04049999999994,
+        20.9845
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 10.5623,
+        "median": 11.9321,
+        "mean": 15.030579999999986,
+        "max": 20.9845,
+        "cv": 0.33539612175341965
+      },
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: updateComputations1to1",
+      "framework": "alien-signals",
+      "name": "updateComputations1to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 22.243700000000004,
+      "samplesMs": [
+        16.0631,
+        16.5431,
+        18.2642,
+        22.6985,
+        24.9311
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 16.0631,
+        "median": 18.2642,
+        "mean": 19.7,
+        "max": 24.9311,
+        "cv": 0.19921835443281946
+      },
+      "validation": "passed",
+      "group": "update",
+      "family": "write and pull",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: updateComputations2to1",
+      "framework": "alien-signals",
+      "name": "updateComputations2to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 20.536100000000005,
+      "samplesMs": [
+        10.39,
+        10.7328,
+        11.0862,
+        11.4258,
+        12.5867
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 10.39,
+        "median": 11.0862,
+        "mean": 11.244299999999999,
+        "max": 12.5867,
+        "cv": 0.0750878072064684
+      },
+      "validation": "passed",
+      "group": "update",
+      "family": "write and pull",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: updateComputations4to1",
+      "framework": "alien-signals",
+      "name": "updateComputations4to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 13.962900000000005,
+      "samplesMs": [
+        7.6736,
+        7.6799,
+        7.9549,
+        11.3466,
+        11.3704
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 7.6736,
+        "median": 7.9549,
+        "mean": 9.20508,
+        "max": 11.3704,
+        "cv": 0.21391348678713248
+      },
+      "validation": "passed",
+      "group": "update",
+      "family": "write and pull",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: updateComputations1000to1",
+      "framework": "alien-signals",
+      "name": "updateComputations1000to1",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 13.71799999999999,
+      "samplesMs": [
+        9.6489,
+        9.6877,
+        9.9349,
+        9.9979,
+        12.056
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 9.6489,
+        "median": 9.9349,
+        "mean": 10.26508,
+        "max": 12.056,
+        "cv": 0.09863800602131369
+      },
+      "validation": "passed",
+      "group": "update",
+      "family": "write and pull",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: updateComputations1to2",
+      "framework": "alien-signals",
+      "name": "updateComputations1to2",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 18.7288,
+      "samplesMs": [
+        13.7797,
+        14.5382,
+        14.5564,
+        20.5099,
+        22.4153
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 13.7797,
+        "median": 14.5564,
+        "mean": 17.1599,
+        "max": 22.4153,
+        "cv": 0.2329540431063328
+      },
+      "validation": "passed",
+      "group": "update",
+      "family": "write and pull",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: updateComputations1to4",
+      "framework": "alien-signals",
+      "name": "updateComputations1to4",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 18.067500000000003,
+      "samplesMs": [
+        11.3122,
+        11.5584,
+        11.6179,
+        11.7548,
+        17.7374
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 11.3122,
+        "median": 11.6179,
+        "mean": 12.796140000000001,
+        "max": 17.7374,
+        "cv": 0.21622865014065937
+      },
+      "validation": "passed",
+      "group": "update",
+      "family": "write and pull",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: updateComputations1to1000",
+      "framework": "alien-signals",
+      "name": "updateComputations1to1000",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 15.286999999999992,
+      "samplesMs": [
+        10.6483,
+        10.9659,
+        10.9961,
+        11.0102,
+        11.4164
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 10.6483,
+        "median": 10.9961,
+        "mean": 11.007380000000001,
+        "max": 11.4164,
+        "cv": 0.02480052674800767
+      },
+      "validation": "passed",
+      "group": "update",
+      "family": "write and pull",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: dynamic/dashboard selective reads",
+      "framework": "alien-signals",
+      "name": "dynamic/dashboard selective reads",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 224.9734,
+      "samplesMs": [
+        262.3623,
+        268.7403,
+        277.182
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 262.3623,
+        "median": 268.7403,
+        "mean": 269.4282,
+        "max": 277.182,
+        "cv": 0.027590874313270126
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: dynamic/editor derived state",
+      "framework": "alien-signals",
+      "name": "dynamic/editor derived state",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 494.89399999999995,
+      "samplesMs": [
+        346.8247,
+        374.2509,
+        379.4182
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 346.8247,
+        "median": 374.2509,
+        "mean": 366.83126666666664,
+        "max": 379.4182,
+        "cv": 0.047754300105462485
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: dynamic/kanban board",
+      "framework": "alien-signals",
+      "name": "dynamic/kanban board",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 248.17629999999997,
+      "samplesMs": [
+        215.44760000000005,
+        220.5727,
+        222.0694
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 215.44760000000005,
+        "median": 220.5727,
+        "mean": 219.36323333333334,
+        "max": 222.0694,
+        "cv": 0.015830506059019516
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: dynamic/entity detail page",
+      "framework": "alien-signals",
+      "name": "dynamic/entity detail page",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 453.6381,
+      "samplesMs": [
+        420.912,
+        431.6946,
+        465.1566
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 420.912,
+        "median": 431.6946,
+        "mean": 439.2544,
+        "max": 465.1566,
+        "cv": 0.052522503995401405
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: dynamic/layered full-drain cold",
+      "framework": "alien-signals",
+      "name": "dynamic/layered full-drain cold",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 149.9527,
+      "samplesMs": [
+        85.1252,
+        100.6609,
+        116.434
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 85.1252,
+        "median": 100.6609,
+        "mean": 100.74003333333333,
+        "max": 116.434,
+        "cv": 0.1553955214135657
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "layered-dag",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: dynamic/layered full-drain warm",
+      "framework": "alien-signals",
+      "name": "dynamic/layered full-drain warm",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 108.59440000000006,
+      "samplesMs": [
+        114.7775,
+        123.6014,
+        147.8988
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 114.7775,
+        "median": 123.6014,
+        "mean": 128.75923333333333,
+        "max": 147.8988,
+        "cv": 0.13321359033225197
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "layered-dag",
+      "fixture": "warm-reused"
+    },
+    {
+      "id": "alien-signals :: dynamic/layered burst flush warm",
+      "framework": "alien-signals",
+      "name": "dynamic/layered burst flush warm",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 1321.0126999999998,
+      "samplesMs": [
+        821.4915,
+        900.0545,
+        916.897
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 821.4915,
+        "median": 900.0545,
+        "mean": 879.4809999999999,
+        "max": 916.897,
+        "cv": 0.05789954284210456
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "layered-dag",
+      "fixture": "warm-reused"
+    },
+    {
+      "id": "alien-signals :: dynamic/stable diamond mesh warm",
+      "framework": "alien-signals",
+      "name": "dynamic/stable diamond mesh warm",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 5.570999999999998,
+      "samplesMs": [
+        4.8701,
+        6.3955,
+        6.579
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 4.8701,
+        "median": 6.3955,
+        "mean": 5.9482,
+        "max": 6.579,
+        "cv": 0.15772153685890972
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "diamond-mesh",
+      "fixture": "warm-reused"
+    },
+    {
+      "id": "alien-signals :: dynamic/pure pull",
+      "framework": "alien-signals",
+      "name": "dynamic/pure pull",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 4.178600000000003,
+      "samplesMs": [
+        0.9145,
+        0.97,
+        1.2889
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 0.9145,
+        "median": 0.97,
+        "mean": 1.0578,
+        "max": 1.2889,
+        "cv": 0.19101260784222515
+      },
+      "validation": "passed",
+      "group": "pull",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: dynamic/pure push",
+      "framework": "alien-signals",
+      "name": "dynamic/pure push",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 139.0942,
+      "samplesMs": [
+        96.2208,
+        121.4144,
+        125.20160000000006
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 96.2208,
+        "median": 121.4144,
+        "mean": 114.27893333333334,
+        "max": 125.20160000000006,
+        "cv": 0.1378471640460086
+      },
+      "validation": "passed",
+      "group": "push",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: dynamic/simple component",
+      "framework": "alien-signals",
+      "name": "dynamic/simple component",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 173.7341,
+      "samplesMs": [
+        162.1838,
+        163.6983,
+        175.5969
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 162.1838,
+        "median": 163.6983,
+        "mean": 167.15966666666665,
+        "max": 175.5969,
+        "cv": 0.04394596344994846
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: dynamic/dynamic component",
+      "framework": "alien-signals",
+      "name": "dynamic/dynamic component",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 150.0148,
+      "samplesMs": [
+        127.3724,
+        131.0709,
+        134.0803
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 127.3724,
+        "median": 131.0709,
+        "mean": 130.8412,
+        "max": 134.0803,
+        "cv": 0.025678792836648184
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: dynamic/large web app",
+      "framework": "alien-signals",
+      "name": "dynamic/large web app",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 265.5443,
+      "samplesMs": [
+        229.5493,
+        232.7678,
+        303.2557
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 229.5493,
+        "median": 232.7678,
+        "mean": 255.1909333333333,
+        "max": 303.2557,
+        "cv": 0.16323622436226556
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: dynamic/wide dense",
+      "framework": "alien-signals",
+      "name": "dynamic/wide dense",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 379.8491,
+      "samplesMs": [
+        390.049,
+        433.0987,
+        447.6675
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 390.049,
+        "median": 433.0987,
+        "mean": 423.6050666666667,
+        "max": 447.6675,
+        "cv": 0.07072499794136788
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: dynamic/deep",
+      "framework": "alien-signals",
+      "name": "dynamic/deep",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 117.2711,
+      "samplesMs": [
+        91.84039999999995,
+        95.1671,
+        113.5516
+      ],
+      "statistics": {
+        "count": 3,
+        "min": 91.84039999999995,
+        "median": 95.1671,
+        "mean": 100.18636666666664,
+        "max": 113.5516,
+        "cv": 0.11671785631120249
+      },
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "rect",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: lifecycle/owned graph create-update-dispose",
+      "framework": "alien-signals",
+      "name": "lifecycle/owned graph create-update-dispose",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 23.1462,
+      "samplesMs": [
+        10.2635,
+        10.3299,
+        10.3616,
+        10.692,
+        16.0411
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 10.2635,
+        "median": 10.3616,
+        "mean": 11.53762,
+        "max": 16.0411,
+        "cv": 0.218672864295343
+      },
+      "validation": "passed",
+      "group": "lifecycle",
+      "family": "native ownership",
+      "fixture": "fresh"
+    },
+    {
+      "id": "alien-signals :: lifecycle/dispose retained graph",
+      "framework": "alien-signals",
+      "name": "lifecycle/dispose retained graph",
+      "profile": "quick",
+      "capped": false,
+      "pilotMs": 0.7383000000000024,
+      "samplesMs": [
+        0.0891,
+        0.0968,
+        0.0995,
+        0.1059,
+        0.4508
+      ],
+      "statistics": {
+        "count": 5,
+        "min": 0.0891,
+        "median": 0.0995,
+        "mean": 0.16842,
+        "max": 0.4508,
+        "cv": 0.9379536035726974
+      },
+      "validation": "passed",
+      "group": "lifecycle",
+      "family": "native ownership",
+      "fixture": "fresh"
+    }
+  ],
+  "sampleOrder": "sorted by duration; all observations retained",
+  "consoleGuard": false,
+  "lockfileSha256": "f50741905a7d40fa6413766071c7cbd046957c284f0a4dc00c3587086734b579"
+}

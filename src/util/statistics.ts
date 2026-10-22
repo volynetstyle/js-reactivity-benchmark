@@ -5,6 +5,8 @@ export interface TimingStatistics {
   mean: number;
   max: number;
   cv?: number;
+  /** Equal-tail 95% order-statistic interval for the median (6+ samples). */
+  medianInterval?: [number, number];
   p95?: number;
   p99?: number;
   p95Interval?: [number, number];
@@ -67,6 +69,7 @@ export function timingStatistics(samples: readonly number[]): TimingStatistics {
     mean,
     max: sorted[n - 1],
     cv: variance === undefined ? undefined : Math.sqrt(variance) / mean,
+    medianInterval: orderInterval(sorted, 0.5),
   };
   // At least ten expected observations beyond the target percentile.
   // This is an explicit reporting rule, not a claim of guaranteed precision.

@@ -3,7 +3,7 @@
 This suite compares reactive libraries as runtime profiles, not as one universal
 speed number.
 
-Current measurements follow **semantics v3**. See
+Current measurements follow **semantics v4**. See
 [the researched workload contracts](docs/benchmark-methodology.md) for
 creation, observation, batching, correctness, and diagnostic policies.
 Earlier logs must be rerun to compare with this contract.
@@ -34,6 +34,28 @@ a profile of that adapter and policy, not a proof that one library universally
 dominates another.
 
 ## Semantics Matrix
+
+The `reactive-engine` adapter uses the public `ReactiveEngineCore` export from
+`@pravosleva/reactive-engine`, with logging disabled. It measures signals, lazy
+computed values, synchronous effects, and native explicit batching. Build calls
+run directly; the automatic microtask scheduler, DI services, resources, and UI
+bridges are not used. Effects return native disposers for fixture cleanup. The
+adapter does not expose `createScope`, because the core has no public owner-scope
+API for disposing an entire graph; native owner lifecycle rows are omitted.
+
+Adapters measure each library's reactive core, built as it ships to production:
+
+- Preact Signals uses `@preact/signals-core`, the framework-agnostic core,
+  rather than the Preact integration package (which also loads Preact and its
+  hooks).
+- `@vue/reactivity` runs `reactivity.cjs.prod.js`. Before v4 the bundle left
+  `process.env.NODE_ENV` unset, so Vue silently ran its development build.
+- Oby effects use `$.effect(fn, { sync: "init" })`: the first run is synchronous
+  and later runs are flushed by `tick()` at the commit. Reactively effects are
+  evaluated once with `get()` and then flushed by `stabilize()`. Before v4 both
+  adapters ran every effect body twice on installation (once untracked).
+- lite-signal (1.5.x) has no disposable root; its `createScope` uses an effect
+  as the unit of ownership, as the library documents.
 
 Each adapter should be classified against these questions before its numbers are
 treated as comparable:
@@ -97,32 +119,56 @@ The report groups benchmarks into these families:
 
 ## Statistics
 
+### Sampling
+
+Each row runs in a fresh process: one validated pilot (cold), validated warmup
+invocations, then measured samples. Each invocation prepares its fixture,
+runs a full GC, and only then starts the clock, so setup garbage and the
+previous sample's garbage are never charged to the measured call.
+
+| Profile           | Warmup | Measured samples                                                             |
+| ----------------- | ------ | ---------------------------------------------------------------------------- |
+| `quick` (default) | 2      | at least the case minimum (10; 6 for graph/fan rows) and 250 ms, at most 100 |
+| `tails`           | 20     | exactly 1000                                                                 |
+| `BENCH_SAMPLES=n` | 2/20   | exactly `n`                                                                  |
+
+`BENCH_MIN_TIME_MS` and `BENCH_MAX_SAMPLES` tune the quick budget. Samples are
+kept in chronological order and untrimmed; statistics use a sorted copy.
+
+`BENCH_ROUNDS=n` repeats every row in `n` fresh processes. The score is then
+the median of the round medians and the reported interval is their range, which
+exposes between-process (JIT, allocation layout) variance that samples inside
+one process cannot show.
+
+Rows run scenario-major: all frameworks for one scenario, then the next. The
+framework order rotates per scenario and per round, so no library is always
+measured first or last as the machine heats up or picks up background load.
+
 ### Adaptive performance ceiling
 
-Every row begins with one validated pilot run. The default ceiling is:
+The default ceiling is:
 
 ```txt
-max(1500 ms, 3 * fastest pilot observed for the same scenario)
+max(1500 ms, 3 * fastest pilot of any framework for the same scenario)
 ```
 
-If a pilot exceeds that ceiling, its measured time is kept as the score, but
-additional samples are skipped and the row is marked `SLOW/CAPPED samples=1`.
-This is a low-confidence classification, not a timeout or a fabricated result.
-Configure it with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`.
+A row whose pilot exceeds 1500 ms is deferred; once every framework's pilot for
+the scenario is known, it is either capped or measured in full in a new process.
+The decision therefore does not depend on run order (before v4 it compared only
+with frameworks that happened to run earlier). A capped row keeps its cold pilot
+as the score, is marked `SLOW/CAPPED samples=1`, and has no interval. Configure
+with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`.
 
-The quick profile uses five measured samples; expensive graph/fan cases use three.
-The tails profile uses 1000 samples and additional warmup. An explicit
-`BENCH_SAMPLES` overrides the target.
-The current runner does not read `BENCH_RUNS`. Sample counts are declared by
-each case through the centralized benchmark API. Report those counts and any
-capped rows when publishing distribution statistics.
+### Uncertainty
 
-The pilot is validated but excluded from an uncapped distribution. A capped row
-uses its pilot alone and remains visibly low confidence. Samples are untrimmed:
-slow observations are never discarded. The runner emits median, CV, group,
-family, and counters. p95 requires 200 samples; p99 requires 1000. Tail intervals
-use 95% order-statistic bounds under an iid assumption; correlated runtime or
-thermal behavior limits that interpretation. Saved JSON contains every duration.
+The row score is the median. With 6 or more samples the runner reports a
+distribution-free 95% order-statistic interval for it (`median_ci95`). The
+report marks a result whose interval overlaps the leader's with `≈` and counts
+a scenario as a win only when the leader's interval lies below the runner-up's.
+p95 requires 200 samples and p99 1000, with 95% order-statistic bounds. All
+intervals assume iid samples; autocorrelation, JIT transitions and thermal
+changes limit that interpretation, which is what rounds are for. Saved JSON
+contains every duration, including pilot and warmup.
 The HTML report ranks libraries by geometric mean of relative slowdown:
 
 ```txt
@@ -164,8 +210,8 @@ CPU
 RAM
 Node
 V8
-package versions
-build mode
+package versions (recorded per worker)
+build mode (production, recorded)
 power mode
 thermal state
 per-case sample counts and capped rows
@@ -179,8 +225,10 @@ Samples within a row share a VM. Creation fixtures remain fresh. Declared warm
 static full-read graphs keep their fixture and restore initial source values,
 flush all leaves, and reset counters outside timing; tests verify the same
 measured values and recomputation counts. The log header records
-Node/V8, platform, CPU, RAM, GC, semantics version, isolation, and whether
-diagnostic instrumentation is enabled. The lockfile records package versions.
+Node/V8, platform, CPU, cores, RAM, GC, semantics version, sampling policy,
+isolation, run order, build mode, and whether diagnostic instrumentation is
+enabled; one `# package` line per framework records the exact versions bundled
+into its worker. All dependencies are pinned to exact versions.
 `BENCH_IN_PROCESS=1` disables row isolation for diagnosis; `BENCH_INSTRUMENT=1`
 adds internal instrumentation to `@solidjs/signals`. Do not combine those
 diagnostic results with a default run.

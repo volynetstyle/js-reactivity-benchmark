@@ -12,7 +12,18 @@ const selections = [
       "diamond,manySourcesIntoOneComputedEffect,molBench,mutable-object/,lifecycle/,createComputations1to1",
   },
   { framework: "alien-signals", filter: "dynamic/layered full-drain warm" },
+  {
+    framework: "reactive-engine",
+    filter:
+      "diamond,manySourcesIntoOneComputedEffect,dynamic/layered full-drain warm,dynamic/pure push,createComputations1to1",
+  },
   { framework: "s-js,SolidJS", filter: "dynamic/pure push" },
+  {
+    // Production builds and native effect wiring for every adapter.
+    framework:
+      "@vue/reactivity,Preact Signals,Oby,@reactively,@solidjs/signals,$mol_wire,Signia,uSignal,@amadeus-it-group/tansu",
+    filter: "diamond,molBench",
+  },
 ];
 let checked = 0;
 for (const selection of selections) {
@@ -47,9 +58,15 @@ for (const selection of selections) {
   const parsed = parseBenchOutput(stdout);
   const raw = JSON.parse(await readFile(outputPath, "utf8"));
   if (
-    raw.semantics !== "v3" ||
+    raw.semantics !== "v4" ||
+    raw.nodeEnv !== "production" ||
     raw.rows.length !== parsed.rows.length ||
-    raw.rows.some((row) => row.validation !== "passed" || !row.samplesMs.length)
+    raw.rows.some(
+      (row) =>
+        row.validation !== "passed" ||
+        row.rounds.some((round) => round.samplesMs.length !== 2) ||
+        !Object.keys(raw.packages[row.framework] ?? {}).length
+    )
   ) {
     throw new Error("Missing validated samples in benchmark smoke");
   }

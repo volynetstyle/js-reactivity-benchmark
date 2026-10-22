@@ -1,4 +1,35 @@
-# Benchmark methodology: research and semantics v3
+# Benchmark methodology: research and semantics v4
+
+## Semantics v4: measurement honesty review
+
+v4 audits what is actually executed and timed. Each finding below changed
+results, or could have changed them, without any library changing.
+
+| Finding                                                                                                                                                            | Effect before v4                                                                                                                              | Decision                                                                                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The esbuild bundle left `process.env.NODE_ENV` unset. `@vue/reactivity/index.js` selects `reactivity.cjs.prod.js` only when it equals `production`.                | Vue ran its development build. Same-machine A/B on three rows: update 1to1 +3%, create 1to1 +17%, kanban board +12% (95% intervals disjoint). | Bundle with `NODE_ENV=production`. The build fails if a bundled file has a production twin on disk (`x.cjs.js`/`x.cjs.prod.js`, `dev.js`/`prod.js`). Workers also run with `NODE_ENV=production`. |
+| `globalThis.__DEV__ = true` was set before every run.                                                                                                              | No bundled library reads it today; it would enable dev paths in any library that does.                                                        | Removed.                                                                                                                                                                                          |
+| `random` was a caret range. `random@5.5` seeds strings with xoshiro128\*\* and also corrects the ARC4 swap that 5.4.1 implements.                                  | A fresh npm install (5.5.1) builds different graphs; every framework failed the configured expected sums.                                     | Vendor the exact 5.4.1 generator (`src/util/seededRandom.ts`), verified identical over one million mixed draws and pinned by a golden test. Every configured sum is unchanged.                    |
+| Dependencies used caret ranges.                                                                                                                                    | npm and pnpm users could measure different library versions under one label.                                                                  | Exact pins. Each worker records the versions it bundles; they are logged (`# package`), saved in JSON and shown on the page.                                                                      |
+| The cap compared a pilot with the fastest pilot of frameworks that had already run.                                                                                | Whether a slow library was capped (one cold sample) depended on its position in the run.                                                      | Pilots above the absolute floor are deferred until all frameworks' pilots for the scenario are known.                                                                                             |
+| Rows ran framework-major.                                                                                                                                          | Thermal and background drift during a long run biased whole libraries.                                                                        | Scenario-major order with framework rotation per scenario and per round.                                                                                                                          |
+| mitata sorted samples and added an unconditional extra warmup call; the quick profile used 5 samples (3 for graph rows). Rows as short as 30 µs had CV around 0.7. | Chronological effects (JIT tier-up, throttling) were invisible; medians of 3 to 5 noisy samples ranked libraries.                             | An in-repo sampler: pilot, explicit warmup, then samples until a per-case minimum and a 250 ms budget are met (max 100), kept chronologically. The median gets a 95% order-statistic interval.    |
+| Within-process samples cannot show between-process variance.                                                                                                       | One process per row was a single draw of JIT and allocation layout.                                                                           | Optional `BENCH_ROUNDS`: fresh-process repetitions, median of round medians plus their range.                                                                                                     |
+| Oby and Reactively adapters called `fn()` before creating the effect.                                                                                              | Every effect body ran twice on installation (once untracked), charged to timed effect installation.                                           | Native `sync: "init"` (Oby) and a single tracked `get()` (Reactively).                                                                                                                            |
+| `@preact/signals` is the Preact integration and loads `preact` and its hooks.                                                                                      | Extra modules in the worker; not the framework-agnostic core the other adapters measure.                                                      | `@preact/signals-core`.                                                                                                                                                                           |
+| The report counted every raw first place as a win and described the score as covering all tests.                                                                   | Differences inside the noise were presented as wins.                                                                                          | Wins require disjoint median intervals; overlapping results are marked `≈`; the score note names the shared-scenario count.                                                                       |
+
+Version policy: every dependency is pinned to its npm `latest` dist-tag at the
+time of the update. `@solidjs/signals` is the exception: its `latest` tag
+points to `2.0.0-rc.0` (a stale release candidate with a new effect API) while
+release candidates ship almost daily, so it stays on the newest stable release,
+0.13.13, until 2.0 is final. `@pravosleva/reactive-engine` has no stable
+release containing `ReactiveEngineCore`; it follows its `latest` beta.
+
+v3 and earlier logs are not comparable with v4: build mode, sample counts,
+warmup, ordering and the cap rule all changed.
+
+## Semantics v3
 
 The v2 revision addressed the CI adapter failure and the five review questions.
 The v3 revision completes value/delivery validation, lifecycle workloads,
@@ -9,14 +40,14 @@ describe a different version.
 
 ## Sources and implications
 
-| Primary source                                                                                                               | Finding                                                                                                                                                                        | Benchmark decision                                                                                                                                        |
-| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [mitata: writing good benchmarks](https://github.com/evanwashere/mitata#writing-good-benchmarks)                             | Unobserved allocations can be eliminated; fixture parameters and GC policy affect measurement.                                                                                 | Return an array retaining all created nodes, consume the result with `do_not_optimize`, and validate outside timing.                                      |
-| [Preact Signals](https://preactjs.com/guide/v10/signals/)                                                                    | Computeds evaluate on demand; reading an invalid computed inside a batch can pull dependencies before the batch ends.                                                          | Initialize every creation node, and read every update consumer after each changed write. Read large-graph sinks after the declared transaction commits.   |
-| [Solid: batch](https://docs.solidjs.com/reference/reactive-utilities/batch)                                                  | Batch defers downstream work; reading during a batch may update a computation on demand.                                                                                       | Apply the same batch policy to every adapter.                                                                                                             |
-| [S.js: freeze and data](https://github.com/adamhaile/S#sfreeze)                                                              | Freeze defers propagation; conflicting writes to a source within one freeze are unsupported.                                                                                   | A burst writes each source at most once. Reject bursts larger than the source count instead of giving S.js a special workload.                            |
-| [lite-signal repository](https://github.com/PeshoVurtoleta/lite-signal), published `@zakkster/lite-signal@1.3.0` `Signal.js` | Lazy preallocation constructs pool objects on demand. In 1.3.0 grow refills chunks and extends a capacity ledger; an array-wide copy is not guaranteed by this implementation. | Keep fresh lazy registries, raise the node budget to 262,144, and use the throw policy to prevent unnoticed growth.                                       |
-| [Reflex repository](https://github.com/volynetstyle/Reflex), published `@volynets/reflex@1.0.0` README and types             | The published `signal` returns `[read, write]`; computed is a lazy accessor and SAB flushes effects after a batch.                                                             | Adapt the published tuple API. Check the exact npm tarball against the lockfile integrity rather than trusting a stale local build with the same version. |
+| Primary source                                                                                                                 | Finding                                                                                                                                                                            | Benchmark decision                                                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [mitata: writing good benchmarks](https://github.com/evanwashere/mitata#writing-good-benchmarks)                               | Unobserved allocations can be eliminated; fixture parameters and GC policy affect measurement.                                                                                     | Return an array retaining all created nodes, keep the result in a blackhole sink, and validate outside timing.                                               |
+| [Preact Signals](https://preactjs.com/guide/v10/signals/)                                                                      | Computeds evaluate on demand; reading an invalid computed inside a batch can pull dependencies before the batch ends.                                                              | Initialize every creation node, and read every update consumer after each changed write. Read large-graph sinks after the declared transaction commits.      |
+| [Solid: batch](https://docs.solidjs.com/reference/reactive-utilities/batch)                                                    | Batch defers downstream work; reading during a batch may update a computation on demand.                                                                                           | Apply the same batch policy to every adapter.                                                                                                                |
+| [S.js: freeze and data](https://github.com/adamhaile/S#sfreeze)                                                                | Freeze defers propagation; conflicting writes to a source within one freeze are unsupported.                                                                                       | A burst writes each source at most once. Reject bursts larger than the source count instead of giving S.js a special workload.                               |
+| [lite-signal repository](https://github.com/PeshoVurtoleta/lite-signal), published `@zakkster/lite-signal@1.5.2` `Signal.d.ts` | Under `prealloc: "lazy"`, `maxNodes`/`maxLinks` are capacity ledgers and objects are constructed on demand. 1.5 validates the config and adds `createRoot`, which has no disposer. | Keep fresh lazy registries, a 262,144-node budget, and the throw policy. Ownership remains an effect, the unit of ownership the library documents.           |
+| [Reflex repository](https://github.com/volynetstyle/Reflex), published `@volynets/reflex@3.0.1` README and types               | `signal` returns a readable accessor with `.set`; computed is a lazy accessor and SAB flushes effects after a batch.                                                               | Adapt the published accessor API. Check the exact npm tarball against the lockfile integrity rather than trusting a stale local build with the same version. |
 
 The [Vue 3.5.32 effect implementation](https://github.com/vuejs/core/blob/v3.5.32/packages/reactivity/src/effect.ts)
 also shows that native triggering runs only if dirty; a custom scheduler
@@ -137,11 +168,9 @@ above a target quantile: at least 200 samples for p95 and 1000 for p99. These
 thresholds are our reporting policy, not a guarantee of precision.
 
 The tails profile collects 1000 measured invocations after extra warmup.
-The quick profile preserves short median runs. Every duration is kept:
-mitata 1.0.34 normally sorts and trims two observations from each end above
-its threshold; `samples_threshold: Infinity` disables that trimming, and a
-count assertion catches any discarded observations. Saved samples are sorted
-by duration, not chronological. JSON stores the pilot separately.
+Every duration is kept. (v3 used mitata 1.0.34 with trimming disabled and saved
+samples sorted. v4 times invocations itself and saves them chronologically,
+with the pilot and warmup stored separately.)
 
 Equal-tail 95% intervals use binomial order-statistic bounds. Their coverage
 interpretation assumes iid continuous samples; autocorrelation, JIT transitions,
@@ -167,9 +196,14 @@ The changes above resolve the five review issues; they do not establish a
 universal library ranking. Further useful work is:
 
 - separate cold construction, allocation-only construction, invalidation-only
-  updates, and steady-state observed push rows;
-- package version metadata and recorded power/thermal conditions for published
-  runs.
+  updates, and steady-state observed push rows (push rows still include effect
+  installation in the timed section);
+- recorded power/thermal conditions for published runs (package versions are
+  recorded since v4);
+- an uncertainty interval for the overall geometric-mean score, not only per
+  row;
+- a dedicated benchmark host: shared CI runners make published numbers noisy,
+  which `BENCH_ROUNDS` exposes but cannot remove.
 
-Old logs cannot be recalculated into v3 measurements. Generate a complete fresh
+Old logs cannot be recalculated into v4 measurements. Generate a complete fresh
 run before publishing a new leaderboard.
