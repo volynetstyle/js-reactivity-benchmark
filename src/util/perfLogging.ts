@@ -48,10 +48,15 @@ export function perfRowStrings(
 ): PerfRowStrings {
   return {
     framework: frameworkName,
-    test: `${makeTitle(config)} (${config.name || ""})`,
+    test: perfTitle(config),
     time: timeMs.toFixed(2),
     metrics: formatMetrics(result.metrics),
   };
+}
+
+/** The report label of a dependency-graph row. */
+export function perfTitle(config: TestConfig): string {
+  return `${makeTitle(config)} (${config.name || ""})`;
 }
 
 export function makeTitle(config: TestConfig): string {

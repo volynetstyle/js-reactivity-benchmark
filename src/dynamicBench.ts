@@ -2,7 +2,7 @@ import { perfTests } from "./workloads";
 import { registerBenchmark } from "./util/benchmark";
 import { Counter, Graph, makeGraph, runGraph } from "./util/dependencyGraph";
 import { FrameworkInfo } from "./util/frameworkTypes";
-import { perfRowStrings } from "./util/perfLogging";
+import { perfRowStrings, perfTitle } from "./util/perfLogging";
 import { TestResult, verifyBenchResult } from "./util/perfTests";
 import { expectedGraphSum } from "./util/referenceGraph";
 
@@ -33,6 +33,7 @@ export function dynamicBench(frameworkInfo: FrameworkInfo): void {
     registerBenchmark<DynamicFixture, TestResult>({
       framework: framework.name,
       name: `dynamic/${config.name ?? "unnamed"}`,
+      title: perfTitle(config),
       group:
         config.mode === "push"
           ? "push"

@@ -1,6 +1,7 @@
 // Based on https://github.com/Riim/cellx/blob/master/perf/perf.html
 import { registerBenchmark } from "./util/benchmark";
 import { Computed, ReactiveFramework, Signal } from "./util/reactiveFramework";
+import { fixtureScope } from "./util/fixtureScope";
 
 type Values = readonly [number, number, number, number];
 type BenchmarkResults = readonly [Values, Values];
@@ -9,6 +10,7 @@ interface CellxFixture {
   start: Record<"prop1" | "prop2" | "prop3" | "prop4", Signal<number>>;
   end: Record<"prop1" | "prop2" | "prop3" | "prop4", Computed<number>>;
   before: Values;
+  dispose: () => void;
 }
 
 const expected: Record<number, BenchmarkResults> = {
@@ -26,9 +28,12 @@ const expected: Record<number, BenchmarkResults> = {
   ],
 };
 
+/** The layer counts of the original js-reactivity-benchmark suite. */
+export const cellxLayers = [1000, 2500];
+
 export function cellxbench(framework: ReactiveFramework): void {
-  for (const [layersText, expectedResult] of Object.entries(expected)) {
-    const layers = Number(layersText);
+  for (const layers of cellxLayers) {
+    const expectedResult = expected[layers];
 
     registerBenchmark<CellxFixture, BenchmarkResults>({
       framework: framework.name,
@@ -60,17 +65,20 @@ export function cellxbench(framework: ReactiveFramework): void {
           );
         }
       },
+      teardown: (fixture) => fixture.dispose(),
       gc: "inner",
       blackhole: true,
     });
   }
 }
 
-function makeFixture(
+export function makeFixture(
   framework: ReactiveFramework,
   layers: number
 ): CellxFixture {
-  return framework.withBuild(() => {
+  // Effects are owned by a fixture scope and disposed in teardown, so earlier
+  // fixtures never keep live subscriptions into later samples.
+  const scope = fixtureScope(framework, () => {
     const start = {
       prop1: framework.signal(1),
       prop2: framework.signal(2),
@@ -103,6 +111,7 @@ function makeFixture(
 
     return { start, end: layer, before: readValues(layer) };
   });
+  return { ...scope.value, dispose: scope.dispose };
 }
 
 function readValues(values: CellxFixture["end"]): Values {

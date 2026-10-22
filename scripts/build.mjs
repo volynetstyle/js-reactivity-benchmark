@@ -1,10 +1,9 @@
 import { build } from "esbuild";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
+import { isBuiltin } from "node:module";
 import path from "node:path";
-
-// Loaded at runtime with require() (see src/frameworks/solid-signals.ts).
-const RUNTIME_EXTERNALS = ["@solidjs/signals"];
+import { moduleAliases } from "./module-aliases.mjs";
 
 const catalog = JSON.parse(await readFile("src/frameworkCatalog.json", "utf8"));
 await mkdir("dist/workers", { recursive: true });
@@ -13,7 +12,7 @@ const options = {
   platform: "node",
   format: "cjs",
   sourcemap: "external",
-  external: RUNTIME_EXTERNALS,
+  alias: moduleAliases,
   // Libraries must run their production builds. Without this, packages that
   // select a build from process.env.NODE_ENV at runtime (e.g. @vue/reactivity)
   // silently run their development build with debug hooks and warnings.
@@ -51,12 +50,27 @@ await Promise.all(
       throw new Error(
         `${entry.id} bundles development builds: ${development.join(", ")}`
       );
+    // Everything a worker executes must be bundled: a package resolved at run
+    // time escapes the production-build and version checks, and can resolve
+    // to a different version than the adapter imported. (`require.resolve`
+    // only locates a file, for the BENCH_INSTRUMENT diagnostic mode.)
     const externals = Object.values(result.metafile.outputs).flatMap((output) =>
-      output.imports.filter((item) => item.external).map((item) => item.path)
+      output.imports
+        .filter(
+          (item) =>
+            item.external &&
+            item.kind !== "require-resolve" &&
+            !isBuiltin(item.path)
+        )
+        .map((item) => item.path)
     );
+    if (externals.length)
+      throw new Error(
+        `${entry.id} leaves packages external: ${externals.join(", ")}`
+      );
     await writeFile(
       `dist/workers/${entry.id}.packages.json`,
-      JSON.stringify(bundledPackages(inputs, externals), null, 2) + "\n"
+      JSON.stringify(bundledPackages(entry.id, inputs), null, 2) + "\n"
     );
   })
 );
@@ -73,19 +87,28 @@ function hasProductionTwin(file) {
   return twins.some((twin) => twin !== file && existsSync(twin));
 }
 
-/** name -> version for every package bundled into, or required by, a worker. */
-function bundledPackages(inputs, externals) {
+/**
+ * name -> version for every package bundled into a worker. Two versions of
+ * one package in a worker mean an adapter measures something other than its
+ * label (e.g. a shared module that pulls in a second library generation).
+ */
+function bundledPackages(id, inputs) {
   const packages = {};
-  const roots = inputs.flatMap(
-    (input) =>
-      input.match(/^(.*node_modules[\\/](?:@[^\\/]+[\\/])?[^\\/]+)/)?.[1] ?? []
+  const roots = new Set(
+    inputs.flatMap(
+      (input) =>
+        input.match(/^(.*node_modules[\\/](?:@[^\\/]+[\\/])?[^\\/]+)/)?.[1] ??
+        []
+    )
   );
-  for (const name of RUNTIME_EXTERNALS)
-    if (externals.includes(name)) roots.push(path.join("node_modules", name));
   for (const root of roots) {
     const manifest = path.join(root, "package.json");
     if (!existsSync(manifest)) continue;
     const { name, version } = JSON.parse(readFileSync(manifest, "utf8"));
+    if (packages[name] && packages[name] !== version)
+      throw new Error(
+        `${id} bundles two versions of ${name}: ${packages[name]} and ${version}`
+      );
     packages[name] = version;
   }
   return Object.fromEntries(

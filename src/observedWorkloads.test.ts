@@ -6,6 +6,7 @@ import { fanCases, fanWorkload } from "./fanBench";
 import { deliveryPlan, DeliveryProbe, verifyDelivery } from "./util/delivery";
 import { molWorkload, objectWorkload } from "./molBench";
 import { lifecycleWorkload, retainedDisposal } from "./lifecycleBench";
+import { makeFixture as makeCellxFixture } from "./cellxBench";
 
 for (const { framework } of frameworkInfo) {
   test(`${framework.name} | checked mutable-object workloads`, () => {
@@ -80,3 +81,28 @@ test("delivery validation catches a transient wrong value followed by a correct 
     "mismatches=1"
   );
 });
+
+test.each(frameworkInfo.map(({ framework }) => framework))(
+  "$name | cellx layers propagate one batch through every layer",
+  (framework) => {
+    framework.resetBenchmark?.();
+    const fixture = makeCellxFixture(framework, 1000);
+    try {
+      expect(fixture.before).toEqual([-3, -6, -2, 2]);
+      framework.withBatch(() => {
+        fixture.start.prop1.write(4);
+        fixture.start.prop2.write(3);
+        fixture.start.prop3.write(2);
+        fixture.start.prop4.write(1);
+      });
+      expect([
+        fixture.end.prop1.read(),
+        fixture.end.prop2.read(),
+        fixture.end.prop3.read(),
+        fixture.end.prop4.read(),
+      ]).toEqual([-2, -4, 2, 3]);
+    } finally {
+      fixture.dispose();
+    }
+  }
+);

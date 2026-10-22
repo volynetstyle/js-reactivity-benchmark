@@ -23,11 +23,54 @@ Version policy: every dependency is pinned to its npm `latest` dist-tag at the
 time of the update. `@solidjs/signals` is the exception: its `latest` tag
 points to `2.0.0-rc.0` (a stale release candidate with a new effect API) while
 release candidates ship almost daily, so it stays on the newest stable release,
-0.13.13, until 2.0 is final. `@pravosleva/reactive-engine` has no stable
-release containing `ReactiveEngineCore`; it follows its `latest` beta.
+0.13.13, as the stable row. The 2.0 line is measured separately (below).
+`@pravosleva/reactive-engine` has no stable release containing
+`ReactiveEngineCore`; it follows its `latest` beta.
 
 v3 and earlier logs are not comparable with v4: build mode, sample counts,
 warmup, ordering and the cap rule all changed.
+
+### Parallel measurement in CI
+
+Parallelism runs on separate CI runner VMs, not on one machine.
+
+| Source                                                                                                                                                                                                   | Finding                                                                                                                                                                                                                                                     | Decision                                                                                                                                |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| [Duet benchmarking (Bulej et al., ICPE 2020)](https://arxiv.org/abs/2001.05811)                                                                                                                          | Running two artifacts concurrently on one machine, with a start barrier, cancels shared cloud noise. It loses accuracy when the workloads differ in length (the shorter one's resources go idle) or in bottleneck, and SMT siblings and throttling skew it. | Not used for absolute rows: 24 libraries with very different durations and allocation profiles would interfere asymmetrically.          |
+| [Laaber, Scheuner, Leitner (EMSE 2019)](https://research.chalmers.se/en/publication/511491)                                                                                                              | Cloud microbenchmark variability ranges from a CV of 0.03% to over 100%. Running test and control on the same instance, in randomized order, detects slowdowns of 10% or less with high confidence.                                                         | Shards split scenarios, never frameworks, so every per-scenario comparison is made on one VM, in rotated order.                         |
+| [CodSpeed: benchmarks in CI without noise](https://codspeed.io/blog/benchmarks-in-ci-without-noise); [GitHub-hosted runners](https://docs.github.com/en/actions/reference/runners/github-hosted-runners) | The same `ubuntu-latest` label lands on different CPUs (e.g. Intel Xeon 8370C, AMD EPYC 7763 / 9V74); GitHub documents vCPU counts, not CPU models.                                                                                                         | Every shard records its CPU; optional machine rounds measure each shard on several VMs and report the median and range across machines. |
+| [pyperf system tuning](https://pyperf.readthedocs.io/en/latest/system.html); [Google Benchmark: reducing variance](https://github.com/google/benchmark/blob/main/docs/reducing_variance.md)              | CPU isolation, pinning, and disabling SMT and boost reduce variance on one host.                                                                                                                                                                            | Not applicable to hosted runners; recorded as a limitation.                                                                             |
+
+`scripts/merge-shards.mjs` merges shard outputs only when they come from the
+same commit, lockfile, bundle hash, Node/V8, package versions and sampling
+policy, and when every machine round covers each scenario exactly once.
+Per-scenario ratios therefore stay within one machine. The overall geometric
+mean still combines ratios measured on different CPUs, so CPU-model effects on
+relative speed remain possible; machine rounds expose them.
+
+### Architectural families
+
+v4 adds second generations next to their stable lines (npm aliases): Solid 2.0
+RC (`solid-js`, `@solidjs/signals`) and Vue reactivity 3.6 RC, plus Dalien
+Signals, Anod, Reatom 1001, Maverick Signals, Cellx and ReScript Signals, and
+registers the original suite's `cellx1000`/`cellx2500` workloads. Adding them
+surfaced problems that tests could not:
+
+- The per-worker version manifests showed that the Vue 3.6 worker also bundled
+  Vue 3.5 (a shared adapter module imported it). They also showed that the
+  SolidJS 2 worker would have loaded `@solidjs/signals@0.13.13` at runtime: the
+  package was external for diagnostic instrumentation, so solid-js 2's import
+  of its own core resolved to the project's top-level 0.13 copy. Workers now
+  bundle everything, and the build fails if a worker contains two versions of
+  one package or leaves a package external.
+- `solid-js` 2 resolves its `node` export condition to its non-reactive SSR
+  build and no longer exports `./dist/*`; the client build is aliased by path.
+- `dalien-signals@3.2.1`'s `reset()` fails on repeated rewinds of a
+  populated graph; the adapter uses the library's default leak-free API.
+- Reatom 1001 retains memory that grows with graph depth on dense DAGs and
+  cannot complete the 32-layer graph rows in a 4 GB heap. Rather than letting
+  one library abort the run, failures became results: classified `FAILED`
+  rows, not ranked overall, while publication continues.
 
 ## Semantics v3
 
@@ -198,8 +241,8 @@ universal library ranking. Further useful work is:
 - separate cold construction, allocation-only construction, invalidation-only
   updates, and steady-state observed push rows (push rows still include effect
   installation in the timed section);
-- recorded power/thermal conditions for published runs (package versions are
-  recorded since v4);
+- recorded power/thermal conditions for published runs (package versions and
+  per-shard CPU models are recorded since v4);
 - an uncertainty interval for the overall geometric-mean score, not only per
   row;
 - a dedicated benchmark host: shared CI runners make published numbers noisy,

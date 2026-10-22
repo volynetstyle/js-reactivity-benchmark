@@ -27,6 +27,7 @@ beforeEach(() => {
   vi.stubEnv("BENCH_ROUNDS", "");
   vi.stubEnv("BENCH_SAMPLES_FILE", "");
   vi.stubEnv("BENCH_ASSERT_NO_CONSOLE", "");
+  vi.stubEnv("BENCH_ALLOW_FAILURES", "");
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -209,7 +210,58 @@ test("an incorrect intermediate sample fails the row before it is reported", asy
     },
   });
   await expect(runBenchmarks()).rejects.toThrow("bad intermediate value");
-  expect(log).toHaveBeenCalledTimes(1); // Header only, no score for the failed row.
+  // Header, then a FAILED row: no time is reported for an incorrect result.
+  expect(log).toHaveBeenCalledTimes(2);
+  expect(rowFor("invalid")).toMatchObject({ time: "FAILED" });
+  expect(rowFor("invalid").metrics).toContain("FAILED kind=incorrect");
+});
+
+test("publication runs record failures as results and keep measuring", async () => {
+  vi.stubEnv("BENCH_ALLOW_FAILURES", "1");
+  const { registerBenchmark, runBenchmarks } = await import("./benchmark");
+  const read = samplesFile();
+  registerBenchmark({
+    framework: "broken",
+    name: "scenario",
+    gc: false,
+    setup: () => null,
+    benchmark: () => {
+      throw new RangeError("Maximum call stack size exceeded");
+    },
+  });
+  registerBenchmark({
+    framework: "working",
+    name: "scenario",
+    gc: false,
+    setup: () => null,
+    benchmark: () => (clock += 1),
+    validate: () => {},
+  });
+  await runBenchmarks();
+  const rows = read().rows;
+  expect(rows.find((row: any) => row.framework === "broken")).toMatchObject({
+    status: "failed",
+    failure: { kind: "stack-overflow" },
+  });
+  expect(rows.find((row: any) => row.framework === "working").estimateMs).toBe(
+    1
+  );
+});
+
+test("worker crashes are classified from their diagnostics", async () => {
+  const { classifyFailure } = await import("./benchmark");
+  expect(
+    classifyFailure(
+      "FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory"
+    )
+  ).toBe("out-of-memory");
+  expect(classifyFailure("RangeError: Array buffer allocation failed")).toBe(
+    "out-of-memory"
+  );
+  expect(classifyFailure("RangeError: Maximum call stack size exceeded")).toBe(
+    "stack-overflow"
+  );
+  expect(classifyFailure("Segmentation fault")).toBe("crashed");
 });
 
 test("an unmatched selection fails instead of producing an empty successful run", async () => {
@@ -271,4 +323,35 @@ test("CI console guard rejects output from a measured callback", async () => {
   await expect(runBenchmarks()).rejects.toThrow(
     "console.warn called inside measured workload"
   );
+});
+
+test("a shard runs whole scenarios for every framework and records itself", async () => {
+  vi.stubEnv("BENCH_SHARD", "2/2");
+  vi.stubEnv(
+    "BENCH_SHARD_WEIGHTS",
+    path.join(tmpdir(), "no-such-weights.json")
+  );
+  vi.stubEnv("BENCH_MACHINE_ROUND", "3");
+  const { registerBenchmark, runBenchmarks } = await import("./benchmark");
+  const read = samplesFile();
+  for (const name of ["a", "b", "c"])
+    for (const framework of ["x", "y"])
+      registerBenchmark({
+        framework,
+        name,
+        gc: false,
+        setup: () => null,
+        benchmark: () => (clock += 1),
+        validate: () => {},
+      });
+  await runBenchmarks();
+  const saved = read();
+  // Equal weights: LPT puts a and c on shard 1, b on shard 2.
+  expect(saved.shard).toEqual({ index: 2, count: 2, scenarios: ["b"] });
+  expect(saved.machineRound).toBe(3);
+  expect(saved.bundleSha256).toMatch(/^[0-9a-f]{64}$/);
+  expect(saved.rows.map((row: any) => row.id).sort()).toEqual([
+    "x :: b",
+    "y :: b",
+  ]);
 });

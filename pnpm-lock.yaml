@@ -14,6 +14,9 @@ importers:
       '@angular/core':
         specifier: 22.2.3
         version: 22.2.3(rxjs@7.8.2)
+      '@maverick-js/signals':
+        specifier: 6.0.0
+        version: 6.0.0
       '@pravosleva/reactive-engine':
         specifier: 2.6.0-beta.2
         version: 2.6.0-beta.2(@angular/core@22.2.3(rxjs@7.8.2))(react@19.2.5)
@@ -23,6 +26,9 @@ importers:
       '@reactively/core':
         specifier: 0.0.8
         version: 0.0.8
+      '@reatom/core':
+        specifier: 1001.3.0
+        version: 1001.3.0
       '@solidjs/signals':
         specifier: 0.13.13
         version: 0.13.13
@@ -38,9 +44,18 @@ importers:
       alien-signals:
         specifier: 3.2.1
         version: 3.2.1
+      anod:
+        specifier: 0.9.1
+        version: 0.9.1
+      cellx:
+        specifier: 2.4.0
+        version: 2.4.0(@artalar/act@3.2.1)(@frp-ts/core@1.0.0-beta.6(tslib@2.8.1))(@preact/signals-core@1.14.4)(@reatom/core@1001.3.0)(@webreflection/signal@2.1.2)(alien-signals@3.2.1)(effector@23.4.4)(mobx@7.1.0)(mol_wire_lib@1.0.1820)(nanostores@1.1.0)(s-js@0.4.9)(solid-js@1.9.17)(spred@0.34.0)(usignal@0.10.0)(whatsup@2.6.0)
       compostate:
         specifier: 1.0.0
         version: 1.0.0(react@19.2.5)
+      dalien-signals:
+        specifier: 3.2.1
+        version: 3.2.1
       kairo:
         specifier: 0.6.0-rc.0
         version: 0.6.0-rc.0
@@ -53,6 +68,9 @@ importers:
       oby:
         specifier: 15.1.2
         version: 15.1.2
+      rescript-signals:
+        specifier: 3.1.4
+        version: 3.1.4
       s-js:
         specifier: 0.4.9
         version: 0.4.9
@@ -65,6 +83,12 @@ importers:
       solid-js:
         specifier: 1.9.17
         version: 1.9.17
+      solid-js-2:
+        specifier: npm:solid-js@2.0.0-rc.17
+        version: solid-js@2.0.0-rc.17
+      solid-signals-2:
+        specifier: npm:@solidjs/signals@2.0.0-rc.17
+        version: '@solidjs/signals@2.0.0-rc.17'
       svelte:
         specifier: 5.57.2
         version: 5.57.2
@@ -74,6 +98,9 @@ importers:
       valtio:
         specifier: 2.3.2
         version: 2.3.2(react@19.2.5)
+      vue-reactivity-3.6:
+        specifier: npm:@vue/reactivity@3.6.0-rc.12
+        version: '@vue/reactivity@3.6.0-rc.12'
     devDependencies:
       '@types/node':
         specifier: 26.6.5
@@ -108,6 +135,9 @@ packages:
         optional: true
       zone.js:
         optional: true
+
+  '@artalar/act@3.2.1':
+    resolution: {integrity: sha512-M+I5FlpOjKfwPyiGTzG0H+tZRE252mkNfMAJM0EGoNXgjlfakunriOZ6h12+RP6ed6awbB3kKh72R8AHg4OZDg==}
 
   '@esbuild/aix-ppc64@0.28.2':
     resolution: {integrity: sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==}
@@ -265,6 +295,16 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@frp-ts/core@1.0.0-beta.6':
+    resolution: {integrity: sha512-vAv0Qlw6oJsfqMcQLMQxQYteNiPHahKIrmYXoF7i0jRzr9U4pXai/ZNpqEBpnsZc4PM8znF3DoBbPMxzvI84Zg==}
+    peerDependencies:
+      tslib: ^2.3.1
+
+  '@frp-ts/utils@1.0.0-beta.6':
+    resolution: {integrity: sha512-nAcc5L3N3ZxuiISyOAfC0YEvPKI7Zoj2hdEumX2ZnmYARzjMTshTnpECwW4vAkroEI6cjHAfLqqjK9XObZlQ1A==}
+    peerDependencies:
+      tslib: ^2.3.1
+
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
 
@@ -283,6 +323,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@maverick-js/signals@6.0.0':
+    resolution: {integrity: sha512-aPAxQOjxcGaLpjMcfE0mRuMgnCVLfdPSGINYmKDjTbTfY37lZdz9CGnVDrkr+svNSADZbUVk7oPVjXA2+vtxYg==}
 
   '@oxc-project/types@0.155.0':
     resolution: {integrity: sha512-SeE8JPwW1xs1tHeNycjUtUBdhorRa8o4jlvjwk49R7/Z291i+4DQa7JJIgOm/TaYQZx+QrPQbVJ/9c8dMIZN8Q==}
@@ -310,6 +353,12 @@ packages:
 
   '@reactively/core@0.0.8':
     resolution: {integrity: sha512-5uAnNf2gQSm3gM7z6Lx079H1/MuDQQI+5aYfwyDFGR9nHZj8yblLY/6aOJVWp+NcBwXVBKuWQ28qWHD9F1qN1w==}
+
+  '@reatom/core@1001.3.0':
+    resolution: {integrity: sha512-M8pZM6sWIQLIJZVaMI//tqadppk5GHV1MMjDZ0q5g3yxF1sXQs5ftgAxnitxAlP/ViwYWKxyrQI/8q1A3DeaNA==}
+
+  '@riim/event@0.2.1':
+    resolution: {integrity: sha512-GNyY6RI5aWOWaaNS8BpaUaAmbR93t1ptK9pDnnwYVZUf2nivdZjLx1bQfdJdHzIG9yZF8Xgj5o4GIyeBR38oNg==}
 
   '@rolldown/binding-android-arm-eabi@1.2.15':
     resolution: {integrity: sha512-aLcgK9gIJ3YRvrrtfSBbRa27F5WrpiTaPulnFpsHPxpUHgFlSgnU4854MHwoRGEBhfRJDWCS2WQ7lIjskE9Olw==}
@@ -407,6 +456,13 @@ packages:
   '@solidjs/signals@0.13.13':
     resolution: {integrity: sha512-4FrkhyvbAT5V6vprmv9Qoi5DAMzo25zkTa7ifEH1W1pwtU6N95ErEZZot8j2rm+KIRYlto9Kq0dzn6nNRdW/uA==}
 
+  '@solidjs/signals@2.0.0-rc.17':
+    resolution: {integrity: sha512-GXXWBlJsiZeBCTw3a941Y/HVBYfwupCfctPnwNjFJV+u3tZnRe/SL+NeStI1247zfxlvkH4p9PWzdZK/yX1I1Q==}
+    engines: {node: '>=22.12.0'}
+
+  '@standard-schema/spec@1.1.0':
+    resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
+
   '@sveltejs/acorn-typescript@1.0.13':
     resolution: {integrity: sha512-wgKggnhZVL9Bfx1OaKKTrYY9BFRk6C8UAkQNUcIv1+llzYrIqy+RZm5HPKzn0NpEBvTVhTqB4kQyllZywsRBRQ==}
     peerDependencies:
@@ -449,8 +505,32 @@ packages:
   '@vue/reactivity@3.5.44':
     resolution: {integrity: sha512-u+QJdKeBBEADkPdevsL+6E12QlYVfBD8Zcw5qjDQKtamI6l14KyqazJMobhCKelhWN5zpyKUiEDoTyHE93cqWw==}
 
+  '@vue/reactivity@3.6.0-rc.12':
+    resolution: {integrity: sha512-clivElcJ56eCxZgSEOOn18xIy5rb7wAlmOUJ/8jTkkEnk9Geu60pjOsVKIlLJRww9WA2MUtB+4svmZIVYm4TLQ==}
+
   '@vue/shared@3.5.44':
     resolution: {integrity: sha512-H82XLH0DjmSOdbEwO15x3QTo1f5PWEtv237eLpYKc0mqLu+B8hnq16lFWmuBmNurkeiG3wr+oM1FhOll/YVFRg==}
+
+  '@vue/shared@3.6.0-rc.12':
+    resolution: {integrity: sha512-xk8fOMESfa00AINIQrwqX9l35xDpi2sE7uTSlt6RWt64TU2FE9SnmqJu3hjdE4dGB1lQ6EwalhowPp4ZOKp1Dw==}
+
+  '@webreflection/signal@2.1.2':
+    resolution: {integrity: sha512-0dW0fstQQkIt588JwhDiPS4xgeeQcQnBHn6MVInrBzmFlnLtzoSJL9G7JqdAlZVVi19tfb8R1QisZIT31cgiug==}
+
+  '@whatsup/core@2.6.0':
+    resolution: {integrity: sha512-i4qETnKlDr1KCSwnURSC97maefNbj26Fn/tZlWPbimI35re/NnVCOrJ7jsQOjkZuWu7lDur1Y76cR4DtKmv6sg==}
+
+  '@whatsup/cssx@2.6.0':
+    resolution: {integrity: sha512-7TRWGfoWhRXK/PUaJQhziX20GYWqbBANu+oJnDy1QEVDw55b4IX4m+0Z5M8aX3y+IrPVOueUhfhSHhmZKTsXhQ==}
+
+  '@whatsup/equals@2.6.0':
+    resolution: {integrity: sha512-+S1eMR3JPqHtjr5Hrrxwdvq8AaIpCnF+B+hGkePHVkTqHnl2VnQ2VAWoXkKvZSey7pOcV647GvsJ6zCpgW21Qg==}
+
+  '@whatsup/jsx@2.6.0':
+    resolution: {integrity: sha512-rdYkWIop/DnHyobK8Fm+8XDKO6Qg8Uo8kPQqwYxxS8zJxh+K98iOmFHEszraHLlw1YQql8jJnfRfPYkVr6QwTA==}
+
+  '@whatsup/route@2.6.0':
+    resolution: {integrity: sha512-sD0wNwCaYDObE3p35pvQunjBudatrACVHz3UYyLVVKagrkpXbHCMMPaej95iZE+VnOsXFxpebnB23d4V5256Fw==}
 
   '@zakkster/lite-signal@1.5.2':
     resolution: {integrity: sha512-v3Io8ADBRTbaWNMnKAdBH0dnwxY+8ZM9H+zscanH56lHzod6FuQFClIgl5Zr+fLJMkJbJox1XzBZ1W/kgWYZpw==}
@@ -464,6 +544,9 @@ packages:
   alien-signals@3.2.1:
     resolution: {integrity: sha512-I8FjmltrfnDFoZedi5CG8DghVYNhzb/Ijluz7tCSJH0xpd0484Kowhbb1XDYOxfJpU1p5wnM2X54dA+IfGyD1g==}
 
+  anod@0.9.1:
+    resolution: {integrity: sha512-J3Rw8vYEw8EZfFyCHM43C95ozidIoOV4ai9cQvvkWV3UbdKUfjjqDq4T0uOHEdBDPcqzwBRhI88uvhktXoaFVA==}
+
   aria-query@5.3.1:
     resolution: {integrity: sha512-Z/ZeOgVl7bcSYZ/u/rh0fOpvEpq//LZmdbkXyc7syVzjPAhfOa9ebsdTSjEBDU4vs5nC98Kfduj1uFo0qyET3g==}
     engines: {node: '>= 0.4'}
@@ -475,6 +558,25 @@ packages:
   axobject-query@4.1.0:
     resolution: {integrity: sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==}
     engines: {node: '>= 0.4'}
+
+  cellx@2.4.0:
+    resolution: {integrity: sha512-bUzQEGUWidGVhE/8bzF2zEfDKXV/U+gIPi/yrfNgPy0O/6m01QaTIw/B0/7e05I4IWOUC9hCgOPhbkiiZW0Q0A==}
+    peerDependencies:
+      '@artalar/act': 3.2.1
+      '@frp-ts/core': 1.0.0-beta.6
+      '@preact/signals-core': 1.13.0
+      '@reatom/core': 3.10.3
+      '@webreflection/signal': 2.1.2
+      alien-signals: 3.1.2
+      effector: 23.4.4
+      mobx: 6.15.0
+      mol_wire_lib: 1.0.1682
+      nanostores: 1.1.0
+      s-js: 0.4.9
+      solid-js: 1.9.11
+      spred: 0.34.0
+      usignal: 0.10.0
+      whatsup: 2.6.0
 
   chai@6.3.0:
     resolution: {integrity: sha512-XWAtwJ6OHO+tj0EKCs0Y2UamnyOxseZWltU4x2U2wh8g4AigdjwvtUjvLP2tqkA/avxHEtzxNaqGq/YGNwckKg==}
@@ -499,12 +601,19 @@ packages:
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
 
+  dalien-signals@3.2.1:
+    resolution: {integrity: sha512-kyoe2BJaOaAYQPvGtX9l+kga83VjTPSxk+J8eOUomOiXjZJlbZa6BR0EYYJrYQ4drrGJwjrLTFXIF57ZyVnjtA==}
+
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
   devalue@5.9.4:
     resolution: {integrity: sha512-sPAT4pztbu6586/hrhOnMKS17IJrvg12mXiSPSS3W5qDeN2RGgvZ0diZCm31dBbnevfVmujNO3IM2wrS4Y2Rhg==}
+
+  effector@23.4.4:
+    resolution: {integrity: sha512-QkZboRN28K/iwxigDhlJcI3ux3aNbt8kYGGH/GkqWG0OlGeyuBhb7PdM89Iu+ogV8Lmz16xIlwnXR2UNWI6psg==}
+    engines: {node: '>=11.0.0'}
 
   es-module-lexer@2.3.2:
     resolution: {integrity: sha512-poHGpORABojJJucnV9KbOavETW8lBVnphkW77ER5/BQ5Fz7oXSoCNek7IH3vR5nRjdsEz926ibFYX8KtLQmdyw==}
@@ -545,6 +654,9 @@ packages:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
+
+  idb-keyval@6.3.0:
+    resolution: {integrity: sha512-um+2dgAWmYsu615EXpWVwSmapJhON0G43t3Ka/EVaohzPQXSMqKEqeDK/oIW3Ow+BXaF2PvSc+oBTFp793A5Ow==}
 
   is-reference@3.0.3:
     resolution: {integrity: sha512-ixkJoqQvAP88E6wLydLGGqCJsrFUnqoH6HnaczB8XmDH1oaWU+xxdptvikTgaEhtZ53Ky6YXiBuUI2WXLMCwjw==}
@@ -642,6 +754,10 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
+  nanostores@1.1.0:
+    resolution: {integrity: sha512-yJBmDJr18xy47dbNVlHcgdPrulSn1nhSE6Ns9vTG+Nx9VPT6iV1MD6aQFp/t52zpf82FhLLTXAXr30NuCnxvwA==}
+    engines: {node: ^20.0.0 || >=22.0.0}
+
   obug@3.0.0:
     resolution: {integrity: sha512-5vvB5+W7ePv+p3uqxi+RcW1XAzLW0/hxt3/4X4Lc4qHudzOhmBiBwOY6DRob4WnanAEGvNcLjF+KNOufrUoEQw==}
     engines: {node: '>=12.20.0'}
@@ -672,6 +788,9 @@ packages:
     resolution: {integrity: sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA==}
     engines: {node: '>=0.10.0'}
 
+  rescript-signals@3.1.4:
+    resolution: {integrity: sha512-laQtebinLLmlDQh+U4eT+soNV5DBtxj19LYit0qJecVe5GjEhl397lGM2wJbuyXawbcMaltpnXWHBLjdq72ttA==}
+
   rolldown@1.2.15:
     resolution: {integrity: sha512-6odND+fel5zVw3I4Yc2e69gvguDnX0CAAGiNDZSq4ik5WUcaLrkD2GLuog0XcODbor31hZ5ayEMgVDno+KPV5g==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -689,8 +808,18 @@ packages:
     peerDependencies:
       seroval: ^1.0
 
+  seroval-plugins@1.6.7:
+    resolution: {integrity: sha512-4Nk35ttD3DTDJW4hgw5StsVAPeU6qnDFnULAouw6tQ7oLTV/ICXrWpsXo2EE52eSP2joUMazbVf52mFEcADqRw==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      seroval: ^1.0
+
   seroval@1.6.12:
     resolution: {integrity: sha512-CqbIVfk/7GL3ITwZI55lcPbpQbjHZ2DD5cUj4iH7E9YsCfHNJV1mx7yNp86Z84w5IpmkZZS/2s5vPOWmVWSdQg==}
+    engines: {node: '>=10'}
+
+  seroval@1.6.7:
+    resolution: {integrity: sha512-AeDcLh0yO2SFm9W71essgnSzLV9DI8ZH0x0knXn2DMnUZj728mpLbxjlbB6IqKCmqh8JA3cEqRyGoNkt584JcQ==}
     engines: {node: '>=10'}
 
   signal-polyfill@0.2.2:
@@ -702,9 +831,16 @@ packages:
   solid-js@1.9.17:
     resolution: {integrity: sha512-4GAmLOWPfNV8H9Jfn2LSFTpNEG6jiOKPiwd5lnLGQtehHaX6l3TOLzJqQ7mqwB/3k1Yy3zyumFVopmc/tm34ow==}
 
+  solid-js@2.0.0-rc.17:
+    resolution: {integrity: sha512-ym3x2kzC+vzgD9VNqhqExn3qWzkrpJco3vane0wTFHCVPS9HBXI3GgSp+ieZ1h72zcb2z27PXFSbMsi8Ot+Hxw==}
+    engines: {node: '>=22.12.0'}
+
   source-map-js@1.2.2:
     resolution: {integrity: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==}
     engines: {node: '>=0.10.0'}
+
+  spred@0.34.0:
+    resolution: {integrity: sha512-xjqt8OHd3IRfXvC4Z8eoMzsKG4eELYIy7315lJq2YWBoYVrqPjmMEN8ZWgvxw1JU3mBWpRcxGPf7lNEnCgePrg==}
 
   std-env@4.3.0:
     resolution: {integrity: sha512-OtU/EgQ1kIm5KwqQpBC6ZEMXrZRui11w8zgfTWp8cdO9B8OaPsbA8bTHO2P+HNo1VlUTGMVBwPhydu6poeXiag==}
@@ -830,6 +966,9 @@ packages:
       jsdom:
         optional: true
 
+  whatsup@2.6.0:
+    resolution: {integrity: sha512-o6B0r5pO5eEH9jbITZbw5xsflgs8fYCT3ReHXy5i7y2J/hL5+ByuzuPihe+FJj9QG+jSZZzxg0+MEotBsL5XwA==}
+
   why-is-node-running@3.2.1:
     resolution: {integrity: sha512-Tb2FUhB4vUsGQlfSquQLYkApkuPAFQXGFzxWKHHumVz2dK+X1RUm/HnID4+TfIGYJ1kTcwOaCk/buYCEJr6YjQ==}
     engines: {node: '>=20.11'}
@@ -846,6 +985,8 @@ snapshots:
     dependencies:
       rxjs: 7.8.2
       tslib: 2.8.1
+
+  '@artalar/act@3.2.1': {}
 
   '@esbuild/aix-ppc64@0.28.2':
     optional: true
@@ -925,6 +1066,15 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
+  '@frp-ts/core@1.0.0-beta.6(tslib@2.8.1)':
+    dependencies:
+      '@frp-ts/utils': 1.0.0-beta.6(tslib@2.8.1)
+      tslib: 2.8.1
+
+  '@frp-ts/utils@1.0.0-beta.6(tslib@2.8.1)':
+    dependencies:
+      tslib: 2.8.1
+
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
@@ -946,6 +1096,8 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
+  '@maverick-js/signals@6.0.0': {}
+
   '@oxc-project/types@0.155.0': {}
 
   '@pravosleva/reactive-engine@2.6.0-beta.2(@angular/core@22.2.3(rxjs@7.8.2))(react@19.2.5)':
@@ -956,6 +1108,14 @@ snapshots:
   '@preact/signals-core@1.14.4': {}
 
   '@reactively/core@0.0.8': {}
+
+  '@reatom/core@1001.3.0':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+    optionalDependencies:
+      idb-keyval: 6.3.0
+
+  '@riim/event@0.2.1': {}
 
   '@rolldown/binding-android-arm-eabi@1.2.15':
     optional: true
@@ -1006,6 +1166,10 @@ snapshots:
 
   '@solidjs/signals@0.13.13': {}
 
+  '@solidjs/signals@2.0.0-rc.17': {}
+
+  '@standard-schema/spec@1.1.0': {}
+
   '@sveltejs/acorn-typescript@1.0.13(acorn@8.19.0)':
     dependencies:
       acorn: 8.19.0
@@ -1044,7 +1208,36 @@ snapshots:
     dependencies:
       '@vue/shared': 3.5.44
 
+  '@vue/reactivity@3.6.0-rc.12':
+    dependencies:
+      '@vue/shared': 3.6.0-rc.12
+
   '@vue/shared@3.5.44': {}
+
+  '@vue/shared@3.6.0-rc.12': {}
+
+  '@webreflection/signal@2.1.2': {}
+
+  '@whatsup/core@2.6.0': {}
+
+  '@whatsup/cssx@2.6.0':
+    dependencies:
+      '@whatsup/jsx': 2.6.0
+
+  '@whatsup/equals@2.6.0':
+    dependencies:
+      '@whatsup/core': 2.6.0
+
+  '@whatsup/jsx@2.6.0':
+    dependencies:
+      '@whatsup/core': 2.6.0
+      csstype: 3.2.3
+
+  '@whatsup/route@2.6.0':
+    dependencies:
+      '@whatsup/core': 2.6.0
+      '@whatsup/equals': 2.6.0
+      '@whatsup/jsx': 2.6.0
 
   '@zakkster/lite-signal@1.5.2': {}
 
@@ -1052,11 +1245,32 @@ snapshots:
 
   alien-signals@3.2.1: {}
 
+  anod@0.9.1: {}
+
   aria-query@5.3.1: {}
 
   assertion-error@2.0.1: {}
 
   axobject-query@4.1.0: {}
+
+  cellx@2.4.0(@artalar/act@3.2.1)(@frp-ts/core@1.0.0-beta.6(tslib@2.8.1))(@preact/signals-core@1.14.4)(@reatom/core@1001.3.0)(@webreflection/signal@2.1.2)(alien-signals@3.2.1)(effector@23.4.4)(mobx@7.1.0)(mol_wire_lib@1.0.1820)(nanostores@1.1.0)(s-js@0.4.9)(solid-js@1.9.17)(spred@0.34.0)(usignal@0.10.0)(whatsup@2.6.0):
+    dependencies:
+      '@artalar/act': 3.2.1
+      '@frp-ts/core': 1.0.0-beta.6(tslib@2.8.1)
+      '@preact/signals-core': 1.14.4
+      '@reatom/core': 1001.3.0
+      '@riim/event': 0.2.1
+      '@webreflection/signal': 2.1.2
+      alien-signals: 3.2.1
+      effector: 23.4.4
+      mobx: 7.1.0
+      mol_wire_lib: 1.0.1820
+      nanostores: 1.1.0
+      s-js: 0.4.9
+      solid-js: 1.9.17
+      spred: 0.34.0
+      usignal: 0.10.0
+      whatsup: 2.6.0
 
   chai@6.3.0: {}
 
@@ -1068,9 +1282,13 @@ snapshots:
 
   csstype@3.2.3: {}
 
+  dalien-signals@3.2.1: {}
+
   detect-libc@2.1.2: {}
 
   devalue@5.9.4: {}
+
+  effector@23.4.4: {}
 
   es-module-lexer@2.3.2: {}
 
@@ -1120,6 +1338,9 @@ snapshots:
       picomatch: 4.0.7
 
   fsevents@2.3.3:
+    optional: true
+
+  idb-keyval@6.3.0:
     optional: true
 
   is-reference@3.0.3:
@@ -1193,6 +1414,8 @@ snapshots:
 
   nanoid@3.3.20: {}
 
+  nanostores@1.1.0: {}
+
   obug@3.0.0: {}
 
   oby@15.1.2: {}
@@ -1213,6 +1436,8 @@ snapshots:
 
   react@19.2.5:
     optional: true
+
+  rescript-signals@3.1.4: {}
 
   rolldown@1.2.15:
     dependencies:
@@ -1245,7 +1470,13 @@ snapshots:
     dependencies:
       seroval: 1.6.12
 
+  seroval-plugins@1.6.7(seroval@1.6.7):
+    dependencies:
+      seroval: 1.6.7
+
   seroval@1.6.12: {}
+
+  seroval@1.6.7: {}
 
   signal-polyfill@0.2.2: {}
 
@@ -1257,7 +1488,16 @@ snapshots:
       seroval: 1.6.12
       seroval-plugins: 1.6.12(seroval@1.6.12)
 
+  solid-js@2.0.0-rc.17:
+    dependencies:
+      '@solidjs/signals': 2.0.0-rc.17
+      csstype: 3.2.3
+      seroval: 1.6.7
+      seroval-plugins: 1.6.7(seroval@1.6.7)
+
   source-map-js@1.2.2: {}
+
+  spred@0.34.0: {}
 
   std-env@4.3.0: {}
 
@@ -1334,6 +1574,14 @@ snapshots:
       '@types/node': 26.6.5
     transitivePeerDependencies:
       - msw
+
+  whatsup@2.6.0:
+    dependencies:
+      '@whatsup/core': 2.6.0
+      '@whatsup/cssx': 2.6.0
+      '@whatsup/equals': 2.6.0
+      '@whatsup/jsx': 2.6.0
+      '@whatsup/route': 2.6.0
 
   why-is-node-running@3.2.1: {}
 

@@ -18,8 +18,17 @@ pnpm build
 Read [SEMANTICS.md](SEMANTICS.md) and the adapter contract in
 [src/util/reactiveFramework.ts](src/util/reactiveFramework.ts) before making
 changes. Add adapters under `src/frameworks/` and register enabled adapters in
-[src/config.ts](src/config.ts). Document semantic differences and limitations;
+[src/config.ts](src/config.ts) and, in the same order,
+[src/frameworkCatalog.json](src/frameworkCatalog.json) (one isolated worker per
+entry). Pin the library to an exact version; measure another generation of a
+library through an npm alias with a shared adapter factory that does not
+import any library itself. Document semantic differences and limitations;
 include correctness checks appropriate to the change.
+
+`pnpm build` rejects a worker that bundles a development build, contains two
+versions of one package, or leaves a package to be resolved at runtime. Check
+`dist/workers/<id>.packages.json`: it must list exactly the library and version
+the adapter's name claims.
 
 Keep fixture setup outside measured operations and use the centralized runner in
 [src/util/benchmark.ts](src/util/benchmark.ts) for measurement.

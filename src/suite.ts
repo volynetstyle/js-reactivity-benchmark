@@ -5,6 +5,7 @@ import { molBench } from "./molBench";
 import { sbench } from "./sBench";
 import { dynamicBench } from "./dynamicBench";
 import { lifecycleBench } from "./lifecycleBench";
+import { cellxbench } from "./cellxBench";
 
 export function registerFrameworkBenchmarks(info: FrameworkInfo): void {
   const { framework } = info;
@@ -14,4 +15,5 @@ export function registerFrameworkBenchmarks(info: FrameworkInfo): void {
   sbench(framework);
   dynamicBench(info);
   lifecycleBench(framework);
+  cellxbench(framework);
 }

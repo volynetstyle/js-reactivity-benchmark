@@ -81,11 +81,46 @@ pnpm.cmd run run
 ```
 
 CI executes `pnpm test`, `pnpm build`, and `pnpm bench:smoke`. The smoke
-checks 58 isolated rows across every adapter, with two samples per row, plus
-production build mode and recorded package versions;
-it is a correctness check, not a performance publication. A static check and
-a runtime guard (`BENCH_ASSERT_NO_CONSOLE=1`) reject console calls on the hot
-path. The full benchmark workflow uses the exact tested commit.
+checks 97 isolated rows across all 24 adapters, with two samples per row, plus
+production build mode, recorded package versions, and a real two-shard run
+merged into one page; it is a correctness check, not a performance
+publication. A static check and a runtime guard (`BENCH_ASSERT_NO_CONSOLE=1`)
+reject console calls on the hot path.
+
+### Parallel CI measurement
+
+The Benchmarks workflow measures in parallel on separate runner VMs, then
+merges the results. GitHub assigns different CPU models to different jobs, so
+shards split **scenarios, never frameworks**: every framework of a scenario
+runs on the same VM and each per-scenario comparison stays within one CPU
+(the same-instance principle of Laaber et al. 2019 and duet benchmarking).
+
+- `BENCH_SHARD=i/n` selects the i-th of n scenario shards. Scenarios are
+  balanced by the measured cost in the committed samples file (longest first),
+  deterministically, so every job computes the same partition.
+- `machine_rounds` (workflow input) measures every shard again on other VMs.
+  The merged score is then the median across machines, and the interval is
+  their range, which exposes the hardware lottery instead of hiding it.
+- [`scripts/merge-shards.mjs`](scripts/merge-shards.mjs) refuses to merge
+  shards that differ in commit, lockfile, bundle hash, Node/V8, package
+  versions, or sampling policy, or that cover scenarios incompletely or twice.
+  The page lists every machine and the scenarios it measured.
+
+Run a shard locally with, for example, `BENCH_SHARD=2/8 pnpm run run`, and merge
+shard outputs (`<name>.log` + `<name>.samples.json` pairs) with
+`node scripts/merge-shards.mjs <dir>`.
+
+### Failures are results
+
+A row that produces a wrong value, throws, crashes, runs out of memory,
+overflows the stack, or exceeds `BENCH_ROW_TIMEOUT_MS` is recorded as a
+`FAILED` row with its classified reason, and the run continues. Such a
+framework is shown, but it is not ranked overall: scoring it only over the
+scenarios it completed would rank it on an easier workload set. The run still
+exits non-zero unless `BENCH_ALLOW_FAILURES=1`, which only the publication
+workflow sets; tests and the smoke stay strict. For a complete local run that
+includes libraries with known failures, use
+`BENCH_ALLOW_FAILURES=1 pnpm bench`.
 
 After the run, these files are updated:
 
@@ -106,7 +141,8 @@ pnpm results:page
 - `pnpm run` - execute the built runner with `node --expose-gc`
 - `pnpm bench` - build, run benchmarks, save `bench-results/latest.log`, and refresh `index.html`
 - `pnpm results:page` - rebuild `index.html` from an existing log
-- `pnpm bench:smoke` - verify the built workers and their correctness gates
+- `pnpm bench:smoke` - verify the built workers, their correctness gates, and a sharded run
+- `node scripts/merge-shards.mjs <dir>` - merge CI shard outputs into one log, samples file and page
 
 ## What Gets Measured
 
@@ -118,7 +154,7 @@ The current default run includes several benchmark groups. They are classified b
 - `push` - fan-out propagation and effect delivery
 - `dynamic` - branch switching, dependency cleanup, and retracking
 - `large_graph` - scaling behavior on larger DAGs
-- `baseline` - historical propagation scenarios such as `diamond`, `mux`, and `triangle`
+- `baseline` - historical propagation scenarios such as `diamond`, `mux`, and `triangle`, plus the `cellx1000`/`cellx2500` layer workloads of the original suite
 
 The `dynamicBench` set now also includes several more app-like presets such as
 `dashboard selective reads`, `editor derived state`, `kanban board`, and
@@ -163,9 +199,11 @@ leader's interval lies entirely below the runner-up's.
 ## Dependency versions
 
 Every dependency is pinned exactly to its npm `latest` dist-tag at the time of
-the update. One exception: `@solidjs/signals` stays on 0.13.13, its newest
-stable release, because its `latest` tag points at a stale 2.0 release
-candidate with a different effect API. Update a library deliberately, run the
+the update. Second generations are measured next to the stable lines through
+npm aliases: `solid-js-2`, `solid-signals-2` (2.0.0-rc.17) and
+`vue-reactivity-3.6` (3.6.0-rc.12). The stable `@solidjs/signals` row stays on
+0.13.13, because that package's `latest` tag points at a stale 2.0 release
+candidate. Update a library deliberately, run the
 full suite, and publish a fresh run; the page lists the measured versions.
 
 Graph topology uses a vendored copy of the `random@5.4.1` generator
@@ -178,7 +216,13 @@ The repository contains adapters for:
 
 - Reflex
 - Alien Signals
+- Dalien Signals (alien-signals over an `Int32Array` arena)
 - [Reactive Engine](https://github.com/garage-13/reactive-engine) (synchronous graph core)
+- Anod (async-native, explicit dependency reads)
+- Reatom (`@reatom/core` 1001)
+- Maverick Signals
+- Cellx
+- ReScript Signals
 - Angular Signals
 - MobX
 - mol_wire
@@ -187,13 +231,13 @@ The repository contains adapters for:
 - Reactively
 - S.js
 - Signia
-- Solid
-- @solidjs/signals
+- Solid 1.9 and Solid 2.0 RC
+- @solidjs/signals 0.13 and 2.0 RC
 - Svelte
 - TC39 Signals Proposal polyfill
 - Tansu
 - uSignal
-- Vue Reactivity
+- Vue Reactivity 3.5 and 3.6 RC
 - Compostate
 - Valtio
 - Kairo

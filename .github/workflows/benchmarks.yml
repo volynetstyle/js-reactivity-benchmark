@@ -1,5 +1,11 @@
 name: Benchmarks
 
+# Measurement runs in parallel CI shards. Shards split scenarios, never
+# frameworks: every framework of a scenario runs on the same runner VM, because
+# GitHub assigns different CPU models to different jobs. Optional machine
+# rounds measure every shard again on other VMs; the merged score is then the
+# median across machines with the range reported as its interval.
+
 on:
   workflow_run:
     workflows:
@@ -12,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       framework:
-        description: "Optional framework name to benchmark, e.g. reflex"
+        description: "Optional framework name(s) to benchmark, e.g. reflex"
         required: false
         type: string
         default: ""
@@ -23,7 +29,17 @@ on:
         options: [quick, tails]
         default: quick
       rounds:
-        description: "Fresh-process repetitions per row; >1 reports the median of round medians and their range"
+        description: "Fresh-process repetitions per row within one VM"
+        required: false
+        type: string
+        default: "1"
+      shards:
+        description: "Parallel scenario shards (one VM each)"
+        required: false
+        type: string
+        default: "8"
+      machine_rounds:
+        description: "Independent VMs per shard; >1 reports the median across machines and their range"
         required: false
         type: string
         default: "1"
@@ -31,8 +47,16 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: benchmarks-${{ github.event.workflow_run.head_branch || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  TESTED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+  TARGET_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+
 jobs:
-  benchmark:
+  plan:
     if: |
       github.actor != 'github-actions[bot]' &&
       (
@@ -40,12 +64,43 @@ jobs:
         github.event.workflow_run.conclusion == 'success'
       )
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      shards: ${{ steps.plan.outputs.shards }}
+    steps:
+      - name: Plan shards
+        id: plan
+        env:
+          SHARDS: ${{ github.event.inputs.shards || '8' }}
+          MACHINE_ROUNDS: ${{ github.event.inputs.machine_rounds || '1' }}
+        run: |
+          node -e '
+            const shards = Number(process.env.SHARDS);
+            const rounds = Number(process.env.MACHINE_ROUNDS);
+            if (!Number.isInteger(shards) || shards < 1 || shards > 32) throw new Error("shards must be 1..32");
+            if (!Number.isInteger(rounds) || rounds < 1 || rounds > 5) throw new Error("machine_rounds must be 1..5");
+            const include = [];
+            for (let round = 1; round <= rounds; round++)
+              for (let shard = 1; shard <= shards; shard++) include.push({ round, shard });
+            console.log("matrix=" + JSON.stringify({ include }));
+            console.log("shards=" + shards);
+          ' >> "$GITHUB_OUTPUT"
+
+  measure:
+    name: Measure shard ${{ matrix.shard }} (machine round ${{ matrix.round }})
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      # A partial set of shards cannot be published; stop spending runners.
+      fail-fast: true
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ env.TESTED_SHA }}
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
@@ -63,23 +118,67 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --strict-peer-dependencies
 
-      - name: Run benchmarks
+      - name: Build
+        run: pnpm build
+
+      - name: Run shard
         env:
           BENCH_FRAMEWORK: ${{ github.event.inputs.framework }}
           BENCH_PROFILE: ${{ github.event.inputs.profile || 'quick' }}
           BENCH_ROUNDS: ${{ github.event.inputs.rounds || '1' }}
+          BENCH_SHARD: ${{ matrix.shard }}/${{ needs.plan.outputs.shards }}
+          BENCH_MACHINE_ROUND: ${{ matrix.round }}
           BENCH_ASSERT_NO_CONSOLE: "1"
-          BENCH_SOURCE_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
-        run: pnpm bench
+          # A library that crashes or runs out of memory is published as a
+          # FAILED row (not ranked) instead of blocking the whole leaderboard.
+          BENCH_ALLOW_FAILURES: "1"
+          BENCH_SOURCE_COMMIT: ${{ env.TESTED_SHA }}
+          BENCH_SAMPLES_FILE: shard-out/shard-${{ matrix.round }}-${{ matrix.shard }}.samples.json
+        run: |
+          mkdir -p shard-out
+          node --expose-gc dist/index.js > "shard-out/shard-${{ matrix.round }}-${{ matrix.shard }}.log"
+
+      - name: Upload shard output
+        uses: actions/upload-artifact@v7
+        with:
+          name: bench-shard-${{ matrix.round }}-${{ matrix.shard }}
+          path: shard-out/
+          retention-days: 30
+          if-no-files-found: error
+
+  publish:
+    needs: [plan, measure]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          ref: ${{ env.TESTED_SHA }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Download shard outputs
+        uses: actions/download-artifact@v8
+        with:
+          pattern: bench-shard-*
+          merge-multiple: true
+          path: shard-out
+
+      # Refuses shards from different commits, lockfiles, bundles, runtimes or
+      # sampling policies, and incomplete or overlapping scenario coverage.
+      - name: Merge shards and render the results page
+        run: node scripts/merge-shards.mjs shard-out
 
       - name: Archive benchmark output
         id: archive
         shell: bash
         run: |
           timestamp="$(date -u +'%Y%m%dT%H%M%SZ')"
-          commit_sha="${{ github.event.workflow_run.head_sha || github.sha }}"
-          short_sha="${commit_sha::7}"
-          ref_name="${{ github.event.workflow_run.head_branch || github.ref_name }}"
+          short_sha="${TESTED_SHA::7}"
           archive_dir="bench-results/history"
           archive_log="$archive_dir/${timestamp}-${short_sha}.log"
           archive_meta="$archive_dir/${timestamp}-${short_sha}.json"
@@ -91,16 +190,18 @@ jobs:
 
           cat > "$archive_meta" <<EOF
           {
-            "commit": "${commit_sha}",
+            "commit": "${TESTED_SHA}",
             "shortCommit": "${short_sha}",
-            "ref": "${ref_name}",
+            "ref": "${TARGET_BRANCH}",
             "runId": "${GITHUB_RUN_ID}",
             "runNumber": "${GITHUB_RUN_NUMBER}",
             "generatedAtUtc": "${timestamp}",
             "logPath": "${archive_log}",
             "samplesPath": "${archive_samples}",
             "profile": "${{ github.event.inputs.profile || 'quick' }}",
-            "rounds": "${{ github.event.inputs.rounds || '1' }}"
+            "rounds": "${{ github.event.inputs.rounds || '1' }}",
+            "shards": "${{ needs.plan.outputs.shards }}",
+            "machineRounds": "${{ github.event.inputs.machine_rounds || '1' }}"
           }
           EOF
 
@@ -126,9 +227,6 @@ jobs:
 
       - name: Check that the tested commit is still the branch head
         id: publication
-        env:
-          TARGET_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
-          TESTED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
           remote_head="$(git ls-remote origin "refs/heads/$TARGET_BRANCH" | cut -f1)"
           if [ "$remote_head" = "$TESTED_SHA" ]; then
@@ -141,8 +239,6 @@ jobs:
       # so attach the branch there before committing (required by v6+).
       - name: Attach the branch at the tested commit
         if: steps.publication.outputs.current == 'true'
-        env:
-          TARGET_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
         run: git checkout -B "$TARGET_BRANCH"
 
       - name: Commit benchmark results
@@ -151,4 +247,4 @@ jobs:
         with:
           commit_message: "chore: update benchmark results [skip ci]"
           file_pattern: bench-results index.html
-          branch: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+          branch: ${{ env.TARGET_BRANCH }}

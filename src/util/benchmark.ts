@@ -1,5 +1,5 @@
 import { fork } from "node:child_process";
-import { cpus, totalmem } from "node:os";
+import { cpus, release, totalmem, type } from "node:os";
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
@@ -23,6 +23,8 @@ export type BenchmarkGcMode = false | true | "once" | "inner";
 export interface BenchmarkCase<TFixture, TResult> {
   framework: string;
   name: string;
+  /** Report label when it differs from `name`; known before measuring. */
+  title?: string;
   setup: () => TFixture;
   benchmark: (fixture: TFixture) => TResult;
   validate?: (result: TResult, fixture: TFixture) => void;
@@ -84,9 +86,59 @@ export interface SamplingPolicy {
   rounds: number;
 }
 
+export type FailureKind =
+  | "incorrect"
+  | "error"
+  | "out-of-memory"
+  | "stack-overflow"
+  | "crashed"
+  | "timeout";
+
+export interface RowFailure {
+  kind: FailureKind;
+  message: string;
+}
+
+/**
+ * A row that could not be measured. Failures are results: they are logged,
+ * saved and shown, and the framework is not ranked overall.
+ */
+export interface FailedRecord {
+  id: string;
+  framework: string;
+  name: string;
+  title: string;
+  status: "failed";
+  failure: RowFailure;
+  group: string;
+  family: string;
+}
+
 type CaseOutcome =
   | { kind: "measured"; id: string; round: RoundRecord; row: PerfRowStrings }
-  | { kind: "deferred"; id: string; pilotMs: number; row: PerfRowStrings };
+  | { kind: "deferred"; id: string; pilotMs: number; row: PerfRowStrings }
+  | { kind: "failed"; id: string; failure: RowFailure };
+
+/** Thrown when a produced result is wrong, as opposed to a crash. */
+class ValidationError extends Error {}
+
+export function classifyFailure(text: string): FailureKind {
+  if (
+    /heap out of memory|Array buffer allocation failed|Invalid array length|allocation failed/i.test(
+      text
+    )
+  )
+    return "out-of-memory";
+  if (/Maximum call stack size exceeded/i.test(text)) return "stack-overflow";
+  return "crashed";
+}
+
+function failureOf(error: unknown): RowFailure {
+  const message = error instanceof Error ? error.message : String(error);
+  if (error instanceof ValidationError) return { kind: "incorrect", message };
+  const kind = classifyFailure(message);
+  return { kind: kind === "crashed" ? "error" : kind, message };
+}
 
 interface RegisteredCase<
   TFixture = unknown,
@@ -212,6 +264,116 @@ export function executionOrder<T extends { name: string }>(
   });
 }
 
+export interface ShardSpec {
+  index: number;
+  count: number;
+}
+
+/** `BENCH_SHARD=i/n` selects the i-th of n scenario shards (1-based). */
+export function readShard(raw = process.env.BENCH_SHARD?.trim()) {
+  if (!raw) return undefined;
+  const match = raw.match(/^(\d+)\/(\d+)$/);
+  const index = Number(match?.[1]);
+  const count = Number(match?.[2]);
+  if (!match || index < 1 || count < 1 || index > count)
+    throw new Error(`BENCH_SHARD must look like i/n with 1 <= i <= n: ${raw}`);
+  return { index, count } satisfies ShardSpec;
+}
+
+/**
+ * Partition scenarios, never frameworks: every framework of a scenario runs
+ * on the same machine, so each per-scenario comparison stays within one CPU
+ * even when CI shards land on different hardware. Longest-processing-time
+ * first by measured cost; deterministic for identical inputs.
+ */
+export function shardScenarios(
+  names: readonly string[],
+  count: number,
+  weights: ReadonlyMap<string, number>
+): string[][] {
+  if (count > names.length)
+    throw new Error(
+      `Cannot split ${names.length} scenarios into ${count} shards`
+    );
+  const known = names
+    .map((name) => weights.get(name))
+    .filter((weight): weight is number => weight !== undefined && weight > 0)
+    .sort((a, b) => a - b);
+  const fallback = known.length ? known[Math.floor(known.length / 2)] : 1;
+  const weightOf = (name: string) => {
+    const weight = weights.get(name);
+    return weight !== undefined && weight > 0 ? weight : fallback;
+  };
+  const order = names
+    .map((name, index) => ({ name, index, weight: weightOf(name) }))
+    .sort((a, b) => b.weight - a.weight || a.index - b.index);
+  const loads = new Array<number>(count).fill(0);
+  const shardOf = new Map<string, number>();
+  for (const { name, weight } of order) {
+    let target = 0;
+    for (let shard = 1; shard < count; shard++)
+      if (loads[shard] < loads[target]) target = shard;
+    loads[target] += weight;
+    shardOf.set(name, target);
+  }
+  return loads.map((_, shard) =>
+    names.filter((name) => shardOf.get(name) === shard)
+  );
+}
+
+/** Total measured cost per scenario from a previous samples file (v3 or v4). */
+export function scenarioWeights(file: string): Map<string, number> {
+  const weights = new Map<string, number>();
+  if (!existsSync(file)) return weights;
+  let rows: any[] = [];
+  try {
+    rows = JSON.parse(readFileSync(file, "utf8")).rows ?? [];
+  } catch {
+    return weights;
+  }
+  const sum = (values: number[] = []) =>
+    values.reduce((total, value) => total + value, 0);
+  for (const row of rows) {
+    const rounds: any[] = row.rounds ?? [row];
+    const cost = sum(
+      rounds.map(
+        (round) =>
+          (round.pilotMs ?? 0) + sum(round.warmupMs) + sum(round.samplesMs)
+      )
+    );
+    weights.set(row.name, (weights.get(row.name) ?? 0) + cost);
+  }
+  return weights;
+}
+
+function selectShard(shard: ShardSpec): string[] {
+  const names = Array.from(new Set(registeredCases.map((entry) => entry.name)));
+  const scenarios = shardScenarios(
+    names,
+    shard.count,
+    scenarioWeights(
+      process.env.BENCH_SHARD_WEIGHTS ?? "bench-results/latest.samples.json"
+    )
+  )[shard.index - 1];
+  const selected = new Set(scenarios);
+  const kept = registeredCases.filter((entry) => selected.has(entry.name));
+  registeredCases.splice(0, registeredCases.length, ...kept);
+  return scenarios;
+}
+
+/** Hash of the runner and worker bundles; shards must measure identical code. */
+function bundleSha256(): string {
+  const files = [process.argv[1], ...workerEntries.values()]
+    .filter((file) => file && existsSync(file))
+    .sort((a, b) => path.basename(a).localeCompare(path.basename(b)));
+  const hash = createHash("sha256");
+  for (const file of files) {
+    hash.update(path.basename(file));
+    hash.update(readFileSync(file));
+  }
+  return hash.digest("hex");
+}
+
 /**
  * Entry point for the parent runner, a row worker (`BENCH_CASE`), and the
  * shared-process diagnostic mode (`BENCH_IN_PROCESS=1`).
@@ -221,8 +383,9 @@ export async function runBenchmarks(): Promise<void> {
     throw new Error("No benchmark cases matched the selection.");
 
   if (process.env.BENCH_CASE) {
-    const outcome = measureCase(
-      registeredCases[0],
+    const entry = registeredCases[0];
+    const outcome = measureCaseSafely(
+      entry,
       readPositiveInteger("BENCH_ROUND", 1),
       process.env.BENCH_DEFER_CAP === "1"
     );
@@ -234,17 +397,21 @@ export async function runBenchmarks(): Promise<void> {
       );
     } else if (outcome.kind === "measured") {
       // Manual single-row run without a parent: print the row directly.
-      logPerfResult(
-        formatRow(summarize(registeredCases[0], [outcome.round]), outcome.row)
-      );
+      logPerfResult(formatRow(summarize(entry, [outcome.round]), outcome.row));
     }
+    if (outcome.kind === "failed")
+      throw new Error(`${entry.id}: ${outcome.failure.message}`);
     return;
   }
 
   const policy = samplingPolicy();
   const isolation = process.env.BENCH_IN_PROCESS === "1" ? "shared" : "row";
+  const shard = readShard();
+  const scenarios = shard ? selectShard(shard) : undefined;
+  const machineRound = readPositiveInteger("BENCH_MACHINE_ROUND", 1);
+  const bundle = bundleSha256();
   console.log(
-    `# semantics=${SEMANTICS_VERSION} profile=${policy.profile} rounds=${policy.rounds} warmup=${policy.warmup} min_samples=${process.env.BENCH_SAMPLES?.trim() || "per-case"} max_samples=${policy.maxSamples} min_time_ms=${policy.minTimeMs} node=${process.version} v8=${process.versions.v8} platform=${process.platform}/${process.arch} cpu=${(cpus()[0]?.model ?? "unknown").replace(/\s+/g, "_")} cores=${cpus().length} ram=${totalmem()} gc=${!!globalThis.gc} isolation=${isolation} order=interleaved node_env=production instrumented=${process.env.BENCH_INSTRUMENT === "1"}`
+    `# semantics=${SEMANTICS_VERSION} profile=${policy.profile} rounds=${policy.rounds} warmup=${policy.warmup} min_samples=${process.env.BENCH_SAMPLES?.trim() || "per-case"} max_samples=${policy.maxSamples} min_time_ms=${policy.minTimeMs} node=${process.version} v8=${process.versions.v8} platform=${process.platform}/${process.arch} cpu=${(cpus()[0]?.model ?? "unknown").trim().replace(/\s+/g, "_")} cores=${cpus().length} ram=${totalmem()} gc=${!!globalThis.gc} isolation=${isolation} order=interleaved node_env=production instrumented=${process.env.BENCH_INSTRUMENT === "1"} shard=${shard ? `${shard.index}/${shard.count}` : "none"} machine_round=${machineRound} bundle=${bundle.slice(0, 12)}`
   );
   const packages = packageVersions();
   for (const [framework, versions] of Object.entries(packages))
@@ -256,7 +423,25 @@ export async function runBenchmarks(): Promise<void> {
   logPerfResult(perfReportHeaders());
 
   const records = await runPlan(policy);
-  await saveTimingRecords(policy, isolation, packages, records);
+  await saveTimingRecords(policy, isolation, packages, records, {
+    shard: shard && { ...shard, scenarios: scenarios! },
+    machineRound,
+    bundleSha256: bundle,
+  });
+  const failures = records.filter(
+    (record): record is FailedRecord => "failure" in record
+  );
+  if (failures.length) {
+    const summary = failures
+      .map(({ id, failure }) => `${id}: ${failure.kind}: ${failure.message}`)
+      .join("\n");
+    // Publication runs record failures as results; every other run fails.
+    if (process.env.BENCH_ALLOW_FAILURES === "1")
+      process.stderr.write(
+        `Recorded ${failures.length} failed rows:\n${summary}\n`
+      );
+    else throw new Error(`Benchmark failures:\n${summary}`);
+  }
 }
 
 interface RowState {
@@ -264,21 +449,28 @@ interface RowState {
   rounds: RoundRecord[];
   row?: PerfRowStrings;
   capped?: { pilotMs: number; ceilingMs: number };
-  failed?: boolean;
+  failure?: RowFailure;
 }
 
-async function runPlan(policy: SamplingPolicy): Promise<TimingRecord[]> {
+async function runPlan(
+  policy: SamplingPolicy
+): Promise<(TimingRecord | FailedRecord)[]> {
   const states = new Map(
     registeredCases.map((entry) => [
       entry.id,
       { entry, rounds: [] } as RowState,
     ])
   );
-  const errors: string[] = [];
-  const records: TimingRecord[] = [];
+  const records: (TimingRecord | FailedRecord)[] = [];
   const total = registeredCases.length * policy.rounds;
   let started = 0;
   const finish = (state: RowState) => {
+    if (state.failure) {
+      const record = failedRecord(state.entry, state.failure);
+      logPerfResult(failedRow(record));
+      records.push(record);
+      return;
+    }
     const record = summarize(state.entry, state.rounds, state.capped);
     logPerfResult(formatRow(record, state.row!));
     records.push(record);
@@ -294,28 +486,27 @@ async function runPlan(policy: SamplingPolicy): Promise<TimingRecord[]> {
       process.stderr.write(
         `[${++started}/${total}] round ${round}/${policy.rounds} ${state.entry.id}\n`
       );
-      try {
-        const outcome = await runRow(state.entry, round, allowDefer);
-        state.row = outcome.row;
-        if (outcome.kind === "deferred") {
-          note(state.entry.name, outcome.pilotMs);
-          deferred.push({ state, pilotMs: outcome.pilotMs });
-          return;
-        }
-        note(state.entry.name, outcome.round.pilotMs);
-        state.rounds.push(outcome.round);
-        if (round === policy.rounds) finish(state);
-      } catch (error) {
-        state.failed = true;
-        errors.push(
-          `${state.entry.id}: ${error instanceof Error ? error.message : String(error)}`
-        );
+      const outcome = await runRow(state.entry, round, allowDefer);
+      if (outcome.kind === "failed") {
+        // A failure in any round is the row's result.
+        state.failure = outcome.failure;
+        finish(state);
+        return;
       }
+      state.row = outcome.row;
+      if (outcome.kind === "deferred") {
+        note(state.entry.name, outcome.pilotMs);
+        deferred.push({ state, pilotMs: outcome.pilotMs });
+        return;
+      }
+      note(state.entry.name, outcome.round.pilotMs);
+      state.rounds.push(outcome.round);
+      if (round === policy.rounds) finish(state);
     };
 
     for (const entry of executionOrder(registeredCases, round)) {
       const state = states.get(entry.id)!;
-      if (state.failed || state.capped) continue;
+      if (state.failure || state.capped) continue;
       // The cap is decided once, in the first round, from all frameworks' pilots.
       await attempt(state, round === 1);
     }
@@ -338,8 +529,6 @@ async function runPlan(policy: SamplingPolicy): Promise<TimingRecord[]> {
     }
   }
 
-  if (errors.length)
-    throw new Error(`Benchmark failures:\n${errors.join("\n")}`);
   return records;
 }
 
@@ -350,9 +539,21 @@ async function runRow(
   allowDefer: boolean
 ): Promise<CaseOutcome> {
   if (process.env.BENCH_IN_PROCESS === "1")
-    return measureCase(entry, round, allowDefer);
-  return await new Promise<CaseOutcome>((resolve, reject) => {
+    return measureCaseSafely(entry, round, allowDefer);
+  const failed = (failure: RowFailure): CaseOutcome => ({
+    kind: "failed",
+    id: entry.id,
+    failure,
+  });
+  return await new Promise<CaseOutcome>((resolve) => {
     let outcome: CaseOutcome | undefined;
+    let timedOut = false;
+    // Keep the end of the worker's diagnostics to classify crashes.
+    let tail = "";
+    const remember = (chunk: Buffer) => {
+      tail = (tail + chunk.toString()).slice(-4096);
+      process.stderr.write(chunk);
+    };
     const child = fork(
       workerEntries.get(entry.framework) ?? process.argv[1],
       process.argv.slice(2),
@@ -368,26 +569,86 @@ async function runRow(
       }
     );
     const timer = setTimeout(() => {
+      timedOut = true;
       child.kill();
-      reject(new Error(`worker exceeded ${ROW_TIMEOUT_MS} ms`));
     }, ROW_TIMEOUT_MS);
-    child.stdout!.on("data", (chunk) => process.stderr.write(chunk));
-    child.stderr!.on("data", (chunk) => process.stderr.write(chunk));
+    child.stdout!.on("data", remember);
+    child.stderr!.on("data", remember);
     child.on("message", (message: CaseOutcome) => {
       if (message?.id === entry.id) outcome = message;
     });
-    child.on("error", reject);
+    child.on("error", (error) =>
+      resolve(failed({ kind: "crashed", message: error.message }))
+    );
     child.on("close", (code, signal) => {
       clearTimeout(timer);
-      if (code === 0 && outcome) resolve(outcome);
+      if (timedOut)
+        resolve(
+          failed({
+            kind: "timeout",
+            message: `worker exceeded ${ROW_TIMEOUT_MS} ms`,
+          })
+        );
+      else if (outcome?.kind === "failed") resolve(outcome);
+      else if (code === 0 && outcome) resolve(outcome);
       else
-        reject(
-          new Error(
-            `worker exited with code ${code}, signal ${signal}${outcome ? "" : ", no result"}`
-          )
+        resolve(
+          failed({
+            kind: classifyFailure(tail),
+            message: `worker exited with code ${code}, signal ${signal}${outcome ? "" : ", no result"}`,
+          })
         );
     });
   });
+}
+
+/** Measure a case; an exception becomes a classified failure outcome. */
+function measureCaseSafely(
+  entry: RegisteredCase,
+  round: number,
+  allowDefer: boolean
+): CaseOutcome {
+  try {
+    return measureCase(entry, round, allowDefer);
+  } catch (error) {
+    return { kind: "failed", id: entry.id, failure: failureOf(error) };
+  }
+}
+
+function failedRecord(
+  entry: RegisteredCase,
+  failure: RowFailure
+): FailedRecord {
+  const [defaultGroup, defaultFamily] = workloadFamily(entry.name);
+  return {
+    id: entry.id,
+    framework: entry.framework,
+    name: entry.name,
+    title: entry.title ?? entry.name,
+    status: "failed",
+    failure,
+    group: entry.group ?? defaultGroup,
+    family: entry.family ?? defaultFamily,
+  };
+}
+
+/** `FAILED` in the time column; the reason stays free of column separators. */
+function failedRow(record: FailedRecord): PerfRowStrings {
+  const reason = record.failure.message
+    .replace(/\s+/g, " ")
+    .replace(/,/g, ";")
+    .slice(0, 200);
+  return {
+    framework: record.framework,
+    test: record.title,
+    time: "FAILED",
+    p95: "",
+    p99: "",
+    cv: "",
+    group: record.group,
+    family: record.family,
+    metrics: `FAILED kind=${record.failure.kind} reason=${JSON.stringify(reason)}`,
+  };
 }
 
 /** Keeps a reference so benchmark results cannot be optimized away. */
@@ -411,7 +672,13 @@ function measureCase(
   const validatePending = () => {
     if (pendingValidation) {
       pendingValidation = false;
-      entry.validate?.(result, fixture);
+      try {
+        entry.validate?.(result, fixture);
+      } catch (error) {
+        throw new ValidationError(
+          error instanceof Error ? error.message : String(error)
+        );
+      }
     }
   };
   const prepare = () => {
@@ -634,7 +901,12 @@ async function saveTimingRecords(
   policy: SamplingPolicy,
   isolation: string,
   packages: Record<string, Record<string, string>>,
-  rows: TimingRecord[]
+  rows: (TimingRecord | FailedRecord)[],
+  run: {
+    shard?: ShardSpec & { scenarios: string[] };
+    machineRound: number;
+    bundleSha256: string;
+  }
 ): Promise<void> {
   const output =
     process.env.BENCH_SAMPLES_FILE ?? "bench-results/last-run.samples.json";
@@ -655,9 +927,13 @@ async function saveTimingRecords(
         node: process.version,
         v8: process.versions.v8,
         platform: `${process.platform}/${process.arch}`,
-        cpu: cpus()[0]?.model ?? "unknown",
+        cpu: cpus()[0]?.model.trim() ?? "unknown",
         cores: cpus().length,
         ram: totalmem(),
+        os: `${type()} ${release()}`,
+        shard: run.shard,
+        machineRound: run.machineRound,
+        bundleSha256: run.bundleSha256,
         gc: !!globalThis.gc,
         isolation,
         order:

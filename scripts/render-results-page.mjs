@@ -25,6 +25,14 @@ export function parseBenchOutput(text) {
       packages[framework.trim()] = versions.split(/\s+/).filter(Boolean);
       continue;
     }
+    if (line.startsWith("# machine ")) {
+      const [id, ...tokens] = line.slice("# machine ".length).split(/\s+/);
+      (meta.machines ??= []).push({
+        id,
+        ...Object.fromEntries(tokens.map((token) => token.split("="))),
+      });
+      continue;
+    }
     if (line.startsWith("#")) {
       for (const token of line.slice(1).trim().split(/\s+/)) {
         const separator = token.indexOf("=");
@@ -52,16 +60,32 @@ export function parseBenchOutput(text) {
       continue;
     }
 
-    const time = Number.parseFloat(timeText);
-    if (!framework || !test || Number.isNaN(time)) {
+    // A row that could not be measured is a result, not a missing value.
+    const failed = timeText === "FAILED";
+    const time = failed ? Number.NaN : Number.parseFloat(timeText);
+    if (!framework || !test || (!failed && Number.isNaN(time))) {
       continue;
     }
-    if (!Number.isFinite(time) || time <= 0)
+    if (!failed && (!Number.isFinite(time) || time <= 0))
       throw new Error(`Invalid duration for ${framework} / ${test}`);
     const pair = JSON.stringify([framework, test]);
     if (seenPairs.has(pair))
       throw new Error(`Duplicate result for ${framework} / ${test}`);
     seenPairs.add(pair);
+    if (failed) {
+      const kind = metrics.match(/kind=(\S+)/)?.[1] ?? "failed";
+      const reason = metrics.match(/reason=("(?:[^"\\]|\\.)*")/)?.[1];
+      rows.push({
+        framework,
+        test,
+        time,
+        failed: true,
+        failure: { kind, reason: reason ? JSON.parse(reason) : "" },
+        group: group || "baseline",
+        family: family || "baseline",
+      });
+      continue;
+    }
     const sampleMatch = metrics.match(/samples=(\d+)/);
     const samples = sampleMatch ? Number(sampleMatch[1]) : undefined;
     const interval = (key) => {
@@ -96,7 +120,10 @@ export function parseBenchOutput(text) {
       samples,
       // Uncertainty of the primary score: a 95% order-statistic interval
       // for the median, or the range of round medians for multi-round runs.
-      interval: interval("median_ci95") ?? interval("round_range"),
+      interval:
+        interval("median_ci95") ??
+        interval("round_range") ??
+        interval("machine_range"),
       p95Interval: interval("p95_ci95"),
       p99Interval: interval("p99_ci95"),
     });
@@ -138,20 +165,29 @@ export function parseBenchOutput(text) {
       interval: row.interval,
       p95Interval: row.p95Interval,
       p99Interval: row.p99Interval,
+      failed: row.failed === true,
+      failure: row.failure,
     });
-    framework.totals += row.time;
+    if (!row.failed) framework.totals += row.time;
   }
 
   const bestByTest = new Map();
   for (const test of tests) {
     const best = rows
-      .filter((row) => row.test === test)
+      .filter((row) => row.test === test && !row.failed)
       .reduce((min, row) => Math.min(min, row.time), Number.POSITIVE_INFINITY);
     bestByTest.set(test, best);
   }
 
+  // A framework with a failed row is shown but not ranked: scoring it over
+  // the scenarios it survived would rank it on an easier workload set.
+  const complete = Array.from(byFramework.values()).filter((framework) =>
+    framework.entries.every((entry) => !entry.failed)
+  );
+  if (!complete.length)
+    throw new Error("No framework completed its scenarios; nothing to rank");
   const commonTests = tests.filter((test) =>
-    Array.from(byFramework.values()).every((framework) =>
+    complete.every((framework) =>
       framework.entries.some((entry) => entry.test === test)
     )
   );
@@ -161,8 +197,12 @@ export function parseBenchOutput(text) {
     );
   const groupTests = new Map();
   for (const group of new Set(rows.map((row) => row.group))) {
-    const participants = Array.from(byFramework.values()).filter((framework) =>
-      framework.entries.some((entry) => entry.group === group)
+    const participants = Array.from(byFramework.values()).filter(
+      (framework) =>
+        framework.entries.some((entry) => entry.group === group) &&
+        framework.entries.every(
+          (entry) => entry.group !== group || !entry.failed
+        )
     );
     groupTests.set(
       group,
@@ -180,29 +220,46 @@ export function parseBenchOutput(text) {
     .map((framework) => ({
       ...framework,
       average: framework.totals / framework.entries.length,
-      relativeScore: geometricMean(
-        framework.entries
-          .filter((entry) => commonTests.includes(entry.test))
-          .map((entry) => entry.time / bestByTest.get(entry.test))
-      ),
+      unranked: !complete.includes(framework),
+      failedTests: framework.entries.filter((entry) => entry.failed),
+      relativeScore: complete.includes(framework)
+        ? geometricMean(
+            framework.entries
+              .filter((entry) => commonTests.includes(entry.test))
+              .map((entry) => entry.time / bestByTest.get(entry.test))
+          )
+        : Number.NaN,
       p95Average: averageFinite(framework.entries.map((entry) => entry.p95)),
       p99Average: averageFinite(framework.entries.map((entry) => entry.p99)),
       cvAverage: averageFinite(framework.entries.map((entry) => entry.cv)),
       scoredTests: commonTests.length,
+      // No group score where the framework failed a row of that group.
       groupScores: computeGroupScores(
-        framework.entries.filter((entry) =>
-          groupTests.get(entry.group)?.includes(entry.test)
+        framework.entries.filter(
+          (entry) =>
+            groupTests.get(entry.group)?.includes(entry.test) &&
+            !framework.entries.some(
+              (other) => other.failed && other.group === entry.group
+            )
         ),
         bestByTest
       ),
       byTest: Object.fromEntries(
-        framework.entries.map((entry) => [entry.test, entry.time])
+        framework.entries
+          .filter((entry) => !entry.failed)
+          .map((entry) => [entry.test, entry.time])
       ),
       cappedByTest: Object.fromEntries(
         framework.entries.map((entry) => [entry.test, entry.capped])
       ),
     }))
-    .sort((left, right) => left.relativeScore - right.relativeScore);
+    .sort(
+      (left, right) =>
+        Number(left.unranked) - Number(right.unranked) ||
+        (left.unranked
+          ? left.name.localeCompare(right.name)
+          : left.relativeScore - right.relativeScore)
+    );
 
   return { rows, tests, commonTests, frameworks, meta, packages };
 }
@@ -285,16 +342,28 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+/** Score cell text: incomplete frameworks are listed, never ranked. */
+function scoreLabel(framework) {
+  return framework.unranked
+    ? `not ranked: ${framework.failedTests.length} failed`
+    : `${framework.relativeScore.toFixed(2)}x`;
+}
+
+function rankedOnly(frameworks) {
+  return frameworks.filter((framework) => !framework.unranked);
+}
+
 function renderRows(frameworks) {
   return frameworks
     .map((framework, index) => {
       const winnerClass = index === 0 ? " winner" : "";
-      return `<tr><td class="rank">${index + 1}</td><td class="framework${winnerClass}">${escapeHtml(framework.name)}</td><td class="time">${framework.relativeScore.toFixed(2)}x</td></tr>`;
+      return `<tr><td class="rank">${framework.unranked ? "–" : index + 1}</td><td class="framework${winnerClass}">${escapeHtml(framework.name)}</td><td class="time">${scoreLabel(framework)}</td></tr>`;
     })
     .join("");
 }
 
 function renderBars(frameworks) {
+  frameworks = rankedOnly(frameworks);
   const maxAverage = Math.max(
     ...frameworks.map((framework) => framework.relativeScore)
   );
@@ -332,13 +401,18 @@ function renderPerTestComparison(frameworks, tests) {
         .filter((entry) => typeof entry.time === "number")
         .sort((left, right) => left.time - right.time);
 
-      if (ranked.length === 0) {
+      if (
+        ranked.length === 0 &&
+        !frameworks.some((framework) =>
+          framework.entries.some((entry) => entry.test === test)
+        )
+      ) {
         return "";
       }
 
-      const fastest = ranked[0].time;
-      const slowest = ranked[ranked.length - 1].time;
-      const leader = ranked[0].evidence;
+      const fastest = ranked[0]?.time;
+      const slowest = ranked.at(-1)?.time;
+      const leader = ranked[0]?.evidence;
 
       const rows = ranked
         .map((entry, index) => {
@@ -365,8 +439,21 @@ function renderPerTestComparison(frameworks, tests) {
           return `<div class="comparison-row" title="${title}" style="--row-delay:${testIndex * 45 + index * 35}ms"><div class="comparison-rank">${index + 1}</div><div class="comparison-name${index === 0 ? " comparison-name-winner" : ""}">${escapeHtml(entry.name)}</div><div class="comparison-bar"><div class="comparison-bar-fill" style="--target-width:${width.toFixed(2)}%"></div></div><div class="comparison-time">${formatTime(entry.time)} ms${entry.capped ? " · capped" : ""}</div><div class="comparison-delta">${delta}</div></div>`;
         })
         .join("");
+      const failures = frameworks
+        .map((framework) => ({
+          name: framework.name,
+          entry: framework.entries.find(
+            (entry) => entry.test === test && entry.failed
+          ),
+        }))
+        .filter(({ entry }) => entry)
+        .map(
+          ({ name, entry }) =>
+            `<div class="comparison-row" title="${escapeHtml(entry.failure.reason || entry.failure.kind)}"><div class="comparison-rank">–</div><div class="comparison-name">${escapeHtml(name)}</div><div class="comparison-bar"></div><div class="comparison-time">FAILED</div><div class="comparison-delta">${escapeHtml(entry.failure.kind)}</div></div>`
+        )
+        .join("");
 
-      return `<article class="comparison-card" style="--card-delay:${testIndex * 55}ms"><h3>${escapeHtml(test)}</h3><div class="comparison-list">${rows}</div></article>`;
+      return `<article class="comparison-card" style="--card-delay:${testIndex * 55}ms"><h3>${escapeHtml(test)}</h3><div class="comparison-list">${rows}${failures}</div></article>`;
     })
     .join("");
 }
@@ -398,8 +485,7 @@ function countWins(frameworks, tests) {
 }
 
 function renderSpotlight(frameworks, tests) {
-  const winner = frameworks[0];
-  const runnerUp = frameworks[1];
+  const [winner, runnerUp] = rankedOnly(frameworks);
   const wins = countWins(frameworks, tests);
   const lead =
     runnerUp && winner.relativeScore > 0
@@ -431,9 +517,9 @@ function renderSpotlight(frameworks, tests) {
 }
 
 function renderStatCards(frameworks, tests, generatedAt, sourceLabel) {
-  const winner = frameworks[0];
-  const runnerUp = frameworks[1];
-  const slowest = frameworks[frameworks.length - 1];
+  const ranked = rankedOnly(frameworks);
+  const [winner, runnerUp] = ranked;
+  const slowest = ranked.at(-1);
   const spread =
     slowest && winner.relativeScore > 0
       ? slowest.relativeScore / winner.relativeScore
@@ -475,22 +561,31 @@ function renderLeaderboardCards(frameworks, tests) {
 
   return frameworks
     .map((framework, index) => {
-      const relative =
-        index === 0 || fastestAverage === 0
+      const relative = framework.unranked
+        ? "incomplete"
+        : index === 0 || fastestAverage === 0
           ? "baseline"
           : `+${(((framework.relativeScore - fastestAverage) / fastestAverage) * 100).toFixed(1)}%`;
 
       return `
         <article class="leader-card${index === 0 ? " leader-card-top" : ""}" style="--card-delay:${index * 45}ms">
           <div class="leader-head">
-            <span class="leader-rank">#${index + 1}</span>
+            <span class="leader-rank">${framework.unranked ? "–" : `#${index + 1}`}</span>
             <span class="leader-delta">${relative}</span>
           </div>
           <h3>${escapeHtml(framework.name)}</h3>
-          <div class="leader-time">${framework.relativeScore.toFixed(2)}x <span>geomean</span></div>
+          <div class="leader-time">${
+            framework.unranked
+              ? `not ranked <span>${framework.failedTests
+                  .map((entry) => entry.failure.kind)
+                  .filter((kind, i, all) => all.indexOf(kind) === i)
+                  .join(", ")}</span>`
+              : `${framework.relativeScore.toFixed(2)}x <span>geomean</span>`
+          }</div>
           <div class="leader-meta">
             <span>${wins.get(framework.name) ?? 0} decisive wins</span>
             <span>${framework.entries.filter((entry) => entry.capped).length} capped</span>
+            ${framework.failedTests.length ? `<span>${framework.failedTests.length} failed</span>` : ""}
           </div>
         </article>
       `;
@@ -572,8 +667,8 @@ function renderTestFilter(tests) {
 }
 
 function renderBenchmarkInterpretation(frameworks, tests) {
-  const winner = frameworks[0];
-  const runnerUp = frameworks[1];
+  const [winner, runnerUp] = rankedOnly(frameworks);
+  const incomplete = frameworks.filter((framework) => framework.unranked);
   const wins = countWins(frameworks, tests);
   const winnerWinCount = wins.get(winner.name) ?? 0;
   const runnerUpWinCount = runnerUp ? (wins.get(runnerUp.name) ?? 0) : 0;
@@ -591,6 +686,7 @@ function renderBenchmarkInterpretation(frameworks, tests) {
         <p>${escapeHtml(winner.name)} has the strongest relative profile in this run${runnerUp ? `, ${averageLead.toFixed(1)}% ahead of ${escapeHtml(runnerUp.name)} by geometric mean` : ""}. It takes ${winnerWinCount} of ${tests.length} scenarios decisively${runnerUp ? `, while ${escapeHtml(runnerUp.name)} takes ${runnerUpWinCount}` : ""}.</p>
         <p>Median is the primary row score; with several rounds it is the median of per-process medians. Each row carries a 95% interval for that median (hover a row). A ≈ mark means the interval overlaps the leader's, so the gap is not distinguishable from noise in this run; such scenarios count as nobody's win. Capped rows use one cold sample and have no interval.</p>
         <p>Interpret wins through the scenario taxonomy: creation, update, pull/push propagation, dynamic dependency churn, large graphs, lifecycle pressure, and memory behavior can favor different runtimes.</p>
+        ${incomplete.length ? `<p>Not ranked: ${incomplete.map((framework) => `${escapeHtml(framework.name)} (${framework.failedTests.length} failed: ${escapeHtml([...new Set(framework.failedTests.map((entry) => entry.failure.kind))].join(", "))})`).join("; ")}. A failed row (wrong result, crash, out of memory, timeout) is a result; scoring such a library over only the scenarios it completed would rank it on an easier workload set. Its completed rows still appear in every per-test card.</p>` : ""}
       </div>
     </section>
   `;
@@ -626,7 +722,13 @@ function renderEnvironment({ meta = {}, packages = {} }) {
         `<tr><td class="framework">${escapeHtml(framework)}</td><td>${list.map(escapeHtml).join("<br>")}</td></tr>`
     )
     .join("");
-  if (!settings && !versions) return "";
+  const machines = (meta.machines ?? [])
+    .map(
+      (machine) =>
+        `<tr><td>${escapeHtml(machine.id)}</td><td>${escapeHtml((machine.cpu ?? "unknown").replaceAll("_", " "))}</td><td class="time">${escapeHtml(machine.cores ?? "")}</td><td class="time">${escapeHtml(machine.scenarios ?? "")}</td></tr>`
+    )
+    .join("");
+  if (!settings && !versions && !machines) return "";
   const warning =
     meta.semantics && meta.semantics !== "v4"
       ? `<p class="note">This log uses semantics ${escapeHtml(meta.semantics)}; do not compare it with v4 runs.</p>`
@@ -636,6 +738,7 @@ function renderEnvironment({ meta = {}, packages = {} }) {
       <h2>Run Environment</h2>
       ${warning}
       <table><tbody>${settings}</tbody></table>
+      ${machines ? `<h2>Machines</h2><table><thead><tr><th>Round/shard</th><th>CPU</th><th class="time">Cores</th><th class="time">Scenarios</th></tr></thead><tbody>${machines}</tbody></table><p class="note">CI shards split scenarios, never frameworks: every framework of a scenario ran on the same machine. With several machine rounds the score is the median of per-machine medians and the interval is their range.</p>` : ""}
       ${versions ? `<h2>Measured Versions</h2><table><thead><tr><th>Framework</th><th>Bundled packages</th></tr></thead><tbody>${versions}</tbody></table>` : ""}
       <p class="note">Libraries are bundled with process.env.NODE_ENV = "production" and run one framework/scenario pair per fresh process.</p>
     </section>

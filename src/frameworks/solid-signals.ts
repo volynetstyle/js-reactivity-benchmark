@@ -32,7 +32,11 @@ function loadSolidSignalsModule(): SolidSignalsModule {
   if (process.env.BENCH_INSTRUMENT !== "1") {
     return require("@solidjs/signals") as SolidSignalsModule;
   }
-  const modulePath = require.resolve("@solidjs/signals");
+  // Diagnostic mode only: locate the installed file at run time and evaluate
+  // an instrumented copy. (A variable keeps the bundler from treating this
+  // lookup as a dependency; the measured path above is bundled.)
+  const packageName = "@solidjs/signals";
+  const modulePath = require.resolve(packageName);
   const source = readFileSync(modulePath, "utf8");
   const instrumentedSource = `${source}
 ;(() => {

@@ -57,6 +57,83 @@ Adapters measure each library's reactive core, built as it ships to production:
 - lite-signal (1.5.x) has no disposable root; its `createScope` uses an effect
   as the unit of ownership, as the library documents.
 
+### Architectural families
+
+Generations of one library run as separate rows with one shared adapter, so a
+difference between them is the library's, not the adapter's:
+
+- **Solid 1.9 → @solidjs/signals 0.13 → 2.0 RC** (`solid-js-2`,
+  `solid-signals-2` aliases). Solid 2 stages writes until `flush()`. Both 2.0
+  adapters keep the 0.13 adapter's commit policy: flush at the end of a batch
+  and before an untracked read, never during tracked reads. `solid-js` 2 maps
+  its `node` export condition to the non-reactive SSR build, so the client
+  build `dist/solid.js` is aliased explicitly (`scripts/module-aliases.mjs`).
+- **Vue 3.5 → 3.6 RC** (`vue-reactivity-3.6`; its core derives from
+  alien-signals). Both use the same dirty-checked effect queue, flushed at
+  the commit.
+- **alien-signals → dalien-signals**: the same algorithm over one `Int32Array`
+  arena. The adapter uses Dalien's default, leak-free callable API, giving it
+  the same shape as the alien-signals adapter. Its numeric-handle tier needs a
+  manual `reset()`, which in 3.2.1 fails on the third rewind of a populated
+  graph (an internal free stack doubles until allocation fails).
+
+Other additions in v4:
+
+- **Anod** tracks dependencies explicitly with `c.val(sender)`. As in the
+  reactive-framework-test-suite adapter, implicit `read()` calls are routed
+  through the active computation's context. `.set()` flushes synchronously;
+  `batch()` coalesces writes; `root()` owns lifecycle scopes.
+- **Reatom 1001** queues effects to a microtask; `batch(cb, true)` notifies
+  synchronously when the outermost batch ends, which is the harness's commit.
+  No owner scope is exposed, so lifecycle rows are absent. Measured outside the
+  benchmark, its retained memory for a top-level read grows with graph depth,
+  about ×3.5 per layer at fan-in 4 and ×7.7 at fan-in 8 (×2–7 when the leaves
+  are observed by effects), while it evaluates each node exactly once.
+  The 32-layer graph rows exceed a 4 GB heap and are recorded as failed.
+- **Maverick Signals**: lazy computeds and microtask-batched effects, flushed
+  with `tick()` at each commit; `root` provides native disposal.
+- **Cellx**: computed cells pull synchronously; propagation to subscribers waits
+  for `release()`, which the adapter calls at each commit. cellx 2.4.0 lists the
+  libraries of its own benchmark as exact peer dependencies; it does not import
+  them, and its worker bundles only `cellx` and `@riim/event`.
+- **ReScript Signals**: the package entry re-exports ReScript module aliases,
+  which compile to `undefined` in JavaScript, so the generated modules are
+  imported directly. Effects run synchronously; `Signal.batch` defers them.
+
+### Adapter matrix
+
+What the harness enforces or verifies for each adapter. Graph representation
+and propagation algorithms are left to each library's documentation.
+
+| Adapter                      | Commit (how a write becomes visible to effects) | Native owner disposal | Minimal recomputation asserted |
+| ---------------------------- | ----------------------------------------------- | --------------------- | ------------------------------ |
+| reflex                       | `batch`, effects after the batch (SAB)          | –                     | yes                            |
+| alien-signals                | `startBatch`/`endBatch`                         | `effectScope`         | yes                            |
+| dalien-signals               | `startBatch`/`endBatch`                         | `effectScope`         | yes                            |
+| reactive-engine              | native `batch`                                  | –                     | yes                            |
+| lite-signal                  | `registry.batch`                                | effect as owner       | yes                            |
+| @solidjs/signals 0.13 / 2 RC | staged until `flush()`                          | `createRoot`          | no                             |
+| SolidJS 1.9                  | `batch`                                         | `createRoot`          | no                             |
+| SolidJS 2 RC                 | staged until `flush()`                          | `createRoot`          | no                             |
+| Preact Signals               | `batch`                                         | –                     | yes                            |
+| @reactively                  | effects queued; `stabilize()` at commit         | –                     | yes                            |
+| s-js                         | `S.freeze`                                      | `S.root`              | no                             |
+| @amadeus-it-group/tansu      | `batch`                                         | –                     | yes                            |
+| $mol_wire                    | `Atom.sync()` at commit                         | –                     | yes                            |
+| Oby                          | scheduled effects; `tick()` at commit           | `$.root`              | yes                            |
+| Signia                       | `transact`                                      | –                     | yes                            |
+| uSignal                      | `batch`                                         | –                     | yes                            |
+| @vue/reactivity 3.5 / 3.6 RC | adapter's dirty-checked queue at commit         | `effectScope`         | yes                            |
+| anod                         | `.set()` flushes; `batch`                       | `root`                | no                             |
+| @reatom/core                 | `batch(cb, true)`                               | –                     | yes                            |
+| @maverick-js/signals         | microtask effects; `tick()` at commit           | `root`                | yes                            |
+| cellx                        | `release()` at commit                           | –                     | no                             |
+| rescript-signals             | `Signal.batch`                                  | –                     | no                             |
+
+"Minimal recomputation asserted" means the adapter's recomputation counts must
+match the minimal counts exactly; libraries marked "no" recompute more on some
+graphs (sums are still checked against the oracle).
+
 Each adapter should be classified against these questions before its numbers are
 treated as comparable:
 
@@ -199,6 +276,14 @@ cycle or error behavior, when claimed
 ```
 
 Fast incorrect results are benchmark failures, not wins.
+
+A failure is also a result. A row that is incorrect, throws, crashes, runs
+out of memory, overflows the stack, or times out is logged as `FAILED` with
+its kind, and the remaining rows are still measured. The framework is listed
+but not ranked overall, and gets no score for a workload group in which it
+failed: a score over only the scenarios it survived would describe an easier
+workload set. Outside the publication workflow (`BENCH_ALLOW_FAILURES=1`), any
+failure still fails the run.
 
 ## Fairness Rules
 

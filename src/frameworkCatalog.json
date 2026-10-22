@@ -47,7 +47,12 @@
     "export": "reactivelyFramework",
     "pullCounts": true
   },
-  { "id": "s", "name": "s-js", "module": "s", "export": "sFramework" },
+  {
+    "id": "s",
+    "name": "s-js",
+    "module": "s",
+    "export": "sFramework"
+  },
   {
     "id": "tansu",
     "name": "@amadeus-it-group/tansu",
@@ -95,5 +100,63 @@
     "module": "vueReactivity",
     "export": "vueReactivityFramework",
     "pullCounts": true
+  },
+  {
+    "id": "solid-signals-2",
+    "name": "@solidjs/signals 2 RC",
+    "module": "solidSignals2",
+    "export": "solidSignals2Framework"
+  },
+  {
+    "id": "solid-2",
+    "name": "SolidJS 2 RC",
+    "module": "solidJs2",
+    "export": "solid2Framework"
+  },
+  {
+    "id": "vue-3.6",
+    "name": "@vue/reactivity 3.6 RC",
+    "module": "vueReactivity36",
+    "export": "vueReactivity36Framework",
+    "pullCounts": true
+  },
+  {
+    "id": "dalien",
+    "name": "dalien-signals",
+    "module": "dalien",
+    "export": "dalienFramework",
+    "pullCounts": true
+  },
+  {
+    "id": "anod",
+    "name": "anod",
+    "module": "anod",
+    "export": "anodFramework"
+  },
+  {
+    "id": "reatom",
+    "name": "@reatom/core",
+    "module": "reatom",
+    "export": "reatomFramework",
+    "pullCounts": true
+  },
+  {
+    "id": "maverick",
+    "name": "@maverick-js/signals",
+    "module": "maverick",
+    "export": "maverickFramework",
+    "pullCounts": true
+  },
+  {
+    "id": "cellx",
+    "name": "cellx",
+    "module": "cellx",
+    "export": "cellxFramework"
+  },
+  {
+    "id": "rescript-signals",
+    "name": "rescript-signals",
+    "module": "rescriptSignals",
+    "export": "rescriptSignalsFramework"
   }
 ]
