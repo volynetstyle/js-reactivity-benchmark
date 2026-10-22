@@ -1,0 +1,11 @@
+{
+  "commit": "904e71a1e78c671edd89ef7fb000cc699e77fae1",
+  "shortCommit": "904e71a",
+  "ref": "main",
+  "runId": "38430862216",
+  "runNumber": "29",
+  "generatedAtUtc": "20261013T164526Z",
+  "logPath": "bench-results/history/20261013T164526Z-904e71a.log",
+  "samplesPath": "bench-results/history/20261013T164526Z-904e71a.samples.json",
+  "profile": "quick"
+}
