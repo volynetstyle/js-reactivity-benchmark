@@ -111,7 +111,8 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          # Pinned: lts/* would silently change the runtime between runs.
+          # Keep .nvmrc at an exact major.minor.patch version: a major-only
+          # range can resolve to different cached releases on shard runners.
           node-version-file: .nvmrc
           cache: pnpm
 

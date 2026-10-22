@@ -27,6 +27,8 @@ Every case starts with one validated cold pilot run, excluded from the score. Re
 ## Quick Start
 
 Use the Node.js version in [`.nvmrc`](.nvmrc) (the one CI publishes with) and pnpm 10.
+Keep `.nvmrc` pinned to an exact `major.minor.patch` release so every CI shard
+uses the same Node/V8 runtime, regardless of the runner's cached versions.
 All dependencies are pinned to exact versions, so `npm install` resolves the
 same libraries as the lockfile; see [Dependency versions](#dependency-versions).
 
