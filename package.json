@@ -1,6 +1,6 @@
 {
   "name": "js-reactivity-benchmark",
-  "version": "1.0.0",
+  "version": "4.0.0",
   "description": "JavaScript reactivity benchmarks with configurable workloads, framework adapters, and HTML performance reports.",
   "main": "index.js",
   "scripts": {
