@@ -79,3 +79,27 @@ describe("CI scenario shards", () => {
     expect(scenarioWeights(path.join(dir, "missing.json")).size).toBe(0);
   });
 });
+
+test("shard weights prefer recorded wall time, including failed rows", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "weights-"));
+  const file = path.join(dir, "samples.json");
+  writeFileSync(
+    file,
+    JSON.stringify({
+      rows: [
+        { name: "slow", status: "failed", wallMs: 180_000 },
+        { name: "fast", wallMs: 900, rounds: [{ pilotMs: 1, samplesMs: [1] }] },
+        {
+          name: "merged",
+          machines: [{ record: { wallMs: 100 } }, { record: { wallMs: 300 } }],
+        },
+      ],
+    })
+  );
+  const weights = scenarioWeights(file);
+  expect(Object.fromEntries(weights)).toEqual({
+    slow: 180_000,
+    fast: 900,
+    merged: 200,
+  });
+});

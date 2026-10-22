@@ -74,6 +74,8 @@ export interface TimingRecord {
   group: string;
   family: string;
   fixture: "fresh" | "warm-reused";
+  /** Wall-clock cost of the row's workers, process start included. */
+  wallMs?: number;
 }
 
 export interface SamplingPolicy {
@@ -112,6 +114,7 @@ export interface FailedRecord {
   failure: RowFailure;
   group: string;
   family: string;
+  wallMs?: number;
 }
 
 type CaseOutcome =
@@ -219,7 +222,18 @@ const MIN_PERFORMANCE_CEILING_MS = readPositiveNumber(
   1500
 );
 const MAX_SLOWDOWN_FACTOR = readPositiveNumber("BENCH_MAX_SLOWDOWN", 3);
-const ROW_TIMEOUT_MS = readPositiveNumber("BENCH_ROW_TIMEOUT_MS", 15 * 60_000);
+/**
+ * Wall-clock budget for one row worker: process start, setup and pilot (plus
+ * warmup and samples when uncapped). Legitimate rows, including capped slow
+ * ones, finish far below it; a row that cannot is a `timeout` failure.
+ */
+const ROW_TIMEOUT_MS = readPositiveNumber("BENCH_ROW_TIMEOUT_MS", 180_000);
+/**
+ * The same V8 heap budget on every machine, independent of the runner's RAM.
+ * A library whose memory keeps growing fails as out-of-memory instead of
+ * spending the run in back-to-back full GCs near a machine-dependent limit.
+ */
+const WORKER_HEAP_MB = readPositiveNumber("BENCH_HEAP_MB", 4096);
 
 /** Register workload and fixture creation without performing any measurement. */
 export function registerBenchmark<TFixture, TResult>(
@@ -333,16 +347,28 @@ export function scenarioWeights(file: string): Map<string, number> {
   }
   const sum = (values: number[] = []) =>
     values.reduce((total, value) => total + value, 0);
-  for (const row of rows) {
+  // Prefer the recorded wall time: it includes setup, process start, and the
+  // time spent on rows that failed or timed out.
+  const cost = (row: any): number => {
+    if (typeof row.wallMs === "number") return row.wallMs;
+    const machines = (row.machines ?? []).filter(
+      (machine: any) => machine.record
+    );
+    if (machines.length)
+      return (
+        sum(machines.map((machine: any) => cost(machine.record))) /
+        machines.length
+      );
     const rounds: any[] = row.rounds ?? [row];
-    const cost = sum(
+    return sum(
       rounds.map(
         (round) =>
           (round.pilotMs ?? 0) + sum(round.warmupMs) + sum(round.samplesMs)
       )
     );
-    weights.set(row.name, (weights.get(row.name) ?? 0) + cost);
-  }
+  };
+  for (const row of rows)
+    weights.set(row.name, (weights.get(row.name) ?? 0) + cost(row));
   return weights;
 }
 
@@ -411,7 +437,7 @@ export async function runBenchmarks(): Promise<void> {
   const machineRound = readPositiveInteger("BENCH_MACHINE_ROUND", 1);
   const bundle = bundleSha256();
   console.log(
-    `# semantics=${SEMANTICS_VERSION} profile=${policy.profile} rounds=${policy.rounds} warmup=${policy.warmup} min_samples=${process.env.BENCH_SAMPLES?.trim() || "per-case"} max_samples=${policy.maxSamples} min_time_ms=${policy.minTimeMs} node=${process.version} v8=${process.versions.v8} platform=${process.platform}/${process.arch} cpu=${(cpus()[0]?.model ?? "unknown").trim().replace(/\s+/g, "_")} cores=${cpus().length} ram=${totalmem()} gc=${!!globalThis.gc} isolation=${isolation} order=interleaved node_env=production instrumented=${process.env.BENCH_INSTRUMENT === "1"} shard=${shard ? `${shard.index}/${shard.count}` : "none"} machine_round=${machineRound} bundle=${bundle.slice(0, 12)}`
+    `# semantics=${SEMANTICS_VERSION} profile=${policy.profile} rounds=${policy.rounds} warmup=${policy.warmup} min_samples=${process.env.BENCH_SAMPLES?.trim() || "per-case"} max_samples=${policy.maxSamples} min_time_ms=${policy.minTimeMs} node=${process.version} v8=${process.versions.v8} platform=${process.platform}/${process.arch} cpu=${(cpus()[0]?.model ?? "unknown").trim().replace(/\s+/g, "_")} cores=${cpus().length} ram=${totalmem()} gc=${!!globalThis.gc} isolation=${isolation} order=interleaved node_env=production instrumented=${process.env.BENCH_INSTRUMENT === "1"} shard=${shard ? `${shard.index}/${shard.count}` : "none"} machine_round=${machineRound} bundle=${bundle.slice(0, 12)} heap_mb=${WORKER_HEAP_MB} row_timeout_s=${Math.round(ROW_TIMEOUT_MS / 1000)}`
   );
   const packages = packageVersions();
   for (const [framework, versions] of Object.entries(packages))
@@ -450,6 +476,7 @@ interface RowState {
   row?: PerfRowStrings;
   capped?: { pilotMs: number; ceilingMs: number };
   failure?: RowFailure;
+  wallMs?: number;
 }
 
 async function runPlan(
@@ -466,12 +493,18 @@ async function runPlan(
   let started = 0;
   const finish = (state: RowState) => {
     if (state.failure) {
-      const record = failedRecord(state.entry, state.failure);
+      const record = {
+        ...failedRecord(state.entry, state.failure),
+        wallMs: state.wallMs,
+      };
       logPerfResult(failedRow(record));
       records.push(record);
       return;
     }
-    const record = summarize(state.entry, state.rounds, state.capped);
+    const record = {
+      ...summarize(state.entry, state.rounds, state.capped),
+      wallMs: state.wallMs,
+    };
     logPerfResult(formatRow(record, state.row!));
     records.push(record);
   };
@@ -486,7 +519,10 @@ async function runPlan(
       process.stderr.write(
         `[${++started}/${total}] round ${round}/${policy.rounds} ${state.entry.id}\n`
       );
+      const startedAt = performance.now();
       const outcome = await runRow(state.entry, round, allowDefer);
+      // Whole-row cost, process start included: what CI shards must balance.
+      state.wallMs = (state.wallMs ?? 0) + performance.now() - startedAt;
       if (outcome.kind === "failed") {
         // A failure in any round is the row's result.
         state.failure = outcome.failure;
@@ -565,12 +601,19 @@ async function runRow(
           BENCH_ROUND: String(round),
           BENCH_DEFER_CAP: allowDefer ? "1" : "",
         },
+        execArgv: [
+          ...process.execArgv.filter(
+            (flag) => !flag.startsWith("--max-old-space-size")
+          ),
+          `--max-old-space-size=${WORKER_HEAP_MB}`,
+        ],
         stdio: ["ignore", "pipe", "pipe", "ipc"],
       }
     );
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill();
+      // A worker stuck in back-to-back GCs may not act on SIGTERM promptly.
+      child.kill("SIGKILL");
     }, ROW_TIMEOUT_MS);
     child.stdout!.on("data", remember);
     child.stderr!.on("data", remember);
@@ -591,13 +634,19 @@ async function runRow(
         );
       else if (outcome?.kind === "failed") resolve(outcome);
       else if (code === 0 && outcome) resolve(outcome);
-      else
+      else {
+        const lastLine = tail
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter((line) => line && !line.startsWith("at "))
+          .at(-1);
         resolve(
           failed({
             kind: classifyFailure(tail),
-            message: `worker exited with code ${code}, signal ${signal}${outcome ? "" : ", no result"}`,
+            message: `worker exited with code ${code}, signal ${signal}${outcome ? "" : ", no result"}${lastLine ? `: ${lastLine}` : ""}`,
           })
         );
+      }
     });
   });
 }
@@ -939,6 +988,7 @@ async function saveTimingRecords(
         order:
           "interleaved: scenario-major, framework rotation per scenario and round",
         nodeEnv: "production",
+        limits: { heapMb: WORKER_HEAP_MB, rowTimeoutMs: ROW_TIMEOUT_MS },
         capPolicy: {
           minCeilingMs: MIN_PERFORMANCE_CEILING_MS,
           maxSlowdown: MAX_SLOWDOWN_FACTOR,
