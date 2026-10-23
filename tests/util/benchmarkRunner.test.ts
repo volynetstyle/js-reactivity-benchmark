@@ -47,7 +47,8 @@ const rowFor = (test: string) =>
   log.mock.calls.map(([row]) => row).find((row) => row.test === test);
 
 test("validates every invocation outside timing and before the next fixture reset", async () => {
-  const { registerBenchmark, runBenchmarks } = await import("../../src/util/benchmark");
+  const { registerBenchmark, runBenchmarks } =
+    await import("../../src/util/benchmark");
   let serial = 0;
   let measured = false;
   const events: string[] = [];
@@ -84,7 +85,8 @@ test("validates every invocation outside timing and before the next fixture rese
 });
 
 test("samples keep chronological order and every observation", async () => {
-  const { registerBenchmark, runBenchmarks } = await import("../../src/util/benchmark");
+  const { registerBenchmark, runBenchmarks } =
+    await import("../../src/util/benchmark");
   const read = samplesFile();
   const durations = [50, 9, 8, 7, 1, 30];
   let call = 0;
@@ -109,7 +111,8 @@ test("samples keep chronological order and every observation", async () => {
 
 test("quick profile samples until both the count and the time budget are met", async () => {
   vi.stubEnv("BENCH_SAMPLES", "");
-  const { registerBenchmark, runBenchmarks } = await import("../../src/util/benchmark");
+  const { registerBenchmark, runBenchmarks } =
+    await import("../../src/util/benchmark");
   const read = samplesFile();
   for (const [name, duration] of [
     ["heavy", 100],
@@ -135,7 +138,8 @@ test("quick profile samples until both the count and the time budget are met", a
 });
 
 test("the slow-row cap does not depend on registration or run order", async () => {
-  const { registerBenchmark, runBenchmarks } = await import("../../src/util/benchmark");
+  const { registerBenchmark, runBenchmarks } =
+    await import("../../src/util/benchmark");
   // Slowest first: an order-dependent cap would compare it with nothing.
   for (const [framework, duration] of [
     ["slowest", 10_000],
@@ -167,7 +171,8 @@ test("the slow-row cap does not depend on registration or run order", async () =
 
 test("rounds report the median of round medians and their range", async () => {
   vi.stubEnv("BENCH_ROUNDS", "3");
-  const { registerBenchmark, runBenchmarks } = await import("../../src/util/benchmark");
+  const { registerBenchmark, runBenchmarks } =
+    await import("../../src/util/benchmark");
   let round = 0;
   registerBenchmark({
     framework: "probe",
@@ -197,7 +202,8 @@ test("execution order is scenario-major and rotates frameworks", async () => {
 });
 
 test("an incorrect intermediate sample fails the row before it is reported", async () => {
-  const { registerBenchmark, runBenchmarks } = await import("../../src/util/benchmark");
+  const { registerBenchmark, runBenchmarks } =
+    await import("../../src/util/benchmark");
   let runs = 0;
   registerBenchmark({
     framework: "probe",
@@ -218,7 +224,8 @@ test("an incorrect intermediate sample fails the row before it is reported", asy
 
 test("publication runs record failures as results and keep measuring", async () => {
   vi.stubEnv("BENCH_ALLOW_FAILURES", "1");
-  const { registerBenchmark, runBenchmarks } = await import("../../src/util/benchmark");
+  const { registerBenchmark, runBenchmarks } =
+    await import("../../src/util/benchmark");
   const read = samplesFile();
   registerBenchmark({
     framework: "broken",
@@ -265,7 +272,8 @@ test("worker crashes are classified from their diagnostics", async () => {
 });
 
 test("an unmatched selection fails instead of producing an empty successful run", async () => {
-  const { registerBenchmark, runBenchmarks } = await import("../../src/util/benchmark");
+  const { registerBenchmark, runBenchmarks } =
+    await import("../../src/util/benchmark");
   vi.stubEnv("BENCH_FILTER", "missing scenario");
   registerBenchmark({
     framework: "probe",
@@ -277,7 +285,8 @@ test("an unmatched selection fails instead of producing an empty successful run"
 });
 
 test("warm fixtures are restored outside timing and disposed once", async () => {
-  const { registerBenchmark, runBenchmarks } = await import("../../src/util/benchmark");
+  const { registerBenchmark, runBenchmarks } =
+    await import("../../src/util/benchmark");
   let measured = false;
   const setup = vi.fn(() => ({ value: 0 }));
   const teardown = vi.fn();
@@ -307,7 +316,8 @@ test("warm fixtures are restored outside timing and disposed once", async () => 
 });
 
 test("CI console guard rejects output from a measured callback", async () => {
-  const { registerBenchmark, runBenchmarks } = await import("../../src/util/benchmark");
+  const { registerBenchmark, runBenchmarks } =
+    await import("../../src/util/benchmark");
   vi.stubEnv("BENCH_ASSERT_NO_CONSOLE", "1");
   vi.mocked(console.log).mockRestore();
   registerBenchmark({
@@ -325,6 +335,26 @@ test("CI console guard rejects output from a measured callback", async () => {
   );
 });
 
+test("teardown failures restore the console guard before reporting", async () => {
+  const { registerBenchmark, runBenchmarks } =
+    await import("../../src/util/benchmark");
+  vi.stubEnv("BENCH_ASSERT_NO_CONSOLE", "1");
+  const originalWarn = console.warn;
+  registerBenchmark({
+    framework: "probe",
+    name: "broken teardown",
+    reuseFixture: true,
+    gc: false,
+    setup: () => null,
+    benchmark: () => (clock += 1),
+    teardown: () => {
+      throw new Error("teardown failed");
+    },
+  });
+  await expect(runBenchmarks()).rejects.toThrow("teardown failed");
+  expect(console.warn).toBe(originalWarn);
+});
+
 test("a shard runs whole scenarios for every framework and records itself", async () => {
   vi.stubEnv("BENCH_SHARD", "2/2");
   vi.stubEnv(
@@ -332,7 +362,8 @@ test("a shard runs whole scenarios for every framework and records itself", asyn
     path.join(tmpdir(), "no-such-weights.json")
   );
   vi.stubEnv("BENCH_MACHINE_ROUND", "3");
-  const { registerBenchmark, runBenchmarks } = await import("../../src/util/benchmark");
+  const { registerBenchmark, runBenchmarks } =
+    await import("../../src/util/benchmark");
   const read = samplesFile();
   for (const name of ["a", "b", "c"])
     for (const framework of ["x", "y"])

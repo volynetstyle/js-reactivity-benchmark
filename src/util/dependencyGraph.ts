@@ -107,9 +107,10 @@ export function runGraph(
     const leaves = layers[layers.length - 1];
     const removeCount = Math.round(leaves.length * (1 - readFraction));
     // Full-drain rows need neither a copy nor a fresh random generator.
-    const readLeaves = removeCount === 0
-      ? leaves
-      : removeElems(leaves, removeCount, new SeededRandom("seed"));
+    const readLeaves =
+      removeCount === 0
+        ? leaves
+        : removeElems(leaves, removeCount, new SeededRandom("seed"));
     let tick = startTick;
     const write = () => {
       const sourceIndex = tick % sources.length;
@@ -232,16 +233,16 @@ function makeLayeredRows(
     const row = new Array<Computed<number>>(width);
     for (let nodeDex = 0; nodeDex < width; nodeDex++) {
       row[nodeDex] = makeLayeredNode(
-          prevRow,
-          nodeDex,
-          layer,
-          counter,
-          staticFraction,
-          fanIn,
-          framework,
-          graphKind,
-          rand
-        );
+        prevRow,
+        nodeDex,
+        layer,
+        counter,
+        staticFraction,
+        fanIn,
+        framework,
+        graphKind,
+        rand
+      );
     }
     rows.push(row);
     prevRow = row;

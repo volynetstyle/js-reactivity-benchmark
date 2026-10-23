@@ -22,47 +22,37 @@ export function expectedGraphSum(config: TestConfig): number {
     measureBuild = warmupIterations === 0,
   } = config;
   const warmup = measureBuild ? 0 : warmupIterations;
-  let previous = Array.from({ length: sourcesCount }, (_, i) => i);
-  for (
-    let tick = 0;
-    tick < (warmup + iterations) * updatesPerIteration;
-    tick++
-  ) {
-    const index = tick % sourcesCount;
-    previous[index] = tick + index;
-  }
+  const writes = (warmup + iterations) * updatesPerIteration;
+  // Only the last write to each source affects the final numerical graph.
+  // Derive it directly instead of replaying every benchmark iteration.
+  let previous = Array.from({ length: sourcesCount }, (_, index) => {
+    if (index >= writes) return index;
+    const tick =
+      index + Math.floor((writes - 1 - index) / sourcesCount) * sourcesCount;
+    return tick + index;
+  });
 
   const random = new SeededRandom("seed");
   const layers = graphKind === "rect" ? totalLayers - 1 : totalLayers;
   for (let layer = 0; layer < layers; layer++) {
     const size = graphKind === "rect" ? previous.length : width;
     const next = new Array<number>(size);
+    const inputCount = graphKind === "rect" ? nSources : fanIn;
+    const step = Math.max(
+      1,
+      Math.floor(previous.length / Math.max(1, fanIn * 8))
+    );
+    const cluster = Math.max(2, Math.floor(fanIn / 2));
     for (let node = 0; node < size; node++) {
-      const inputs: number[] = [];
-      const inputCount = graphKind === "rect" ? nSources : fanIn;
-      const step = Math.max(
-        1,
-        Math.floor(previous.length / Math.max(1, fanIn * 8))
-      );
-      const cluster = Math.max(2, Math.floor(fanIn / 2));
-      for (let input = 0; input < inputCount; input++) {
-        let index: number;
-        if (graphKind === "rect") {
-          index = (node + input) % previous.length;
-        } else if (graphKind === "layered-dag") {
-          index = (node * 13 + layer * 17 + input * step) % previous.length;
-        } else {
-          index =
-            (Math.floor(node / cluster) * cluster +
-              layer * cluster +
-              Math.floor(input / 2)) %
-            previous.length;
-        }
-        inputs.push(previous[index]);
-      }
+      const base =
+        graphKind === "rect"
+          ? node
+          : graphKind === "layered-dag"
+            ? node * 13 + layer * 17
+            : Math.floor(node / cluster) * cluster + layer * cluster;
       const isStatic = random.float() < staticFraction;
-      let sum = inputs[0];
-      const tailLength = inputs.length - 1;
+      let sum = previous[base % previous.length];
+      const tailLength = inputCount - 1;
       const drop =
         graphKind === "rect"
           ? sum % tailLength
@@ -71,9 +61,15 @@ export function expectedGraphSum(config: TestConfig): number {
             : (sum + node) % tailLength;
       const shouldDrop =
         graphKind === "rect" ? sum & 1 : (sum + layer + node) & 1;
-      for (let input = 1; input < inputs.length; input++) {
+      for (let input = 1; input < inputCount; input++) {
         if (!isStatic && shouldDrop && input - 1 === drop) continue;
-        sum += inputs[input];
+        const offset =
+          graphKind === "rect"
+            ? input
+            : graphKind === "layered-dag"
+              ? input * step
+              : Math.floor(input / 2);
+        sum += previous[(base + offset) % previous.length];
       }
       next[node] = sum;
     }

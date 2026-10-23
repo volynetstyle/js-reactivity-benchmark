@@ -3,7 +3,11 @@ import { frameworkInfo } from "../src/config";
 import { historicalCases } from "../src/kairoBench";
 import { historicalWorkload } from "../src/kairo/observed";
 import { fanCases, fanWorkload } from "../src/fanBench";
-import { deliveryPlan, DeliveryProbe, verifyDelivery } from "../src/util/delivery";
+import {
+  deliveryPlan,
+  DeliveryProbe,
+  verifyDelivery,
+} from "../src/util/delivery";
 import { molWorkload, objectWorkload } from "../src/molBench";
 import { lifecycleWorkload, retainedDisposal } from "../src/lifecycleBench";
 import { makeFixture as makeCellxFixture } from "../src/cellxBench";

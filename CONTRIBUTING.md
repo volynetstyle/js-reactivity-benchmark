@@ -9,6 +9,7 @@ Use the Node.js version in `.nvmrc` and pnpm 10, then run:
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm typecheck
 pnpm test
 pnpm build
 ```
@@ -46,8 +47,14 @@ produced. Avoid drawing conclusions from runs with different configurations.
 ## Pull Requests
 
 Describe the problem, the resulting behavior, and how you validated the change.
-Run `pnpm test` and `pnpm build` for code changes. For report generator changes,
-the same `pnpm test` run covers `scripts/render-results-page.test.mjs`.
+Tests live in `tests/`, next to `src/`. Its `util/`, `frameworks/` and `scripts/`
+subdirectories mirror the production code. Production TypeScript configuration
+includes only `src/`; Vitest discovers only `tests/**/*.test.{ts,mjs}`.
+
+Run `pnpm check` for the complete validation used by CI: type checking, unit
+tests, production build, isolated benchmark smoke and standalone distribution
+verification. For report generator changes, `pnpm test` also covers
+`tests/scripts/render-results-page.test.mjs`.
 
 Preserve existing attribution and third-party notices. Contributions are provided
 under the repository's [MIT License](LICENSE).

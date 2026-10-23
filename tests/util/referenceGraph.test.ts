@@ -15,6 +15,29 @@ test("historical expected sums agree with the numerical oracle", () => {
   expect(failures).toEqual([]);
 });
 
+test.each([0, 1, 4, 5, 6, 20, 21])(
+  "oracle preserves final source values after %i writes",
+  (iterations) => {
+    const values = [0, 1, 2, 3, 4];
+    // Replay writes independently of the oracle's direct last-write formula.
+    for (let tick = 0; tick < iterations; tick++) {
+      const index = tick % values.length;
+      values[index] = tick + index;
+    }
+    expect(
+      expectedGraphSum({
+        width: values.length,
+        totalLayers: 2,
+        staticFraction: 1,
+        nSources: 1,
+        readFraction: 1,
+        iterations,
+        expected: {},
+      })
+    ).toBe(values.reduce((sum, value) => sum + value, 0));
+  }
+);
+
 for (const { framework } of frameworkInfo) {
   test(`${framework.name} | warm graph checkpoint preserves values and work counts`, () => {
     framework.resetBenchmark?.();

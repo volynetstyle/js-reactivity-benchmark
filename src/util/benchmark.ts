@@ -807,8 +807,11 @@ function measureCase(
   } finally {
     blackholeSink.value = undefined;
     result = undefined;
-    if (hasFixture) entry.teardown?.(fixture);
-    guard.restore();
+    try {
+      if (hasFixture) entry.teardown?.(fixture);
+    } finally {
+      guard.restore();
+    }
   }
 }
 
@@ -858,7 +861,10 @@ function summarize(
       ],
     };
   }
-  const statistics = timingStatistics(rounds.flatMap((r) => r.samplesMs));
+  const statistics =
+    rounds.length === 1
+      ? rounds[0].statistics!
+      : timingStatistics(rounds.flatMap((r) => r.samplesMs));
   const medians = rounds.map((r) => r.statistics!.median);
   const single = rounds.length === 1;
   const interval = single

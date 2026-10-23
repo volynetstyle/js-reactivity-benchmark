@@ -1,4 +1,7 @@
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+export const projectRoot = fileURLToPath(new URL("../", import.meta.url));
 
 /**
  * Module aliases shared by the benchmark build and the test runner, so both
@@ -9,5 +12,8 @@ import path from "node:path";
  * node_modules, so the reactive client build is aliased by file path.
  */
 export const moduleAliases = {
-  "solid-js-2-client": path.resolve("node_modules/solid-js-2/dist/solid.js"),
+  "solid-js-2-client": path.join(
+    projectRoot,
+    "node_modules/solid-js-2/dist/solid.js"
+  ),
 };

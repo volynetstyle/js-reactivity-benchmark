@@ -138,13 +138,20 @@ pnpm results:page
 
 ## Scripts
 
-- `pnpm test` - run `vitest`
-- `pnpm build` - bundle `src/index.ts` into `dist/`
+- `pnpm test` - run the Vitest suite from `tests/`
+- `pnpm typecheck` - check all production TypeScript under `src/`
+- `pnpm build` - build the production runner and isolated workers into `dist/`
+- `pnpm start` - execute the production runner with `node --expose-gc`
 - `pnpm run` - execute the built runner with `node --expose-gc`
 - `pnpm bench` - build, run benchmarks, save `bench-results/latest.log`, and refresh `index.html`
 - `pnpm results:page` - rebuild `index.html` from an existing log
 - `pnpm bench:smoke` - verify the built workers, their correctness gates, and a sharded run
+- `pnpm verify:production` - run all frameworks using only `dist/`, outside the repository
+- `pnpm check` - run type checking, tests, build, smoke and standalone production verification
 - `node scripts/merge-shards.mjs <dir>` - merge CI shard outputs into one log, samples file and page
+
+See [production setup](docs/production.md) for standalone distribution, Docker,
+runtime configuration and reproducible installation.
 
 ## What Gets Measured
 
@@ -224,7 +231,7 @@ authors of these benchmark adapters.
 | [Reflex](https://github.com/volynetstyle/Reflex)                                       | [Andrii Volynets](https://github.com/volynetstyle) and contributors                    | [reflex.ts](src/frameworks/reflex.ts)                   |
 | [Alien Signals](https://github.com/stackblitz/alien-signals)                           | [Johnson Chu](https://github.com/johnsoncodehk) and contributors                       | [alienSignals.ts](src/frameworks/alienSignals.ts)       |
 | [Reactive Engine](https://github.com/garage-13/reactive-engine)                        | [Den Pol](https://pravosleva.pro) and contributors                                     | [reactiveEngine.ts](src/frameworks/reactiveEngine.ts)   |
-| [Lite Signal](https://gitlab.com/zakkster/lite-signal)                                 | [Zahary Shinikchiev](https://github.com/PeshoVurtoleta) (`zakkster`) and contributors                                       | [liteSignal.ts](src/frameworks/liteSignal.ts)           |
+| [Lite Signal](https://gitlab.com/zakkster/lite-signal)                                 | [Zahary Shinikchiev](https://github.com/PeshoVurtoleta) (`zakkster`) and contributors  | [liteSignal.ts](src/frameworks/liteSignal.ts)           |
 | [@solidjs/signals 0.13](https://github.com/solidjs/signals)                            | [Ryan Carniato](https://github.com/ryansolid) and contributors                         | [solid-signals.ts](src/frameworks/solid-signals.ts)     |
 | [Preact Signals Core](https://github.com/preactjs/signals)                             | [Preact team](https://github.com/preactjs) and contributors                            | [preactSignals.ts](src/frameworks/preactSignals.ts)     |
 | [Reactively](https://github.com/milomg/reactively)                                     | [Milo M](https://github.com/milomg) and contributors                                   | [reactively.ts](src/frameworks/reactively.ts)           |
@@ -283,7 +290,7 @@ by the active adapter contract tests.
 - [src/util/seededRandom.ts](src/util/seededRandom.ts) - vendored deterministic generator behind every graph topology and expected sum
 - [scripts/bench-and-update.mjs](scripts/bench-and-update.mjs) - full benchmark-and-refresh pipeline
 - [scripts/render-results-page.mjs](scripts/render-results-page.mjs) - log parser and profile-oriented HTML report generator
-- [src/frameworks.test.ts](src/frameworks.test.ts) - adapter sanity checks with `vitest`
+- [tests/frameworks.test.ts](tests/frameworks.test.ts) - adapter sanity checks with `vitest`
 
 ## Notes
 

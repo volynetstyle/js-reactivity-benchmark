@@ -122,13 +122,13 @@ commit and the same machine/runtime/profile to measure the changes.
 
 ## Verification
 
-[`frameworkAdapters.test.ts`](../src/frameworkAdapters.test.ts) checks method
+[`frameworkAdapters.test.ts`](../tests/frameworkAdapters.test.ts) checks method
 accessors with object replacement, nested transaction delivery, synchronous
 initial observation, ignored numeric callback returns, and fixture disposal
 for all 24 active rows, including native queued-work disposal policies.
 Existing adapter and observed-workload tests additionally
 check values, dynamic dependency detachment, delivery coverage, and supported
 native graph lifecycles. A prototype-method probe in
-[`sBench.test.ts`](../src/sBench.test.ts) runs every creation/update row to ensure
+[`sBench.test.ts`](../tests/sBench.test.ts) runs every creation/update row to ensure
 the harness preserves source and computed receivers. The production build and `bench:smoke` exercise isolated
 workers, their bundled versions, correctness gates, and shard merging.

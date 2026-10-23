@@ -15,7 +15,9 @@ export const reflexFramework: ReactiveFramework = {
     const data = signal(initial);
     return {
       read: data,
-      write: data.set,
+      // The native setter has conditional updater overloads. Workloads use
+      // direct values; keep that call path without an extra runtime wrapper.
+      write: data.set as (value: typeof initial) => void,
     };
   },
   computed: (fn) => {

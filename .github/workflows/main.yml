@@ -25,8 +25,14 @@ jobs:
       - name: Run test
         run: pnpm test
 
+      - name: Check source types
+        run: pnpm typecheck
+
       - name: Run build
         run: pnpm build
 
       - name: Verify isolated benchmark runner
         run: pnpm bench:smoke
+
+      - name: Verify standalone production distribution
+        run: pnpm verify:production

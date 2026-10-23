@@ -127,7 +127,9 @@ export function fanWorkload(
     ? () => scope.value[0].write(inputs!.writes[offset])
     : () => {
         for (let i = 0; i < MUTATIONS_PER_STEP; i++)
-          scope.value[inputs!.indices[offset + i]].write(inputs!.writes[offset + i]);
+          scope.value[inputs!.indices[offset + i]].write(
+            inputs!.writes[offset + i]
+          );
       };
   const run = (start: number, count: number) => {
     for (let step = 0; step < count; step++) {

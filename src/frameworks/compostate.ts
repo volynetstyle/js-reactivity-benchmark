@@ -1,4 +1,4 @@
-import { signal, computed, syncEffect, batch, createRoot } from "compostate";
+import { signal, computed, syncEffect, batch } from "compostate";
 import { ReactiveFramework } from "../util/reactiveFramework";
 
 // NOTE: The compostate adapter is currently not working and unused.
@@ -20,5 +20,6 @@ export const compostateFramework: ReactiveFramework = {
   },
   effect: syncEffect,
   withBatch: batch,
-  withBuild: createRoot,
+  // Compostate 1.0 does not export a native owner/root constructor.
+  withBuild: (fn) => fn(),
 };

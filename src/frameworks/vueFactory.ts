@@ -1,10 +1,21 @@
-import type * as vue from "@vue/reactivity";
 import { ReactiveFramework } from "../util/reactiveFramework";
 
-export type VueReactivity = Pick<
-  typeof vue,
-  "computed" | "effectScope" | "shallowRef" | "effect"
->;
+export interface VueReactivity {
+  shallowRef<T>(value: T): { value: T };
+  computed<T>(fn: () => T): { readonly value: T };
+  effectScope(): {
+    run<T>(fn: () => T): T | undefined;
+    stop(): void;
+  };
+  // Only the scheduler contract is shared between Vue generations. Their
+  // development-only debugger types refer to different internal node types.
+  effect(
+    fn: () => void,
+    options: { scheduler: () => void }
+  ): {
+    effect: { dirty: boolean; run(): unknown };
+  };
+}
 
 /**
  * One adapter for every @vue/reactivity generation, so 3.5 (pull-oriented

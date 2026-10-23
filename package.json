@@ -2,13 +2,19 @@
   "name": "js-reactivity-benchmark",
   "version": "4.0.0",
   "description": "JavaScript reactivity benchmarks with configurable workloads, framework adapters, and HTML performance reports.",
-  "main": "index.js",
+  "private": true,
+  "main": "dist/index.js",
+  "packageManager": "pnpm@10.22.0",
   "scripts": {
     "test": "vitest run --pool=threads",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm typecheck && pnpm test && pnpm build && pnpm bench:smoke && pnpm verify:production",
     "build": "node scripts/build.mjs",
+    "start": "node --expose-gc dist/index.js",
     "run": "node --expose-gc dist/index.js",
     "bench": "npm run build && node scripts/bench-and-update.mjs",
     "bench:smoke": "node scripts/benchmark-smoke.mjs",
+    "verify:production": "node scripts/verify-production.mjs",
     "results:page": "node scripts/render-results-page.mjs"
   },
   "keywords": [
@@ -65,6 +71,7 @@
     "@types/node": "26.6.5",
     "esbuild": "0.28.2",
     "prettier": "3.9.10",
+    "typescript": "7.0.2",
     "vite": "8.3.5",
     "vitest": "5.0.5"
   },

@@ -1,0 +1,14 @@
+# cellx lists its own benchmark libraries as exact peers. Each adapter here
+# deliberately measures the version pinned in package.json; workers verify
+# that no other library version is bundled.
+peerDependencyRules:
+  allowedVersions:
+    "cellx@2.4.0>@preact/signals-core": "1.14.4"
+    "cellx@2.4.0>@reatom/core": "1001.3.0"
+    "cellx@2.4.0>alien-signals": "3.2.1"
+    "cellx@2.4.0>mobx": "7.1.0"
+    "cellx@2.4.0>mol_wire_lib": "1.0.1820"
+    "cellx@2.4.0>solid-js": "1.9.17"
+
+onlyBuiltDependencies:
+  - esbuild

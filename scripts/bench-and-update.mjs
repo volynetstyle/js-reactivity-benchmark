@@ -10,10 +10,11 @@ const HTML_PATH = path.resolve("index.html");
 async function runBench() {
   const benchFramework = process.env.BENCH_FRAMEWORK?.trim();
   return await new Promise((resolve, reject) => {
-    const child = spawn("node", ["--expose-gc", "dist/index.js"], {
+    const child = spawn(process.execPath, ["--expose-gc", "dist/index.js"], {
       cwd: process.cwd(),
       env: {
         ...process.env,
+        NODE_ENV: "production",
         BENCH_SAMPLES_FILE:
           process.env.BENCH_SAMPLES_FILE ??
           path.join(LOG_DIR, "latest.samples.json"),
