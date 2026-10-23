@@ -142,6 +142,11 @@ and propagation algorithms are left to each library's documentation.
 | @maverick-js/signals         | microtask effects; `tick()` at commit           | `root`                | yes                            |
 | cellx                        | `release()` at commit                           | –                     | no                             |
 | rescript-signals             | `Signal.batch`                                  | –                     | no                             |
+| MobX 7.1                    | `runInAction`                                    | –                     | no                             |
+| Svelte 5                    | outer private runtime `flush`                    | `effect_root`         | yes                            |
+| TC39 Signals Polyfill       | outer adapter Watcher drain                      | –                     | yes                            |
+| Angular Signals             | outer adapter Watch queue                        | –                     | yes                            |
+| Kairo 0.8 alpha             | native `batch`                                   | –                     | no                             |
 
 "Minimal recomputation asserted" means the adapter's recomputation counts must
 match the minimal counts exactly; libraries marked "no" recompute more on some
@@ -230,6 +235,23 @@ the median of the round medians and the reported interval is their range, which
 exposes between-process (JIT, allocation layout) variance that samples inside
 one process cannot show.
 
+Published runs measure every row as scenario × framework × fresh process ×
+machine: 3 process rounds on each of 3 independent machine rounds (CI VMs).
+All frameworks of a scenario share a VM within a machine round. The merged row
+score is the median of the per-machine estimates, its interval is their range
+(`machine_range`), and each row records its noise at three nested levels as
+standard deviations of ln(time):
+
+| Token        | Level                                                                    |
+| ------------ | ------------------------------------------------------------------------ |
+| `sd_within`  | one process: standard error of its median, from its 95% interval width   |
+| `sd_process` | fresh processes on the same VM (pooled)                                  |
+| `sd_machine` | per-machine estimates across VMs, CPU model and its interaction included |
+
+Each level contains the noise of the levels below it. The levels are
+descriptive: with three machines `sd_machine` of a single row is itself very
+uncertain, so the page reports medians over rows.
+
 Rows run scenario-major: all frameworks for one scenario, then the next. The
 framework order rotates per scenario and per round, so no library is always
 measured first or last as the machine heats up or picks up background load.
@@ -252,9 +274,14 @@ with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`.
 ### Uncertainty
 
 The row score is the median. With 6 or more samples the runner reports a
-distribution-free 95% order-statistic interval for it (`median_ci95`). The
-report marks a result whose interval overlaps the leader's with `≈` and counts
-a scenario as a win only when the leader's interval lies below the runner-up's.
+distribution-free 95% order-statistic interval for it (`median_ci95`). That
+interval covers sample noise inside one process only: a new process, another VM
+or another CPU model can move the median further. The range of `n` independent
+estimates (`round_range`, `machine_range`) covers their population median with
+probability `1 - 2 × 0.5^n`, 75% for three, and is labelled as such, never as a
+95% interval. The report marks a result whose interval overlaps the leader's
+with `≈` and counts a scenario as a win only when the leader's interval lies
+below the runner-up's.
 p95 requires 200 samples and p99 1000, with 95% order-statistic bounds. All
 intervals assume iid samples; autocorrelation, JIT transitions and thermal
 changes limit that interpretation, which is what rounds are for. Saved JSON
@@ -267,6 +294,22 @@ score(L) = exp(mean(log(r(L, shared_test))))
 ```
 
 Lower is better. A score of `1.00x` means best on every included row.
+
+With machine rounds, the ratios are formed within one machine round, where all
+frameworks of a scenario ran on the same VM:
+
+```txt
+r_m(L, test) = time_m(L, test) / best_time_m(test)
+score_m(L) = exp(mean(log(r_m(L, shared_test))))
+score(L) = median over m of score_m(L), reported with min..max over m
+```
+
+Each machine round is a complete leaderboard on its own set of VMs, so the
+range of `score_m` shows how much the ranking depends on which CPUs a run drew
+(the algorithm × microarchitecture interaction), and a rank whose range
+overlaps the one above is marked `≈`. Without machine rounds the overall score
+has no interval: each scenario ran on one VM and different scenarios on
+different CPU models.
 
 ## Correctness Gate
 

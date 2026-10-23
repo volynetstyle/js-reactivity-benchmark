@@ -1,7 +1,7 @@
 # Adapter audit
 
 Reviewed against the exact installed versions in `package.json` and
-`pnpm-lock.yaml`. The active comparison consists of the 24 entries in
+`pnpm-lock.yaml`. The active comparison consists of the 29 entries in
 [`frameworkCatalog.json`](../src/frameworkCatalog.json); tests verify that it
 matches [`config.ts`](../src/config.ts). Upstream links and author credits for
 every integration, including inactive ones, are in the
@@ -54,6 +54,11 @@ keep. Native lifecycle workloads run only for adapters with a real owner scope.
 | Maverick Signals                     | Native callable getter, already bound `.set`, native computed getter                      | Native effect, outer `tick()` and native root/disposer                                                                                |
 | Cellx                                | Closures preserve `Cell.get/set` receiver; standalone writes release                      | Native autorun; call native batch once for the outer transaction, then release; native effect disposer                                |
 | ReScript Signals                     | Closures pass node to generated `Signal.get/set`                                          | Direct generated module imports; native synchronous scheduler and batch; effect result converted to ReScript unit; native disposer    |
+| MobX 7.1                             | Shallow observable box; computed with native `keepAlive: true`                            | Native autorun disposer and runInAction; action enforcement disabled for fixture writes; no synthetic owner scope |
+| Svelte 5                             | Private runtime state/derived/get/set; derivations constructed under a native root        | Native render effect; outer flush; native effect-root disposal; runtime primitives used directly without compiling a component |
+| TC39 Signals Polyfill                | Native State/Computed get/set                                                            | Adapter Watcher scheduler drains at outer commit; microtask fallback; native unwatch disposer |
+| Angular Signals                      | Public signal/computed callables                                                        | Low-level createWatch, custom outer commit queue; native destroy disposer; no dependency injection or synthetic graph owner |
+| Kairo 0.8 alpha                      | Native mutable/current and computed; explicit Track reader saved/restored in finally     | Native Reaction.track/dispose and batch; no fabricated owner scope; alpha version explicitly labeled |
 
 ### Why some wrappers remain
 
@@ -102,16 +107,15 @@ native scope disposal without allocating an extra per-effect disposer.
 
 ## Inactive integrations and limits
 
-The seven inactive integrations are Angular, MobX, Svelte, the TC39 polyfill,
-Compostate, Valtio, and Kairo. Their files were inspected and straightforward
-forwarding closures removed where applicable. This does not certify their
-compatibility with the present suite. Svelte uses private runtime APIs; Angular
-and the polyfill supply custom queues; Valtio's proxy getter is not a cached
-computed and its no-op batch cannot satisfy the active commit contract.
-Compostate/Kairo retain known incompatibilities; MobX/Valtio have linked
-historical hang reports in the README. Re-enabling any of them requires the
-same contract and workload validation as the active rows, regardless of its
-historical speed.
+The 2026-10-23 [adapter recheck](adapter-recheck.md) restored MobX, Svelte,
+Angular, the TC39 polyfill and Kairo. Two integrations remain inactive:
+Compostate 1.0.0 has exponential shared-path invalidation on cellx graphs;
+Valtio 2.3.2 with valtio-reactive 0.2.0 emits transient values through a diamond
+even inside a batch. Both adapters now use current native APIs, and
+[`inactiveAdapters.test.ts`](../tests/inactiveAdapters.test.ts) checks the
+shallow Compostate case and an expected-failure Valtio commit contract.
+The stale rippleFramework comment had neither an adapter nor a dependency in
+this repository and was removed; it does not identify a package to benchmark.
 
 Known native failures remain results, including Reatom's deep-graph retained
 memory growth. Library defaults and adapter policies can still influence
@@ -125,7 +129,7 @@ commit and the same machine/runtime/profile to measure the changes.
 [`frameworkAdapters.test.ts`](../tests/frameworkAdapters.test.ts) checks method
 accessors with object replacement, nested transaction delivery, synchronous
 initial observation, ignored numeric callback returns, and fixture disposal
-for all 24 active rows, including native queued-work disposal policies.
+for all 29 active rows, including native queued-work disposal policies.
 Existing adapter and observed-workload tests additionally
 check values, dynamic dependency detachment, delivery coverage, and supported
 native graph lifecycles. A prototype-method probe in

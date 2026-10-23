@@ -2,9 +2,14 @@ name: Benchmarks
 
 # Measurement runs in parallel CI shards. Shards split scenarios, never
 # frameworks: every framework of a scenario runs on the same runner VM, because
-# GitHub assigns different CPU models to different jobs. Optional machine
-# rounds measure every shard again on other VMs; the merged score is then the
-# median across machines with the range reported as its interval.
+# GitHub assigns different CPU models to different jobs. Machine rounds
+# measure every shard again on other VMs, and process rounds repeat every row
+# in fresh processes on each VM, so the merged results separate within-process,
+# between-process and between-machine variance. Publication runs default to
+# 3 process rounds x 3 machine rounds.
+#
+# This workflow measures on exactly the Node.js release in .nvmrc. Compatibility
+# with other Node.js lines is the CI workflow's job, never mixed in here.
 
 on:
   workflow_run:
@@ -32,7 +37,7 @@ on:
         description: "Fresh-process repetitions per row within one VM"
         required: false
         type: string
-        default: "1"
+        default: "3"
       shards:
         description: "Parallel scenario shards (one VM each)"
         required: false
@@ -42,7 +47,7 @@ on:
         description: "Independent VMs per shard; >1 reports the median across machines and their range"
         required: false
         type: string
-        default: "1"
+        default: "3"
 
 permissions:
   contents: write
@@ -64,26 +69,38 @@ jobs:
         github.event.workflow_run.conclusion == 'success'
       )
     runs-on: ubuntu-latest
+    # The effective settings, so automatic runs and the archived metadata use
+    # the same values (workflow_run events carry no inputs).
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       shards: ${{ steps.plan.outputs.shards }}
+      rounds: ${{ steps.plan.outputs.rounds }}
+      machine_rounds: ${{ steps.plan.outputs.machine_rounds }}
+      profile: ${{ steps.plan.outputs.profile }}
     steps:
       - name: Plan shards
         id: plan
         env:
           SHARDS: ${{ github.event.inputs.shards || '8' }}
-          MACHINE_ROUNDS: ${{ github.event.inputs.machine_rounds || '1' }}
+          ROUNDS: ${{ github.event.inputs.rounds || '3' }}
+          MACHINE_ROUNDS: ${{ github.event.inputs.machine_rounds || '3' }}
+          PROFILE: ${{ github.event.inputs.profile || 'quick' }}
         run: |
           node -e '
             const shards = Number(process.env.SHARDS);
-            const rounds = Number(process.env.MACHINE_ROUNDS);
+            const rounds = Number(process.env.ROUNDS);
+            const machineRounds = Number(process.env.MACHINE_ROUNDS);
             if (!Number.isInteger(shards) || shards < 1 || shards > 32) throw new Error("shards must be 1..32");
-            if (!Number.isInteger(rounds) || rounds < 1 || rounds > 5) throw new Error("machine_rounds must be 1..5");
+            if (!Number.isInteger(rounds) || rounds < 1 || rounds > 10) throw new Error("rounds must be 1..10");
+            if (!Number.isInteger(machineRounds) || machineRounds < 1 || machineRounds > 5) throw new Error("machine_rounds must be 1..5");
             const include = [];
-            for (let round = 1; round <= rounds; round++)
+            for (let round = 1; round <= machineRounds; round++)
               for (let shard = 1; shard <= shards; shard++) include.push({ round, shard });
             console.log("matrix=" + JSON.stringify({ include }));
             console.log("shards=" + shards);
+            console.log("rounds=" + rounds);
+            console.log("machine_rounds=" + machineRounds);
+            console.log("profile=" + process.env.PROFILE);
           ' >> "$GITHUB_OUTPUT"
 
   measure:
@@ -116,6 +133,9 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      - name: Verify the pinned runtime
+        run: node scripts/check-runtime.mjs
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --strict-peer-dependencies
 
@@ -125,8 +145,8 @@ jobs:
       - name: Run shard
         env:
           BENCH_FRAMEWORK: ${{ github.event.inputs.framework }}
-          BENCH_PROFILE: ${{ github.event.inputs.profile || 'quick' }}
-          BENCH_ROUNDS: ${{ github.event.inputs.rounds || '1' }}
+          BENCH_PROFILE: ${{ needs.plan.outputs.profile }}
+          BENCH_ROUNDS: ${{ needs.plan.outputs.rounds }}
           BENCH_SHARD: ${{ matrix.shard }}/${{ needs.plan.outputs.shards }}
           BENCH_MACHINE_ROUND: ${{ matrix.round }}
           BENCH_ASSERT_NO_CONSOLE: "1"
@@ -174,6 +194,11 @@ jobs:
       - name: Merge shards and render the results page
         run: node scripts/merge-shards.mjs shard-out
 
+      # Every shard measured on the same Node.js/V8 (enforced by the merge);
+      # this checks that it is the release pinned in .nvmrc.
+      - name: Verify the published runtime
+        run: node scripts/check-runtime.mjs bench-results/latest.samples.json
+
       - name: Archive benchmark output
         id: archive
         shell: bash
@@ -199,10 +224,10 @@ jobs:
             "generatedAtUtc": "${timestamp}",
             "logPath": "${archive_log}",
             "samplesPath": "${archive_samples}",
-            "profile": "${{ github.event.inputs.profile || 'quick' }}",
-            "rounds": "${{ github.event.inputs.rounds || '1' }}",
+            "profile": "${{ needs.plan.outputs.profile }}",
+            "rounds": "${{ needs.plan.outputs.rounds }}",
             "shards": "${{ needs.plan.outputs.shards }}",
-            "machineRounds": "${{ github.event.inputs.machine_rounds || '1' }}"
+            "machineRounds": "${{ needs.plan.outputs.machine_rounds }}"
           }
           EOF
 

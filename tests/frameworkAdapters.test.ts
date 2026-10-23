@@ -11,6 +11,9 @@ const explicitCommitAdapters = new Set([
   "Oby",
   "@maverick-js/signals",
   "cellx",
+  "Svelte v5",
+  "@angular/signals",
+  "TC39 Signals Polyfill",
 ]);
 
 for (const { framework } of frameworkInfo) {

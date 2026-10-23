@@ -158,5 +158,38 @@
     "name": "rescript-signals",
     "module": "rescriptSignals",
     "export": "rescriptSignalsFramework"
+  },
+  {
+    "id": "mobx",
+    "name": "MobX",
+    "module": "mobx",
+    "export": "mobxFramework"
+  },
+  {
+    "id": "svelte",
+    "name": "Svelte v5",
+    "module": "svelte",
+    "export": "svelteFramework",
+    "pullCounts": true
+  },
+  {
+    "id": "tc39",
+    "name": "TC39 Signals Polyfill",
+    "module": "tc39-proposal-signals-stage-0",
+    "export": "tc39SignalsProposalStage0",
+    "pullCounts": true
+  },
+  {
+    "id": "angular",
+    "name": "@angular/signals",
+    "module": "angularSignals",
+    "export": "angularFramework",
+    "pullCounts": true
+  },
+  {
+    "id": "kairo",
+    "name": "kairo 0.8 alpha",
+    "module": "kairo",
+    "export": "kairoFramework"
   }
 ]

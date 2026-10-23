@@ -10,7 +10,9 @@ import { updateResultsPage } from "./render-results-page.mjs";
  * Shards split scenarios, never frameworks, so every per-scenario comparison
  * was made on a single machine. With several machine rounds each scenario was
  * measured on several independent machines; the score is then the median of
- * the per-machine medians and the reported interval is their range.
+ * the per-machine medians and the reported interval is their range. Every row
+ * also keeps its per-machine estimates and a decomposition of its noise into
+ * within-process, between-process and between-machine spread.
  */
 export async function mergeShards(
   dir,
@@ -193,11 +195,17 @@ export function mergeShardData(shards) {
     // A failure on any machine is the row's result (a library that crashes
     // on one CPU is not reported by its luckier machines).
     const failed = entries.find((entry) => entry.row.status === "failed");
+    const noise = failed
+      ? undefined
+      : noiseComponents(entries.map((entry) => entry.row));
     if (entries.length === 1 || failed) {
       const chosen = failed ?? entries[0];
-      outLines.push(chosen.line);
+      outLines.push(
+        failed ? chosen.line : appendMetrics(chosen.line, noiseTokens(noise))
+      );
       outRows.push({
         ...chosen.row,
+        ...(noise ? { noise } : {}),
         machines: entries.map((entry) => ({
           machineRound: entry.id,
           shard: entry.shard.shard.index,
@@ -209,22 +217,28 @@ export function mergeShardData(shards) {
     }
     const estimates = entries.map((entry) => entry.row.estimateMs);
     const sorted = [...estimates].sort((a, b) => a - b);
-    const middle = (sorted.length - 1) / 2;
-    const estimateMs =
-      (sorted[Math.floor(middle)] + sorted[Math.ceil(middle)]) / 2;
+    const estimateMs = median(estimates);
     const capped = entries.some((entry) => entry.row.capped);
     const samples = entries.reduce(
       (sum, entry) => sum + entry.row.statistics.count,
       0
     );
     outLines.push(
-      rewriteLine(entries[0].line, {
-        time: estimateMs,
-        samples,
-        machines: entries.length,
-        range: [sorted[0], sorted[sorted.length - 1]],
-        capped,
-      })
+      appendMetrics(
+        rewriteLine(entries[0].line, {
+          time: estimateMs,
+          samples,
+          machines: entries.length,
+          range: [sorted[0], sorted[sorted.length - 1]],
+          capped,
+        }),
+        [
+          // In machine-round order, so a reader can form ratios within one
+          // machine instead of between medians taken from different machines.
+          `machine_estimates=${estimates.map((value) => value.toFixed(6)).join(";")}`,
+          ...noiseTokens(noise),
+        ]
+      )
     );
     outRows.push({
       id: rowId,
@@ -244,6 +258,8 @@ export function mergeShardData(shards) {
         lowMs: sorted[0],
         highMs: sorted[sorted.length - 1],
       },
+      machineEstimatesMs: estimates,
+      ...(noise ? { noise } : {}),
       machines: entries.map((entry) => ({
         machineRound: entry.id,
         shard: entry.shard.shard.index,
@@ -261,7 +277,7 @@ export function mergeShardData(shards) {
     .split(/\r?\n/)
     .find((line) => /^framework\s*,\s*test\s*,/.test(line));
   const log = [
-    header,
+    `${header} machine_rounds=${roundIds.length}`,
     ...machines.map(
       (machine) =>
         `# machine ${machine.machineRound}/${machine.shard} cpu=${String(machine.cpu).replace(/\s+/g, "_")} cores=${machine.cores} os=${String(machine.os ?? "unknown").replace(/\s+/g, "_")} scenarios=${machine.scenarios.length}`
@@ -286,15 +302,117 @@ export function mergeShardData(shards) {
     merged: {
       shards: count,
       machineRounds: roundIds.length,
+      processRounds: first.policy?.rounds ?? 1,
       estimate:
         roundIds.length > 1
           ? "median of per-machine estimates; interval is their range"
           : "per-machine estimate (each scenario measured on one machine)",
+      noise: summarizeNoise(outRows),
     },
     machines,
     rows: outRows,
   };
   return { log: log + "\n", samples };
+}
+
+const Z95 = 1.959963984540054;
+
+const median = (values) => {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = (sorted.length - 1) / 2;
+  return (sorted[Math.floor(middle)] + sorted[Math.ceil(middle)]) / 2;
+};
+
+/**
+ * Spread of a row's estimate at each level of the nested design
+ * machine > fresh process > sample, as standard deviations of ln(time)
+ * (0.05 is roughly a 5% relative spread):
+ *
+ * - `withinProcess`: standard error of one process's median, from the width of
+ *   its 95% order-statistic interval (median over processes);
+ * - `betweenProcess`: SD of process medians on the same machine (pooled);
+ * - `betweenMachine`: SD of the per-machine estimates.
+ *
+ * Each level contains the noise of the levels below it. Capped rows have a
+ * single cold sample per machine and are left out.
+ */
+export function noiseComponents(records) {
+  if (records.some((record) => record.capped)) return undefined;
+  const within = [];
+  let squares = 0;
+  let df = 0;
+  for (const record of records) {
+    const rounds = (record.rounds ?? []).filter((round) => round.statistics);
+    for (const { statistics } of rounds)
+      if (statistics.medianInterval) {
+        const [low, high] = statistics.medianInterval;
+        within.push((Math.log(high) - Math.log(low)) / (2 * Z95));
+      }
+    if (rounds.length < 2) continue;
+    const logs = rounds.map((round) => Math.log(round.statistics.median));
+    const mean = logs.reduce((sum, value) => sum + value, 0) / logs.length;
+    squares += logs.reduce((sum, value) => sum + (value - mean) ** 2, 0);
+    df += logs.length - 1;
+  }
+  const machines = records.map((record) => Math.log(record.estimateMs));
+  const machineMean =
+    machines.reduce((sum, value) => sum + value, 0) / machines.length;
+  const components = {
+    withinProcess: within.length ? median(within) : undefined,
+    betweenProcess: df ? Math.sqrt(squares / df) : undefined,
+    betweenMachine:
+      machines.length > 1
+        ? Math.sqrt(
+            machines.reduce(
+              (sum, value) => sum + (value - machineMean) ** 2,
+              0
+            ) /
+              (machines.length - 1)
+          )
+        : undefined,
+  };
+  return Object.values(components).some((value) => value !== undefined)
+    ? components
+    : undefined;
+}
+
+const NOISE_TOKENS = {
+  withinProcess: "sd_within",
+  betweenProcess: "sd_process",
+  betweenMachine: "sd_machine",
+};
+
+function noiseTokens(noise) {
+  return Object.entries(NOISE_TOKENS)
+    .filter(([key]) => noise?.[key] !== undefined)
+    .map(([key, token]) => `${token}=${noise[key].toFixed(4)}`);
+}
+
+/** Median of each noise component over the rows that report it. */
+function summarizeNoise(rows) {
+  const summary = {
+    unit: "SD of ln(time); median over rows",
+  };
+  for (const key of Object.keys(NOISE_TOKENS)) {
+    const values = rows
+      .map((row) => row.noise?.[key])
+      .filter((value) => value !== undefined);
+    summary[key] = values.length
+      ? { median: median(values), rows: values.length }
+      : undefined;
+  }
+  return summary;
+}
+
+function appendMetrics(line, tokens) {
+  if (!tokens.length) return line;
+  const parts = line.split(" , ");
+  if (parts.length < 9) throw new Error(`Unexpected row format: ${line}`);
+  const metrics = parts.slice(8).join(" , ").trim();
+  return [
+    ...parts.slice(0, 8),
+    [metrics, ...tokens].filter(Boolean).join(" "),
+  ].join(" , ");
 }
 
 function dataLines(log) {

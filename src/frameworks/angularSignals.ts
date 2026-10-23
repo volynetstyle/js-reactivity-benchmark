@@ -19,23 +19,38 @@ export const angularFramework: ReactiveFramework = {
   },
   effect,
   withBatch: (fn) => {
-    fn();
-    flushEffects();
+    batchDepth++;
+    try {
+      fn();
+    } finally {
+      if (--batchDepth === 0) flushEffects();
+    }
   },
   withBuild: (fn) => fn(),
 };
 
-let queue = new Set<Watch>();
+const queue = new Set<Watch>();
+let batchDepth = 0;
 
 /**
  * Wrapper around Angular's core effect primitive `Watch`, decoupled from
  * dependency injection, cleanup, and other unrelated concepts.
  */
-function effect(effectFn: () => void): void {
-  const w = createWatch(effectFn, queue.add.bind(queue), true);
+function effect(effectFn: () => void): () => void {
+  const w = createWatch(
+    () => {
+      effectFn();
+    },
+    queue.add.bind(queue),
+    true
+  );
 
   // Run effect immediately
   w.run();
+  return () => {
+    queue.delete(w);
+    w.destroy();
+  };
 }
 
 function flushEffects(): void {

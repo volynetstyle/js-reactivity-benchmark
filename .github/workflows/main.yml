@@ -1,11 +1,20 @@
 name: CI
 
+# Compatibility, not performance: the suite must install, type-check, build
+# and run on every supported Node.js line. Published measurements use exactly
+# the release in .nvmrc (see benchmarks.yml); the "pinned" entry checks that
+# release here too, so the Benchmarks workflow only starts after it passes.
+
 on: [push, pull_request]
 
 jobs:
   test:
-    name: Test (Node.js from .nvmrc)
+    name: Test (Node.js ${{ matrix.node }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["22", "24", "26", "pinned"]
 
     steps:
       - uses: actions/checkout@v7
@@ -16,8 +25,13 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version-file: .nvmrc
+          node-version: ${{ matrix.node != 'pinned' && matrix.node || '' }}
+          node-version-file: ${{ matrix.node == 'pinned' && '.nvmrc' || '' }}
           cache: "pnpm"
+
+      - name: Verify the pinned runtime
+        if: matrix.node == 'pinned'
+        run: node scripts/check-runtime.mjs
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --strict-peer-dependencies

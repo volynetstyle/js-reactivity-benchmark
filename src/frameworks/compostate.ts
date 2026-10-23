@@ -1,15 +1,16 @@
-import { signal, computed, syncEffect, batch } from "compostate";
+import { atom, computed, syncEffect, batch, batchCleanup } from "compostate";
 import { ReactiveFramework } from "../util/reactiveFramework";
-
-// NOTE: The compostate adapter is currently not working and unused.
 
 export const compostateFramework: ReactiveFramework = {
   name: "Compostate",
   signal: (initialValue) => {
-    const [get, set] = signal(initialValue);
+    // atom accepts literal function values; signal interprets them as updaters.
+    const value = atom(initialValue);
     return {
-      write: set,
-      read: get,
+      write: (next) => {
+        value(next);
+      },
+      read: value,
     };
   },
   computed: (fn) => {
@@ -18,8 +19,17 @@ export const compostateFramework: ReactiveFramework = {
       read: get,
     };
   },
-  effect: syncEffect,
+  effect: (fn) =>
+    syncEffect(() => {
+      fn();
+    }),
   withBatch: batch,
-  // Compostate 1.0 does not export a native owner/root constructor.
   withBuild: (fn) => fn(),
+  createScope: <T>(fn: () => T) => {
+    let value!: T;
+    const dispose = batchCleanup(() => {
+      value = fn();
+    });
+    return { value, dispose };
+  },
 };

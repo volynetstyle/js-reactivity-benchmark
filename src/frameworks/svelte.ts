@@ -26,14 +26,44 @@ export const svelteFramework: ReactiveFramework = {
     };
   },
   effect: (fn) => {
-    $.render_effect(fn);
-  },
-  withBatch: (fn) => $.flush(fn),
-  withBuild: <T>(fn: () => T): T => {
-    let res: T | undefined;
-    $.effect_root(() => {
-      res = fn();
+    if (scopeDepth) {
+      $.render_effect(() => {
+        fn();
+      });
+      return;
+    }
+    // Discard callback results: the runtime interprets functions as cleanups.
+    return $.effect_root(() => {
+      $.render_effect(() => {
+        fn();
+      });
     });
-    return res!;
   },
+  withBatch: (fn) => {
+    batchDepth++;
+    try {
+      fn();
+    } finally {
+      if (--batchDepth === 0) $.flush();
+    }
+  },
+  // Match compiler-created derivations: they have an active effect owner.
+  withBuild: (fn) => (scopeDepth ? fn() : createScope(fn).value),
+  createScope,
 };
+
+function createScope<T>(fn: () => T) {
+  let value!: T;
+  const dispose = $.effect_root(() => {
+    scopeDepth++;
+    try {
+      value = fn();
+    } finally {
+      scopeDepth--;
+    }
+  });
+  return { value, dispose };
+}
+
+let batchDepth = 0;
+let scopeDepth = 0;

@@ -1,32 +1,48 @@
 import { ReactiveFramework } from "../util/reactiveFramework";
-import { batch, computed, effect, mutValue } from "kairo";
-import { collectScope } from "kairo";
+import { batch, computed, Reaction, mutable, Track, Cell } from "kairo";
 
-// NOTE: The kairo adapter is currently not working and unused.
+let track: Track | undefined;
+function tracked<T>(reader: Track, fn: () => T): T {
+  const parent = track;
+  track = reader;
+  try {
+    return fn();
+  } finally {
+    track = parent;
+  }
+}
+function read<T>(cell: Cell<T>): T {
+  return track ? track(cell) : cell.current;
+}
 
 export const kairoFramework: ReactiveFramework = {
-  name: "kairo",
+  name: "kairo 0.8 alpha",
   signal: (initialValue) => {
-    const [get, write] = mutValue(initialValue);
+    const [cell, set] = mutable(initialValue);
     return {
-      read: () => get.value,
-      write,
+      read: () => read(cell),
+      write: (value) => set(() => value),
     };
   },
   computed: (fn) => {
-    const c = computed(fn);
+    const c = computed(($) => tracked($, fn));
     return {
-      read: () => c.value,
+      read: () => read(c),
     };
   },
-  effect,
-  withBatch: batch,
-  withBuild: (fn) => {
-    const endCollectScope = collectScope();
-    try {
-      return fn();
-    } finally {
-      endCollectScope();
-    }
+  // effect() only initializes when a LifecycleScope attaches. Public Reaction
+  // provides the synchronous observation and disposer needed by this harness.
+  effect: (fn) => {
+    const run = ($: Track) =>
+      tracked($, () => {
+        fn();
+      });
+    const reaction = new Reaction(() => {
+      reaction.track(run);
+    });
+    reaction.track(run);
+    return () => reaction.dispose();
   },
+  withBatch: batch,
+  withBuild: (fn) => fn(),
 };

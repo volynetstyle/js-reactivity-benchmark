@@ -1,65 +1,66 @@
 import { ReactiveFramework } from "../util/reactiveFramework";
 import { Signal } from "signal-polyfill";
 
-export const tc39SignalsProposalStage0: ReactiveFramework = {
-  name: "TC39 Signals Polyfill",
-  signal: (initialValue) => {
-    const s = new Signal.State(initialValue);
-    return {
-      write: (v) => s.set(v),
-      read: () => s.get(),
-    };
-  },
-  computed: (fn) => {
-    const c = new Signal.Computed(fn);
-    return {
-      read: () => c.get(),
-    };
-  },
-  effect: (fn) => effect(fn),
-  withBatch: (fn) => {
-    fn();
-    processPending();
-  },
-  withBuild: (fn) => fn(),
-};
-
-let needsEnqueue = false;
-
-const w = new Signal.subtle.Watcher(() => {
-  if (needsEnqueue) {
-    needsEnqueue = false;
-    (async () => {
-      await Promise.resolve();
-      // next micro queue
+let batchDepth = 0;
+let flushing = false;
+let scheduled = false;
+// The proposal deliberately leaves effects and scheduling to consumers.
+const watcher = new Signal.subtle.Watcher(() => {
+  if (!scheduled) {
+    scheduled = true;
+    queueMicrotask(() => {
+      scheduled = false;
       processPending();
-    })();
+    });
   }
 });
 
 function processPending() {
-  needsEnqueue = true;
-
-  for (const s of w.getPending()) {
-    s.get();
+  if (batchDepth || flushing) return;
+  flushing = true;
+  try {
+    while (watcher.getPending().length) {
+      for (const signal of watcher.getPending()) signal.get();
+      watcher.watch();
+    }
+  } finally {
+    watcher.watch();
+    flushing = false;
   }
-
-  w.watch();
 }
 
-export function effect(callback: any) {
-  let cleanup: any;
-
+export function effect(callback: () => void) {
   const computed = new Signal.Computed(() => {
-    typeof cleanup === "function" && cleanup();
-    cleanup = callback();
+    callback();
   });
-
-  w.watch(computed);
-  computed.get();
-
-  return () => {
-    w.unwatch(computed);
-    typeof cleanup === "function" && cleanup();
-  };
+  watcher.watch(computed);
+  try {
+    computed.get();
+  } catch (error) {
+    watcher.unwatch(computed);
+    throw error;
+  }
+  return () => watcher.unwatch(computed);
 }
+
+export const tc39SignalsProposalStage0: ReactiveFramework = {
+  name: "TC39 Signals Polyfill",
+  signal: (initialValue) => {
+    const s = new Signal.State(initialValue);
+    return { write: (value) => s.set(value), read: () => s.get() };
+  },
+  computed: (fn) => {
+    const c = new Signal.Computed(fn);
+    return { read: () => c.get() };
+  },
+  effect,
+  withBatch: (fn) => {
+    batchDepth++;
+    try {
+      fn();
+    } finally {
+      if (--batchDepth === 0) processPending();
+    }
+  },
+  withBuild: (fn) => fn(),
+};

@@ -6,9 +6,12 @@ continues to publish the generated `index.html` and `bench-results/` artifacts.
 
 ## Build and validate
 
-Use the exact Node.js version from `.nvmrc` (24.15.0) for comparable measurements.
-The generated JavaScript targets Node.js 22 and later. `package.json` pins pnpm
-10.22.0; all dependencies, including TypeScript, have exact versions.
+Use the exact Node.js version from `.nvmrc` (24.15.0) for comparable measurements;
+`node scripts/check-runtime.mjs` verifies it, and the Benchmarks workflow runs it
+on every shard and on the merged result. The generated JavaScript targets
+Node.js 22 and later, which CI checks on Node.js 22, 24 and 26: that is a
+compatibility matrix, never a source of published numbers. `package.json` pins
+pnpm 10.22.0; all dependencies, including TypeScript, have exact versions.
 
 ```sh
 pnpm install --frozen-lockfile --strict-peer-dependencies
@@ -72,9 +75,9 @@ Remove-Item Env:BENCH_FRAMEWORK, Env:BENCH_FILTER
 ```
 
 `pnpm verify:production` copies only `dist/` into an OS temporary directory and
-runs one checked scenario for all 24 frameworks. It starts from
+runs one checked scenario for all 29 frameworks. It starts from
 `NODE_ENV=development` and checks that the runner establishes the actual
-production environment. CI runs this after the existing 101-row smoke test and
+production environment. CI runs this after the adapter smoke tests and
 the real two-shard merge check. Temporary verification outputs are removed.
 
 ## Container execution

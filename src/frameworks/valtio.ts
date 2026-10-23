@@ -1,59 +1,44 @@
 import { ReactiveFramework } from "../util/reactiveFramework";
-import { proxy } from "valtio/vanilla";
-import { watch } from "valtio/utils";
+import { proxy, ref } from "valtio/vanilla";
+import { batch, computed, effect } from "valtio-reactive";
 
-// The Valtio adapter is currently not working and unused: https://github.com/pmndrs/valtio/discussions/949
-
-type WatchGet = <T extends object>(proxyObject: T) => T;
-
-// stack of watch getters because Valtio doesn't auto-track dependency reads
-let watchGet: Array<WatchGet> = [];
+let batchDepth = 0;
+// Nested properties are outside the signal replacement contract.
+const literal = <T>(value: T): T =>
+  value !== null && typeof value === "object" ? ref(value) : value;
 
 export const valtioFramework: ReactiveFramework = {
   name: "Valtio",
-  signal: (initialValue) => {
-    const s = proxy({ value: initialValue });
+  signal: (initial) => {
+    const state = proxy({ value: literal(initial) });
     return {
-      write: (v) => (s.value = v),
-      read: () => {
-        const get = watchGet.at(-1);
-        if (get) {
-          return get(s).value;
-        } else {
-          return s.value;
-        }
+      read: () => state.value,
+      write: (value) => {
+        state.value = literal(value);
       },
     };
   },
   computed: (fn) => {
-    const c = proxy({
-      get value() {
-        return fn();
-      },
-    });
-    return {
-      read: () => {
-        const get = watchGet.at(-1);
-        if (get) {
-          return get(c).value;
-        } else {
-          return c.value;
-        }
-      },
-    };
+    const state = computed({ value: () => literal(fn()) });
+    return { read: () => state.value };
   },
-  effect: (fn) => {
-    return watch(
-      (get) => {
-        watchGet.push(get);
+  effect: (fn) =>
+    effect(() => {
+      fn();
+    }),
+  withBatch: (fn) => {
+    if (batchDepth) {
+      fn();
+      return;
+    }
+    batch(() => {
+      batchDepth++;
+      try {
         fn();
-        watchGet.pop();
-      },
-      {
-        sync: true,
+      } finally {
+        batchDepth--;
       }
-    );
+    });
   },
-  withBatch: (fn) => fn(),
   withBuild: (fn) => fn(),
 };

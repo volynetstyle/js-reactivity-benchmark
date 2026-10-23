@@ -1,7 +1,9 @@
 import { describe, expect, test } from "vitest";
 import {
+  describeInterval,
   intervalsOverlap,
   parseBenchOutput,
+  rangeCoverage,
   renderResultsPage,
 } from "../../scripts/render-results-page.mjs";
 
@@ -125,4 +127,30 @@ test("failed rows are results: shown, not scored, and never ranked on a subset",
   const page = renderResultsPage(parsed);
   expect(page).toContain("not ranked: 1 failed");
   expect(page).toContain("out-of-memory");
+});
+
+test("intervals are labelled with what they actually cover", () => {
+  const parsed = parseBenchOutput(
+    [
+      "a , t , 1.00 , , , , update , stable , samples=10 median_ci95=0.9..1.1",
+      "b , t , 1.50 , , , , update , stable , samples=30 rounds=3 round_range=1.4..1.6",
+      "c , t , 2.00 , , , , update , stable , samples=90 machines=3 machine_range=1.8..2.2",
+    ].join("\n")
+  );
+  const [a, b, c] = parsed.rows;
+  expect(describeInterval(a)).toContain("95% interval within one process");
+  expect(describeInterval(a)).toContain("sample noise only");
+  expect(describeInterval(b)).toContain("3 fresh processes on one machine");
+  expect(describeInterval(b)).toContain("~75% coverage");
+  expect(describeInterval(c)).toContain("range over 3 machines");
+  expect(rangeCoverage(3)).toBe(0.75);
+  expect(rangeCoverage(5)).toBe(0.9375);
+  // A single-VM-per-scenario run has no interval for the overall score.
+  expect(
+    renderResultsPage(
+      parseBenchOutput(
+        "a , t , 1 , , , , update , stable , samples=10 median_ci95=0.9..1.1"
+      )
+    )
+  ).toContain("The leaderboard score has no interval of its own");
 });

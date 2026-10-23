@@ -4,15 +4,24 @@ declare module "solid-js-2-client" {
 }
 
 // Kairo ships these declarations but its exports map hides them from bundler
-// resolution. Describe the API used by the disabled legacy adapter.
+// resolution. Describe the public API used by the adapter.
 declare module "kairo" {
-  export function mutValue<T>(
+  export interface Cell<T> {
+    readonly current: T;
+  }
+  export interface Track {
+    <T>(cell: Cell<T>): T;
+  }
+  export function mutable<T>(
     value: T
-  ): [{ readonly value: T }, (value: T) => void];
-  export function computed<T>(fn: () => T): { readonly value: T };
-  export function effect(fn: () => void): void;
+  ): [Cell<T>, (value: T | ((current: T) => T)) => void];
+  export function computed<T>(fn: (track: Track) => T): Cell<T>;
+  export class Reaction {
+    constructor(callback: () => void);
+    track<T>(fn: (track: Track) => T): T;
+    dispose(): void;
+  }
   export function batch(fn: () => void): void;
-  export function collectScope(): () => unknown;
 }
 
 // rescript-signals ships generated JavaScript without type declarations.

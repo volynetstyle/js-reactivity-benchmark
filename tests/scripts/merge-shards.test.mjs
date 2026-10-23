@@ -3,7 +3,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "vitest";
 import { mergeShardData, mergeShards } from "../../scripts/merge-shards.mjs";
-import { parseBenchOutput } from "../../scripts/render-results-page.mjs";
+import {
+  parseBenchOutput,
+  renderResultsPage,
+} from "../../scripts/render-results-page.mjs";
 
 const WIDTHS = [22, 60, 8, 8, 8, 8, 12, 24, 0];
 const line = (values) =>
@@ -42,7 +45,7 @@ function shard({
     os: "Linux 6",
     shard: { index, count, scenarios },
     machineRound: round,
-    rows: rows.map(([framework, name, estimateMs]) => ({
+    rows: rows.map(([framework, name, estimateMs, rounds = []]) => ({
       id: `${framework} :: ${name}`,
       framework,
       name,
@@ -54,7 +57,10 @@ function shard({
       group: "update",
       family: "stable",
       fixture: "fresh",
-      rounds: [],
+      rounds: rounds.map(([median, low, high], index) => ({
+        round: index + 1,
+        statistics: { median, medianInterval: [low, high] },
+      })),
     })),
     ...overrides,
   };
@@ -157,6 +163,134 @@ test("machine rounds report the median of per-machine estimates and their range"
     lowMs: 10,
     highMs: 30,
   });
+});
+
+test("rows decompose their noise into process, round and machine levels", () => {
+  const sd = (values) => {
+    const logs = values.map(Math.log);
+    const mean = logs.reduce((sum, value) => sum + value, 0) / logs.length;
+    return Math.sqrt(
+      logs.reduce((sum, value) => sum + (value - mean) ** 2, 0) /
+        (logs.length - 1)
+    );
+  };
+  // Two fresh processes per machine, three machines.
+  const processes = [
+    [
+      [10, 9, 11],
+      [12, 11, 13],
+    ],
+    [
+      [20, 19, 21],
+      [20, 18, 22],
+    ],
+    [
+      [15, 14, 16],
+      [13, 12, 14],
+    ],
+  ];
+  const machines = processes.map((rounds, i) =>
+    shard({
+      round: i + 1,
+      index: 1,
+      count: 1,
+      scenarios: ["s"],
+      cpu: `cpu ${i}`,
+      rows: [["a", "s", (rounds[0][0] + rounds[1][0]) / 2, rounds]],
+    })
+  );
+  const { log, samples } = mergeShardData(machines);
+  const { noise, machineEstimatesMs } = samples.rows[0];
+  expect(machineEstimatesMs).toEqual([11, 20, 14]);
+  expect(noise.betweenMachine).toBeCloseTo(sd([11, 20, 14]));
+  // Pooled within-machine SD of ln(process median), 3 degrees of freedom.
+  const pooled = Math.sqrt(
+    processes.reduce((sum, [[x], [y]]) => sum + sd([x, y]) ** 2, 0) / 3
+  );
+  expect(noise.betweenProcess).toBeCloseTo(pooled);
+  // Median over processes of the log-width of the 95% interval / (2 * 1.96).
+  const widths = processes
+    .flat()
+    .map(([, low, high]) => Math.log(high / low) / (2 * 1.959963984540054))
+    .sort((a, b) => a - b);
+  expect(noise.withinProcess).toBeCloseTo((widths[2] + widths[3]) / 2);
+  expect(samples.merged.noise.betweenMachine.rows).toBe(1);
+
+  const [row] = parseBenchOutput(log).rows;
+  expect(row.machineEstimates).toEqual([11, 20, 14]);
+  expect(row.noise.betweenMachine).toBeCloseTo(noise.betweenMachine, 4);
+  expect(row.intervalKind).toBe("machine_range");
+  expect(log.split("\n")[0]).toContain("machine_rounds=3");
+});
+
+test("one machine round reports no machine-level noise", () => {
+  const { log, samples } = mergeShardData([
+    shard({
+      index: 1,
+      count: 1,
+      scenarios: ["s"],
+      cpu: "cpu",
+      rows: [
+        [
+          "a",
+          "s",
+          11,
+          [
+            [10, 9, 11],
+            [12, 11, 13],
+          ],
+        ],
+      ],
+    }),
+  ]);
+  expect(samples.rows[0].noise.betweenMachine).toBeUndefined();
+  expect(samples.rows[0].noise.betweenProcess).toBeGreaterThan(0);
+  expect(log).toContain("sd_process=");
+  expect(log).not.toContain("sd_machine=");
+  expect(log).not.toContain("machine_estimates=");
+});
+
+test("the leaderboard is scored per machine round, not from merged medians", () => {
+  // Per machine round: [a s1, b s1, a s2, b s2].
+  const times = [
+    [1, 2, 4, 2],
+    [3, 2, 2, 4],
+    [2, 4, 3, 3],
+  ];
+  const shards = times.map(([a1, b1, a2, b2], i) =>
+    shard({
+      round: i + 1,
+      index: 1,
+      count: 1,
+      scenarios: ["s1", "s2"],
+      cpu: `cpu ${i}`,
+      rows: [
+        ["a", "s1", a1],
+        ["b", "s1", b1],
+        ["a", "s2", a2],
+        ["b", "s2", b2],
+      ],
+    })
+  );
+  const parsed = parseBenchOutput(mergeShardData(shards).log);
+  // Merged medians are identical (2 and 3 for both), which would score both
+  // 1.00x; within each machine they are not.
+  expect(parsed.rows.map((row) => row.time)).toEqual([2, 2, 3, 3]);
+  expect(parsed.machineRounds).toBe(3);
+  const [a, b] = parsed.frameworks;
+  expect(a.name).toBe("a");
+  expect(a.roundScores.map((value) => value.toFixed(4))).toEqual(
+    [Math.SQRT2, Math.sqrt(1.5), 1].map((value) => value.toFixed(4))
+  );
+  expect(a.relativeScore).toBeCloseTo(Math.sqrt(1.5));
+  expect(a.scoreRange).toEqual([1, expect.closeTo(Math.SQRT2)]);
+  expect(b.relativeScore).toBeCloseTo(Math.SQRT2);
+
+  const page = renderResultsPage(parsed);
+  expect(page).toContain("1.00–1.41x over 3 machine sets");
+  expect(page).toContain("overlaps #1");
+  expect(page).toContain("~75% probability");
+  expect(page).not.toContain("median 95% interval");
 });
 
 test("refuses to merge results that are not one comparable measurement", () => {

@@ -2,9 +2,9 @@ import { FrameworkInfo } from "./util/frameworkTypes";
 
 import { alienFramework } from "./frameworks/alienSignals";
 import { reactiveEngineFramework } from "./frameworks/reactiveEngine";
-//import { angularFramework } from "./frameworks/angularSignals";
-//import { mobxFramework } from "./frameworks/mobx";
-//import { tc39SignalsProposalStage0 } from "./frameworks/tc39-proposal-signals-stage-0";
+import { angularFramework } from "./frameworks/angularSignals";
+import { mobxFramework } from "./frameworks/mobx";
+import { tc39SignalsProposalStage0 } from "./frameworks/tc39-proposal-signals-stage-0";
 import { molWireFramework } from "./frameworks/molWire";
 import { obyFramework } from "./frameworks/oby";
 import { preactSignalFramework } from "./frameworks/preactSignals";
@@ -15,7 +15,7 @@ import { solidFramework } from "./frameworks/solid";
 import { sFramework } from "./frameworks/s";
 import { usignalFramework } from "./frameworks/uSignal";
 import { vueReactivityFramework } from "./frameworks/vueReactivity";
-//import { svelteFramework } from "./frameworks/svelte";
+import { svelteFramework } from "./frameworks/svelte";
 import { tansuFramework } from "./frameworks/tansu";
 import { reflexFramework } from "./frameworks/reflex";
 import { solidSignalsFramework } from "./frameworks/solid-signals";
@@ -29,8 +29,7 @@ import { reatomFramework } from "./frameworks/reatom";
 import { maverickFramework } from "./frameworks/maverick";
 import { cellxFramework } from "./frameworks/cellx";
 import { rescriptSignalsFramework } from "./frameworks/rescriptSignals";
-// import { compostateFramework } from "./frameworks/compostate";
-// import { valtioFramework } from "./frameworks/valtio";
+import { kairoFramework } from "./frameworks/kairo";
 
 export const frameworkInfo: FrameworkInfo[] = [
   { framework: reflexFramework, testPullCounts: true },
@@ -58,25 +57,14 @@ export const frameworkInfo: FrameworkInfo[] = [
   { framework: maverickFramework, testPullCounts: true },
   { framework: cellxFramework },
   { framework: rescriptSignalsFramework },
-  // NOTE: MobX currently hangs on some of the `dynamic` tests and `cellx` tests,
-  // so disable it if you want to run them. (https://github.com/mobxjs/mobx/issues/3926)
-  // { framework: mobxFramework, testPullCounts: false },
-
-  // --- Disabled frameworks ---
-  // unoptimized and too heavy
-  // { framework: rippleFramework, testPullCounts: true },
-  // REMOVED: cause too slow because it maybe should compiled - tough to measure
-  // { framework: svelteFramework, testPullCounts: true },
-  // REMOVED: cause too slow
-  // { framework: tc39SignalsProposalStage0, testPullCounts: true },
-  // REMOVED: cause too slow
-  // { framework: angularFramework, testPullCounts: true }
-  // NOTE: the compostate adapter is currently broken and unused.
-  // { framework: compostateFramework },
-  // NOTE: the kairo adapter is currently broken and unused.
-  // { framework: kairoFramework, testPullCounts: true },
-  // NOTE: Valtio currently hangs on some of the `dynamic` tests, so disable it if you want to run them. (https://github.com/pmndrs/valtio/discussions/949)
-  // { framework: valtioFramework },
+  { framework: mobxFramework },
+  { framework: svelteFramework, testPullCounts: true },
+  { framework: tc39SignalsProposalStage0, testPullCounts: true },
+  { framework: angularFramework, testPullCounts: true },
+  { framework: kairoFramework },
+  // Compostate 1.0.0 revisits shared dependency paths exponentially (cellx).
+  // Valtio 2.3.2 + valtio-reactive 0.2.0 emits transient diamond values.
+  // See tests/inactiveAdapters.test.ts and docs/adapter-recheck.md.
 ];
 
 export { perfTests } from "./workloads";

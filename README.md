@@ -29,6 +29,10 @@ Every case starts with one validated cold pilot run, excluded from the score. Re
 Use the Node.js version in [`.nvmrc`](.nvmrc) (the one CI publishes with) and pnpm 10.
 Keep `.nvmrc` pinned to an exact `major.minor.patch` release so every CI shard
 uses the same Node/V8 runtime, regardless of the runner's cached versions.
+Compatibility and performance are separate questions: CI checks that the suite
+installs, builds and runs on Node.js 22, 24 and 26 (plus the pinned release),
+while published numbers come only from the exact release in `.nvmrc`
+(`scripts/check-runtime.mjs` refuses anything else).
 All dependencies are pinned to exact versions, so `npm install` resolves the
 same libraries as the lockfile; see [Dependency versions](#dependency-versions).
 
@@ -69,8 +73,8 @@ exactly 1000 untrimmed samples per uncapped row after 20 warmup invocations.
 distributions. Slow rows retain one pilot and cannot establish tails.
 
 `BENCH_ROUNDS=3` repeats every row in three fresh processes and reports the
-median of the round medians with their range. Use it for publication-grade
-runs: it shows between-process variance that samples inside one process cannot.
+median of the round medians with their range. Publication runs use it: it shows
+between-process variance that samples inside one process cannot.
 
 For a focused tail run in PowerShell:
 
@@ -82,8 +86,9 @@ pnpm.cmd build
 pnpm.cmd run run
 ```
 
-CI executes `pnpm test`, `pnpm build`, and `pnpm bench:smoke`. The smoke
-checks 97 isolated rows across all 24 adapters, with two samples per row, plus
+CI executes `pnpm test`, `pnpm build`, and `pnpm bench:smoke` on Node.js 22,
+24, 26 and the pinned release. The smoke
+checks 123 isolated rows across all 29 adapters, with two samples per row, plus
 production build mode, recorded package versions, and a real two-shard run
 merged into one page; it is a correctness check, not a performance
 publication. A static check and a runtime guard (`BENCH_ASSERT_NO_CONSOLE=1`)
@@ -101,8 +106,13 @@ runs on the same VM and each per-scenario comparison stays within one CPU
   balanced by the measured cost in the committed samples file (longest first),
   deterministically, so every job computes the same partition.
 - `machine_rounds` (workflow input) measures every shard again on other VMs.
-  The merged score is then the median across machines, and the interval is
+  The merged row score is then the median across machines, and the interval is
   their range, which exposes the hardware lottery instead of hiding it.
+- Automatic runs on `main` use `rounds=3` and `machine_rounds=3`: every row is
+  measured as scenario × framework × fresh process × machine, so the merged
+  output separates within-process, between-process and between-machine noise
+  (`sd_within`, `sd_process`, `sd_machine`) and the page shows where the noise
+  is. With 8 shards that is 24 VMs of roughly half an hour each.
 - [`scripts/merge-shards.mjs`](scripts/merge-shards.mjs) refuses to merge
   shards that differ in commit, lockfile, bundle hash, Node/V8, package
   versions, or sampling policy, or that cover scenarios incompletely or twice.
@@ -149,6 +159,7 @@ pnpm results:page
 - `pnpm verify:production` - run all frameworks using only `dist/`, outside the repository
 - `pnpm check` - run type checking, tests, build, smoke and standalone production verification
 - `node scripts/merge-shards.mjs <dir>` - merge CI shard outputs into one log, samples file and page
+- `node scripts/check-runtime.mjs [samples.json]` - check that this process (or a samples file) uses exactly the Node.js release in `.nvmrc`
 
 See [production setup](docs/production.md) for standalone distribution, Docker,
 runtime configuration and reproducible installation.
@@ -180,7 +191,12 @@ The semantics and interpretation rules are documented in [SEMANTICS.md](SEMANTIC
 The primary `time` is the median of measured samples (the median of round
 medians with `BENCH_ROUNDS`), excluding the pilot unless the row is capped.
 Each row carries `median_ci95`, a distribution-free 95% interval for the median
-(6+ samples), or `round_range` for multi-round runs. Expanded output includes
+(6+ samples), `round_range` for multi-round runs, or `machine_range` for merged
+machine rounds. Only `median_ci95` is a 95% interval, and it covers sample noise
+inside one process only; the range of `n` independent estimates covers their
+median with probability `1 - 2 × 0.5^n` (75% for three). Merged rows also carry
+`machine_estimates` (in machine-round order) and the noise components
+`sd_within`, `sd_process` and `sd_machine` (SD of ln(time)). Expanded output includes
 p95/p99 when supported, CV, group, family, and counters. The log header records
 the semantics version, sampling policy, runtime, machine, GC, isolation, run
 order, build mode, and diagnostic mode; a `# package` line per framework records
@@ -197,6 +213,12 @@ r(L, test) = median_time(L, test) / best_median_time(test)
 score(L) = geometric_mean(r(L, tests))
 ```
 
+With machine rounds, each round is a complete leaderboard measured on its own
+VMs: `r` is formed within one round (one VM per scenario), each round is scored
+separately, and the page shows the median score with its range across rounds.
+Dividing medians taken from different machines would mix CPU models inside one
+ratio. A `≈` next to a rank means its range overlaps the one above.
+
 Lower is better. The score weights each included scenario equally; use per-row
 results to assess a particular application. Capped rows have only one sample.
 Overall scores use the same scenario intersection for every framework.
@@ -207,8 +229,9 @@ leader's interval lies entirely below the runner-up's.
 
 ## Dependency versions
 
-Every dependency is pinned exactly to its npm `latest` dist-tag at the time of
-the update. Second generations are measured next to the stable lines through
+Dependencies are pinned exactly. The restored adapters were checked against npm
+dist-tags on 2026-10-23. Kairo uses `0.8.0-alpha.2` (`alpha`) because the
+`latest` 0.6 RC fails dynamic graph correctness; its row is explicitly labeled. Second generations are measured next to the stable lines through
 npm aliases: `solid-js-2`, `solid-signals-2` (2.0.0-rc.17) and
 `vue-reactivity-3.6` (3.6.0-rc.12). The stable `@solidjs/signals` row stays on
 0.13.13, because that package's `latest` tag points at a stale 2.0 release
@@ -221,7 +244,7 @@ depend on its exact sequence, and `random@5.5` changed that sequence.
 
 ## Framework Adapters
 
-The default run contains 24 library/version rows. Library links point to the
+The default run contains 29 library/version rows. Library links point to the
 upstream projects; credits name their authors or authoring teams, with
 contributors acknowledged collectively. They describe the libraries, not the
 authors of these benchmark adapters.
@@ -252,25 +275,27 @@ authors of these benchmark adapters.
 | [Maverick Signals](https://github.com/maverick-js/signals)                             | [Rahim Alwer](https://github.com/mihar-22) and contributors                            | [maverick.ts](src/frameworks/maverick.ts)               |
 | [Cellx](https://github.com/Riim/cellx)                                                 | [Dmitry Vibe](https://github.com/Riim) and contributors                                | [cellx.ts](src/frameworks/cellx.ts)                     |
 | [ReScript Signals](https://github.com/brnrdog/rescript-signals)                        | [Bernardo Gurgel](https://github.com/brnrdog) and contributors                         | [rescriptSignals.ts](src/frameworks/rescriptSignals.ts) |
+| [Angular Signals](https://github.com/angular/angular)                        | Angular team at Google and contributors                                               | [angularSignals.ts](src/frameworks/angularSignals.ts) |
+| [MobX](https://github.com/mobxjs/mobx)                                       | [Michel Weststrate](https://github.com/mweststrate) and contributors                  | [mobx.ts](src/frameworks/mobx.ts) |
+| [Svelte](https://github.com/sveltejs/svelte)                                 | [Rich Harris](https://github.com/Rich-Harris) and Svelte contributors                 | [svelte.ts](src/frameworks/svelte.ts) |
+| [TC39 Signals polyfill](https://github.com/proposal-signals/signal-polyfill) | [Rob Eisenberg](https://github.com/EisenbergEffect) and proposal-signals contributors | [tc39-proposal-signals-stage-0.ts](src/frameworks/tc39-proposal-signals-stage-0.ts) |
+| [Kairo 0.8 alpha](https://github.com/3Shain/kairo)                                     | [3Shain](https://github.com/3Shain) and contributors                                  | [kairo.ts](src/frameworks/kairo.ts) |
 
-Additional adapters remain in the repository, outside the default comparison:
+Two adapters remain outside the default comparison after the [2026-10-23 recheck](docs/adapter-recheck.md):
 
 | Library                                                                      | Author / team                                                                         | Adapter / current limitation                                                                                                                            |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Angular Signals](https://github.com/angular/angular)                        | Angular team at Google and contributors                                               | [angularSignals.ts](src/frameworks/angularSignals.ts); low-level Watch primitive, custom effect queue; disabled                                         |
-| [MobX](https://github.com/mobxjs/mobx)                                       | [Michel Weststrate](https://github.com/mweststrate) and contributors                  | [mobx.ts](src/frameworks/mobx.ts); known hangs on some dynamic/cellx workloads ([upstream issue](https://github.com/mobxjs/mobx/issues/3926))           |
-| [Svelte](https://github.com/sveltejs/svelte)                                 | [Rich Harris](https://github.com/Rich-Harris) and Svelte contributors                 | [svelte.ts](src/frameworks/svelte.ts); private compiler/runtime APIs; disabled                                                                          |
-| [TC39 Signals polyfill](https://github.com/proposal-signals/signal-polyfill) | [Rob Eisenberg](https://github.com/EisenbergEffect) and proposal-signals contributors | [tc39-proposal-signals-stage-0.ts](src/frameworks/tc39-proposal-signals-stage-0.ts); custom watcher queue; disabled                                     |
-| [Compostate](https://github.com/lxsmnsyc/compostate)                         | [Alexis Munsayac](https://github.com/lxsmnsyc) and contributors                       | [compostate.ts](src/frameworks/compostate.ts); incompatible adapter; disabled                                                                           |
-| [Valtio](https://github.com/pmndrs/valtio)                                   | [Daishi Kato](https://github.com/dai-shi) and contributors                            | [valtio.ts](src/frameworks/valtio.ts); known dynamic-workload hangs ([upstream discussion](https://github.com/pmndrs/valtio/discussions/949)); disabled |
-| [Kairo](https://github.com/3Shain/kairo)                                     | [3Shain](https://github.com/3Shain) and contributors                                  | [kairo.ts](src/frameworks/kairo.ts); incompatible adapter; disabled                                                                                     |
+| [Compostate](https://github.com/lxsmnsyc/compostate) | [Alexis Munsayac](https://github.com/lxsmnsyc) and contributors | [compostate.ts](src/frameworks/compostate.ts); 1.0.0 repeatedly traverses shared dependency paths on deep cellx graphs |
+| [Valtio](https://github.com/pmndrs/valtio) | [Daishi Kato](https://github.com/dai-shi) and contributors | [valtio.ts](src/frameworks/valtio.ts); 2.3.2 + valtio-reactive 0.2.0 emits transient diamond values inside a batch |
 
 The active list is defined in [src/config.ts](src/config.ts) and checked against
 [the isolated-worker catalog](src/frameworkCatalog.json). See the
 [adapter audit](docs/adapter-audit.md) for native API mappings, necessary
 wrappers, scheduling differences, and comparison limits. Disabling an adapter
-is not a current speed measurement; the seven inactive adapters are not covered
-by the active adapter contract tests.
+is not a current speed measurement. The two inactive adapters have focused
+regressions in [inactiveAdapters.test.ts](tests/inactiveAdapters.test.ts). MobX
+uses native `keepAlive` for pull caching; Svelte uses private client runtime
+primitives. These policies and current stress limits are recorded in the recheck.
 
 ## Artifacts
 
@@ -294,7 +319,7 @@ by the active adapter contract tests.
 
 ## Notes
 
-- Some adapters are disabled because parts of the suite currently hang or are incompatible. The reasons are documented inline in [src/config.ts](src/config.ts) and [src/index.ts](src/index.ts).
+- Compostate and Valtio remain disabled for reproduced limitations documented in [the adapter recheck](docs/adapter-recheck.md). The old `rippleFramework` comment referred to no adapter or dependency in this repository and was removed.
 - `bench-results/latest.log` and `index.html` always reflect the last local run. If the active framework list changed, those artifacts may still describe an older run until you execute `pnpm bench` again.
 
 ## Credits

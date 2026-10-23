@@ -43,7 +43,8 @@
     "@reactively/core": "0.0.8",
     "@reatom/core": "1001.3.0",
     "@solidjs/signals": "0.13.13",
-    "@volynets/reflex": "3.0.1",
+    "@volynets/reflex": "3.0.2",
+    "@volynets/reflex-runtime": "1.2.0",
     "@vue/reactivity": "3.5.44",
     "@zakkster/lite-signal": "1.5.2",
     "alien-signals": "3.2.1",
@@ -51,7 +52,7 @@
     "cellx": "2.4.0",
     "compostate": "1.0.0",
     "dalien-signals": "3.2.1",
-    "kairo": "0.6.0-rc.0",
+    "kairo": "0.8.0-alpha.2",
     "mobx": "7.1.0",
     "mol_wire_lib": "1.0.1820",
     "oby": "15.1.2",
@@ -65,6 +66,7 @@
     "svelte": "5.57.2",
     "usignal": "0.10.0",
     "valtio": "2.3.2",
+    "valtio-reactive": "0.2.0",
     "vue-reactivity-3.6": "npm:@vue/reactivity@3.6.0-rc.12"
   },
   "devDependencies": {

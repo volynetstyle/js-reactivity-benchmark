@@ -5,6 +5,12 @@ import { pathToFileURL } from "node:url";
 const DEFAULT_INPUT = path.resolve("bench-results", "latest.log");
 const DEFAULT_OUTPUT = path.resolve("index.html");
 const DEFAULT_SOURCE_LABEL = "Auto-generated from benchmark output";
+/** Row noise components written by merge-shards (SD of ln(time)). */
+const NOISE_TOKENS = {
+  withinProcess: "sd_within",
+  betweenProcess: "sd_process",
+  betweenMachine: "sd_machine",
+};
 
 export function parseBenchOutput(text) {
   const lines = text
@@ -88,16 +94,34 @@ export function parseBenchOutput(text) {
     }
     const sampleMatch = metrics.match(/samples=(\d+)/);
     const samples = sampleMatch ? Number(sampleMatch[1]) : undefined;
+    const tokens = metrics.split(/\s+/);
+    const metric = (key) =>
+      tokens
+        .find((token) => token.startsWith(`${key}=`))
+        ?.slice(key.length + 1);
     const interval = (key) => {
-      const prefix = `${key}=`;
-      const token = metrics
-        .split(/\s+/)
-        .find((token) => token.startsWith(prefix));
-      const values = token?.slice(prefix.length).split("..").map(Number);
+      const values = metric(key)?.split("..").map(Number);
       return values?.length === 2 && values.every(Number.isFinite)
         ? values
         : undefined;
     };
+    const count = (key) => {
+      const value = Number(metric(key));
+      return Number.isInteger(value) && value > 0 ? value : undefined;
+    };
+    const intervalKind = ["median_ci95", "round_range", "machine_range"].find(
+      (key) => interval(key)
+    );
+    const machineEstimates = metric("machine_estimates")
+      ?.split(";")
+      .map(Number);
+    if (machineEstimates?.some((value) => !(value > 0)))
+      throw new Error(`Invalid machine estimates for ${framework} / ${test}`);
+    const noise = Object.fromEntries(
+      Object.entries(NOISE_TOKENS)
+        .map(([key, token]) => [key, Number(metric(token))])
+        .filter(([, value]) => Number.isFinite(value))
+    );
     if (
       samples !== undefined &&
       ((samples < 200 && Number.isFinite(Number.parseFloat(p95Text))) ||
@@ -120,10 +144,12 @@ export function parseBenchOutput(text) {
       samples,
       // Uncertainty of the primary score: a 95% order-statistic interval
       // for the median, or the range of round medians for multi-round runs.
-      interval:
-        interval("median_ci95") ??
-        interval("round_range") ??
-        interval("machine_range"),
+      interval: intervalKind && interval(intervalKind),
+      intervalKind,
+      rounds: count("rounds"),
+      machines: count("machines"),
+      machineEstimates,
+      noise,
       p95Interval: interval("p95_ci95"),
       p99Interval: interval("p99_ci95"),
     });
@@ -163,6 +189,11 @@ export function parseBenchOutput(text) {
       capped: row.capped,
       samples: row.samples,
       interval: row.interval,
+      intervalKind: row.intervalKind,
+      rounds: row.rounds,
+      machines: row.machines,
+      machineEstimates: row.machineEstimates,
+      noise: row.noise,
       p95Interval: row.p95Interval,
       p99Interval: row.p99Interval,
       failed: row.failed === true,
@@ -216,19 +247,27 @@ export function parseBenchOutput(text) {
     );
   }
 
+  const score = scorer(rows, tests, bestByTest);
   const frameworks = Array.from(byFramework.values())
     .map((framework) => ({
+      framework,
+      overall: complete.includes(framework)
+        ? score(
+            framework.entries.filter((entry) =>
+              commonTests.includes(entry.test)
+            )
+          )
+        : undefined,
+    }))
+    .map(({ framework, overall }) => ({
       ...framework,
       average: framework.totals / framework.entries.length,
       unranked: !complete.includes(framework),
       failedTests: framework.entries.filter((entry) => entry.failed),
-      relativeScore: complete.includes(framework)
-        ? geometricMean(
-            framework.entries
-              .filter((entry) => commonTests.includes(entry.test))
-              .map((entry) => entry.time / bestByTest.get(entry.test))
-          )
-        : Number.NaN,
+      relativeScore: overall?.value ?? Number.NaN,
+      // Range of the per-machine-round scores (machine rounds only).
+      scoreRange: overall?.range,
+      roundScores: overall?.perRound,
       p95Average: averageFinite(framework.entries.map((entry) => entry.p95)),
       p99Average: averageFinite(framework.entries.map((entry) => entry.p99)),
       cvAverage: averageFinite(framework.entries.map((entry) => entry.cv)),
@@ -242,7 +281,7 @@ export function parseBenchOutput(text) {
               (other) => other.failed && other.group === entry.group
             )
         ),
-        bestByTest
+        score
       ),
       byTest: Object.fromEntries(
         framework.entries
@@ -261,7 +300,114 @@ export function parseBenchOutput(text) {
           : left.relativeScore - right.relativeScore)
     );
 
-  return { rows, tests, commonTests, frameworks, meta, packages };
+  return {
+    rows,
+    tests,
+    commonTests,
+    frameworks,
+    meta,
+    packages,
+    machineRounds: score.machineRounds,
+    noise: summarizeNoise(rows),
+  };
+}
+
+/**
+ * Relative score of a set of entries: geometric mean of time / best time.
+ *
+ * When every measured row carries per-machine estimates for the same machine
+ * rounds, each round is a complete leaderboard measured on its own VMs. Ratios
+ * are then formed within one round (one VM per scenario), each round is scored
+ * on its own, and the score is the median of the round scores with their
+ * range. Dividing medians taken from different machines would mix
+ * microarchitectures inside one ratio.
+ */
+function scorer(rows, tests, bestByTest) {
+  const measured = rows.filter((row) => !row.failed);
+  const machineRounds = measured[0]?.machineEstimates?.length ?? 0;
+  const perRound =
+    machineRounds > 1 &&
+    measured.every((row) => row.machineEstimates?.length === machineRounds);
+  if (!perRound) {
+    const score = (entries) => ({
+      value: geometricMean(
+        entries.map((entry) => entry.time / bestByTest.get(entry.test))
+      ),
+    });
+    score.machineRounds = 0;
+    return score;
+  }
+  const bestByRound = Array.from({ length: machineRounds }, (_, round) => {
+    const best = new Map();
+    for (const test of tests)
+      best.set(
+        test,
+        Math.min(
+          ...measured
+            .filter((row) => row.test === test)
+            .map((row) => row.machineEstimates[round])
+        )
+      );
+    return best;
+  });
+  const score = (entries) => {
+    const values = bestByRound.map((best, round) =>
+      geometricMean(
+        entries.map(
+          (entry) => entry.machineEstimates[round] / best.get(entry.test)
+        )
+      )
+    );
+    return {
+      value: median(values),
+      range: [Math.min(...values), Math.max(...values)],
+      perRound: values,
+    };
+  };
+  score.machineRounds = machineRounds;
+  return score;
+}
+
+function median(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = (sorted.length - 1) / 2;
+  return (sorted[Math.floor(middle)] + sorted[Math.ceil(middle)]) / 2;
+}
+
+/** Median of each row noise component, over rows that report it. */
+function summarizeNoise(rows) {
+  const summary = {};
+  for (const key of Object.keys(NOISE_TOKENS)) {
+    const values = rows
+      .map((row) => row.noise?.[key])
+      .filter((value) => Number.isFinite(value));
+    if (values.length)
+      summary[key] = { median: median(values), rows: values.length };
+  }
+  return summary;
+}
+
+/**
+ * Probability that the range of n independent estimates covers their
+ * population median: 1 - 2 * 0.5^n (75% for 3, 94% for 5).
+ */
+export function rangeCoverage(n) {
+  return 1 - 2 * 0.5 ** n;
+}
+
+/** What a row's interval is, stated without overclaiming. */
+export function describeInterval(entry) {
+  if (!entry?.interval) return "no interval (fewer than 6 samples or capped)";
+  const bounds = `${entry.interval[0].toFixed(6)}..${entry.interval[1].toFixed(6)} ms`;
+  if (entry.intervalKind === "machine_range") {
+    const n = entry.machines ?? entry.machineEstimates?.length;
+    return `range over ${n ?? "several"} machines ${bounds}${n ? ` (covers the cross-machine median with ~${Math.round(rangeCoverage(n) * 100)}% probability)` : ""}`;
+  }
+  if (entry.intervalKind === "round_range") {
+    const n = entry.rounds;
+    return `range over ${n ?? "several"} fresh processes on one machine ${bounds}${n ? ` (~${Math.round(rangeCoverage(n) * 100)}% coverage)` : ""}`;
+  }
+  return `median 95% interval within one process ${bounds} (sample noise only)`;
 }
 
 /**
@@ -300,20 +446,20 @@ function geometricMean(values) {
   );
 }
 
-function computeGroupScores(entries, bestByTest) {
+function computeGroupScores(entries, score) {
   const groups = new Map();
   for (const entry of entries) {
     const group = entry.group || "baseline";
     if (!groups.has(group)) {
       groups.set(group, []);
     }
-    groups.get(group).push(entry.time / bestByTest.get(entry.test));
+    groups.get(group).push(entry);
   }
 
   return Object.fromEntries(
-    Array.from(groups.entries()).map(([group, values]) => [
+    Array.from(groups.entries()).map(([group, members]) => [
       group,
-      geometricMean(values),
+      score(members).value,
     ])
   );
 }
@@ -349,6 +495,22 @@ function scoreLabel(framework) {
     : `${framework.relativeScore.toFixed(2)}x`;
 }
 
+/** Score range across machine rounds, e.g. "1.19–1.27x over 3 machine sets". */
+function scoreRangeLabel(framework) {
+  if (framework.unranked || !framework.scoreRange) return "";
+  const [low, high] = framework.scoreRange;
+  return `${low.toFixed(2)}–${high.toFixed(2)}x over ${framework.roundScores.length} machine sets`;
+}
+
+/** Whether a ranked framework's score range overlaps the one ranked above it. */
+function rankOverlapsPrevious(frameworks, index) {
+  const current = frameworks[index];
+  const previous = frameworks[index - 1];
+  if (!previous?.scoreRange || !current?.scoreRange || current.unranked)
+    return false;
+  return current.scoreRange[0] <= previous.scoreRange[1];
+}
+
 function rankedOnly(frameworks) {
   return frameworks.filter((framework) => !framework.unranked);
 }
@@ -357,7 +519,8 @@ function renderRows(frameworks) {
   return frameworks
     .map((framework, index) => {
       const winnerClass = index === 0 ? " winner" : "";
-      return `<tr><td class="rank">${framework.unranked ? "–" : index + 1}</td><td class="framework${winnerClass}">${escapeHtml(framework.name)}</td><td class="time">${scoreLabel(framework)}</td></tr>`;
+      const range = scoreRangeLabel(framework);
+      return `<tr><td class="rank">${framework.unranked ? "–" : index + 1}${rankOverlapsPrevious(frameworks, index) ? " ≈" : ""}</td><td class="framework${winnerClass}">${escapeHtml(framework.name)}</td><td class="time">${scoreLabel(framework)}${range ? `<span class="score-range">${escapeHtml(range.replace(/ over .*/, ""))}</span>` : ""}</td></tr>`;
     })
     .join("");
 }
@@ -426,11 +589,9 @@ function renderPerTestComparison(frameworks, tests) {
               const interval = evidence[`${key}Interval`];
               return `${key} ${evidence[key].toFixed(6)} ms${interval ? ` (95% interval ${interval[0].toFixed(6)}..${interval[1].toFixed(6)} ms)` : ""}`;
             });
-          const median = evidence.interval
-            ? `median 95% interval ${evidence.interval[0].toFixed(6)}..${evidence.interval[1].toFixed(6)} ms`
-            : "no median interval (fewer than 6 samples or capped)";
+          const noise = noiseLabel(evidence.noise);
           const title = escapeHtml(
-            `samples=${evidence.samples ?? "unknown"}; ${median}; ${tails.join("; ") || "insufficient samples for tail estimates"}`
+            `samples=${evidence.samples ?? "unknown"}; ${describeInterval(evidence)}; ${noise ? `${noise}; ` : ""}${tails.join("; ") || "insufficient samples for tail estimates"}`
           );
           const tie = index > 0 && intervalsOverlap(leader, evidence);
           const delta =
@@ -456,6 +617,52 @@ function renderPerTestComparison(frameworks, tests) {
       return `<article class="comparison-card" style="--card-delay:${testIndex * 55}ms"><h3>${escapeHtml(test)}</h3><div class="comparison-list">${rows}${failures}</div></article>`;
     })
     .join("");
+}
+
+const NOISE_LEVELS = [
+  ["withinProcess", "within one process"],
+  ["betweenProcess", "between fresh processes"],
+  ["betweenMachine", "between machines"],
+];
+
+/** SD of ln(time) as an approximate relative spread. */
+function formatSpread(sd) {
+  return `±${(sd * 100).toFixed(1)}%`;
+}
+
+function noiseLabel(noise) {
+  if (!noise) return "";
+  return NOISE_LEVELS.filter(([key]) => Number.isFinite(noise[key]))
+    .map(([key, label]) => `spread ${label} ${formatSpread(noise[key])}`)
+    .join(", ");
+}
+
+/** Where the uncertainty of this run comes from, in the reader's terms. */
+function renderNoiseBudget(parsed) {
+  const { noise = {} } = parsed;
+  const levels = NOISE_LEVELS.filter(([key]) => noise[key]);
+  if (!levels.length) return "";
+  const cells = levels
+    .map(
+      ([key, label]) =>
+        `<tr><td>${escapeHtml(label)}</td><td class="time">${formatSpread(noise[key].median)}</td><td class="time">${noise[key].rows}</td></tr>`
+    )
+    .join("");
+  const within = noise.withinProcess?.median;
+  const widest = levels
+    .map(([key]) => noise[key].median)
+    .reduce((max, value) => Math.max(max, value), 0);
+  const ratio = within ? widest / within : undefined;
+  return `
+    <section class="card detail-only">
+      <h2>Where The Noise Is</h2>
+      <table>
+        <thead><tr><th>Spread of a row's median</th><th class="time">Typical (median row)</th><th class="time">Rows</th></tr></thead>
+        <tbody>${cells}</tbody>
+      </table>
+      <p class="note">Each level is the standard deviation of ln(time), shown as an approximate relative spread, and includes the noise of the levels listed above it. The machine level compares per-machine estimates that are already medians over fresh processes, so it can be smaller than the process level. A within-process 95% interval only covers sample noise${ratio && ratio > 1.2 ? `; in this run a fresh process or another machine typically moves a row ${ratio.toFixed(1)}x as much` : ""}. Only the machine-level range reflects all three.</p>
+    </section>
+  `;
 }
 
 function countWins(frameworks, tests) {
@@ -510,7 +717,7 @@ function renderSpotlight(frameworks, tests) {
         <p class="spotlight-label">Best Geomean Profile</p>
         <h2>${escapeHtml(winner.name)}</h2>
         <div class="spotlight-metric">${winner.relativeScore.toFixed(2)}x<span> relative</span></div>
-        <p class="spotlight-copy">${wins.get(winner.name) ?? 0} decisive test wins${runnerUp ? ` and ${lead.toFixed(1)}% ahead of ${escapeHtml(runnerUp.name)}` : ""}.</p>
+        <p class="spotlight-copy">${wins.get(winner.name) ?? 0} decisive test wins${runnerUp ? ` and ${lead.toFixed(1)}% ahead of ${escapeHtml(runnerUp.name)}` : ""}.${winner.scoreRange ? ` Score ${escapeHtml(scoreRangeLabel(winner))}${rankOverlapsPrevious(rankedOnly(frameworks), 1) ? `; overlaps ${escapeHtml(runnerUp.name)}'s range, so the lead is not established` : ""}.` : ""}</p>
       </aside>
     </section>
   `;
@@ -583,6 +790,7 @@ function renderLeaderboardCards(frameworks, tests) {
               : `${framework.relativeScore.toFixed(2)}x <span>geomean</span>`
           }</div>
           <div class="leader-meta">
+            ${scoreRangeLabel(framework) ? `<span>${escapeHtml(scoreRangeLabel(framework))}${rankOverlapsPrevious(frameworks, index) ? ", overlaps #" + index : ""}</span>` : ""}
             <span>${wins.get(framework.name) ?? 0} decisive wins</span>
             <span>${framework.entries.filter((entry) => entry.capped).length} capped</span>
             ${framework.failedTests.length ? `<span>${framework.failedTests.length} failed</span>` : ""}
@@ -666,7 +874,29 @@ function renderTestFilter(tests) {
   `;
 }
 
-function renderBenchmarkInterpretation(frameworks, tests) {
+/** How the row score and its interval were formed in this run. */
+function uncertaintyText(parsed) {
+  const kinds = new Set(
+    parsed.rows.map((row) => row.intervalKind).filter(Boolean)
+  );
+  const machines = Number(parsed.meta.machine_rounds) || 0;
+  const rounds = Number(parsed.meta.rounds) || 1;
+  const design = `Each scenario was measured with all frameworks on one VM${machines > 1 ? `, on ${machines} independent VM sets` : ""}${rounds > 1 ? `, in ${rounds} fresh processes per VM` : ""}.`;
+  const interval = kinds.has("machine_range")
+    ? `The row score is the median of the per-machine estimates and its interval is their range; with ${machines} machines a range covers the cross-machine median with only ~${Math.round(rangeCoverage(machines) * 100)}% probability, so it is not a 95% interval.`
+    : kinds.has("round_range")
+      ? `The row score is the median of the per-process medians and its interval is their range on one machine; it says nothing about other CPUs.`
+      : `The row interval is a 95% order-statistic interval for the median within one process: it covers sample noise only, not a new process, another VM or another CPU model.`;
+  const score = parsed.machineRounds
+    ? ` The leaderboard score is computed separately for each of the ${parsed.machineRounds} machine sets (ratios within one VM) and the median is shown with the range; a ≈ next to a rank means its range overlaps the one above.`
+    : machines > 1
+      ? ""
+      : " The leaderboard score has no interval of its own: it was measured on one VM per scenario, and different scenarios ran on different CPU models.";
+  return `${design} ${interval}${score} A ≈ next to a time means its interval overlaps the leader's; such scenarios count as nobody's win. Capped rows use one cold sample and have no interval. All intervals describe repeat measurements of this run on GitHub-hosted runners, not the speed of a runtime on other hardware.`;
+}
+
+function renderBenchmarkInterpretation(parsed) {
+  const { frameworks, tests } = parsed;
   const [winner, runnerUp] = rankedOnly(frameworks);
   const incomplete = frameworks.filter((framework) => framework.unranked);
   const wins = countWins(frameworks, tests);
@@ -684,7 +914,7 @@ function renderBenchmarkInterpretation(frameworks, tests) {
       <h2>How To Read This</h2>
       <div class="interpretation-copy">
         <p>${escapeHtml(winner.name)} has the strongest relative profile in this run${runnerUp ? `, ${averageLead.toFixed(1)}% ahead of ${escapeHtml(runnerUp.name)} by geometric mean` : ""}. It takes ${winnerWinCount} of ${tests.length} scenarios decisively${runnerUp ? `, while ${escapeHtml(runnerUp.name)} takes ${runnerUpWinCount}` : ""}.</p>
-        <p>Median is the primary row score; with several rounds it is the median of per-process medians. Each row carries a 95% interval for that median (hover a row). A ≈ mark means the interval overlaps the leader's, so the gap is not distinguishable from noise in this run; such scenarios count as nobody's win. Capped rows use one cold sample and have no interval.</p>
+        <p>${escapeHtml(uncertaintyText(parsed))} Hover a row for its interval and noise.</p>
         <p>Interpret wins through the scenario taxonomy: creation, update, pull/push propagation, dynamic dependency churn, large graphs, lifecycle pressure, and memory behavior can favor different runtimes.</p>
         ${incomplete.length ? `<p>Not ranked: ${incomplete.map((framework) => `${escapeHtml(framework.name)} (${framework.failedTests.length} failed: ${escapeHtml([...new Set(framework.failedTests.map((entry) => entry.failure.kind))].join(", "))})`).join("; ")}. A failed row (wrong result, crash, out of memory, timeout) is a result; scoring such a library over only the scenarios it completed would rank it on an easier workload set. Its completed rows still appear in every per-test card.</p>` : ""}
       </div>
@@ -697,6 +927,7 @@ function renderEnvironment({ meta = {}, packages = {} }) {
     "semantics",
     "profile",
     "rounds",
+    "machine_rounds",
     "warmup",
     "max_samples",
     "min_time_ms",
@@ -738,7 +969,7 @@ function renderEnvironment({ meta = {}, packages = {} }) {
       <h2>Run Environment</h2>
       ${warning}
       <table><tbody>${settings}</tbody></table>
-      ${machines ? `<h2>Machines</h2><table><thead><tr><th>Round/shard</th><th>CPU</th><th class="time">Cores</th><th class="time">Scenarios</th></tr></thead><tbody>${machines}</tbody></table><p class="note">CI shards split scenarios, never frameworks: every framework of a scenario ran on the same machine. With several machine rounds the score is the median of per-machine medians and the interval is their range.</p>` : ""}
+      ${machines ? `<h2>Machines</h2><table><thead><tr><th>Round/shard</th><th>CPU</th><th class="time">Cores</th><th class="time">Scenarios</th></tr></thead><tbody>${machines}</tbody></table><p class="note">CI shards split scenarios, never frameworks: every framework of a scenario ran on the same machine. With several machine rounds the row score is the median of per-machine estimates, the interval is their range, and the leaderboard is scored per machine round before taking the median.</p>` : ""}
       ${versions ? `<h2>Measured Versions</h2><table><thead><tr><th>Framework</th><th>Bundled packages</th></tr></thead><tbody>${versions}</tbody></table>` : ""}
       <p class="note">Libraries are bundled with process.env.NODE_ENV = "production" and run one framework/scenario pair per fresh process.</p>
     </section>
@@ -1163,6 +1394,12 @@ export function renderResultsPage(parsed, options = {}) {
     text-align: right;
     font-variant-numeric: tabular-nums;
   }
+  .score-range {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.7;
+  }
   .bar-row {
     display: grid;
     grid-template-columns: minmax(110px, 180px) minmax(0, 1fr) 64px;
@@ -1496,7 +1733,7 @@ export function renderResultsPage(parsed, options = {}) {
           </thead>
           <tbody>${renderRows(frameworks)}</tbody>
         </table>
-        <p class="note">Geometric mean of relative slowdown across the ${parsed.commonTests.length} scenarios shared by all ${frameworks.length} frameworks.</p>
+        <p class="note">Geometric mean of relative slowdown across the ${parsed.commonTests.length} scenarios shared by all ${frameworks.length} frameworks${parsed.machineRounds ? `: median of ${parsed.machineRounds} machine-set scores, with their range; ≈ marks a rank whose range overlaps the one above` : ""}.</p>
       </article>
       <section class="leader-grid">
         ${renderLeaderboardCards(frameworks, tests)}
@@ -1517,7 +1754,8 @@ export function renderResultsPage(parsed, options = {}) {
     <div class="comparison-grid">${renderPerTestComparison(frameworks, tests)}</div>
   </section>
 
-  ${renderBenchmarkInterpretation(frameworks, tests)}
+  ${renderBenchmarkInterpretation(parsed)}
+  ${renderNoiseBudget(parsed)}
   ${renderEnvironment(parsed)}
 </main>
 <script>

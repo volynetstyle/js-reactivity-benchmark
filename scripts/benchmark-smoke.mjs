@@ -20,6 +20,13 @@ const selections = [
   },
   { framework: "s-js,SolidJS", filter: "dynamic/pure push" },
   {
+    // Rechecked adapters: native propagation, historical deep cellx graph,
+    // pull caching and Svelte's actual owner disposal.
+    framework:
+      "MobX,Svelte v5,TC39 Signals Polyfill,@angular/signals,kairo 0.8 alpha",
+    filter: "mux,molBench,cellx1000,dynamic/pure pull,lifecycle/",
+  },
+  {
     // Native nodes with prototype accessors require the harness to preserve
     // `this` in one-source creation and update rows (including 1-to-1000).
     framework: "$mol_wire",

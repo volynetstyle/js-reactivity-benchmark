@@ -48,6 +48,21 @@ Per-scenario ratios therefore stay within one machine. The overall geometric
 mean still combines ratios measured on different CPUs, so CPU-model effects on
 relative speed remain possible; machine rounds expose them.
 
+The first sharded v4 publication ran with `rounds=1` and `machine_rounds=1`:
+its 8 shards landed on AMD EPYC 7763, 9V74 and 9V45 VMs, each scenario was
+measured once, and the only interval shown per row was the within-process
+`median_ci95`. Comparisons inside a row were fair (one VM), but nothing
+separated sample noise from process or machine noise, and the page labelled an
+interval that covers only sample noise as "95%". Publication runs now use 3
+process rounds × 3 machine rounds; merged rows carry `sd_within`, `sd_process`
+and `sd_machine`, the leaderboard is scored per machine round (ratios within
+one VM) and shown as the median with its range, and ranges of `n` estimates are
+labelled with their actual coverage (`1 - 2 × 0.5^n`).
+
+Compatibility and publication are separate: CI tests Node.js 22, 24 and 26 plus
+the pinned release; published measurements use exactly the `.nvmrc` release,
+checked on every shard and on the merged samples.
+
 ### Architectural families
 
 v4 adds second generations next to their stable lines (npm aliases): Solid 2.0
@@ -90,7 +105,7 @@ describe a different version.
 | [Solid: batch](https://docs.solidjs.com/reference/reactive-utilities/batch)                                                    | Batch defers downstream work; reading during a batch may update a computation on demand.                                                                                           | Apply the same batch policy to every adapter.                                                                                                                |
 | [S.js: freeze and data](https://github.com/adamhaile/S#sfreeze)                                                                | Freeze defers propagation; conflicting writes to a source within one freeze are unsupported.                                                                                       | A burst writes each source at most once. Reject bursts larger than the source count instead of giving S.js a special workload.                               |
 | [lite-signal repository](https://github.com/PeshoVurtoleta/lite-signal), published `@zakkster/lite-signal@1.5.2` `Signal.d.ts` | Under `prealloc: "lazy"`, `maxNodes`/`maxLinks` are capacity ledgers and objects are constructed on demand. 1.5 validates the config and adds `createRoot`, which has no disposer. | Keep fresh lazy registries, a 262,144-node budget, and the throw policy. Ownership remains an effect, the unit of ownership the library documents.           |
-| [Reflex repository](https://github.com/volynetstyle/Reflex), published `@volynets/reflex@3.0.1` README and types               | `signal` returns a readable accessor with `.set`; computed is a lazy accessor and SAB flushes effects after a batch.                                                               | Adapt the published accessor API. Check the exact npm tarball against the lockfile integrity rather than trusting a stale local build with the same version. |
+| [Reflex repository](https://github.com/volynetstyle/Reflex), published `@volynets/reflex@3.0.2` README and types               | `signal` returns a readable accessor with `.set`; computed is a lazy accessor and SAB flushes effects after a batch.                                                               | Adapt the published accessor API. Check the exact npm tarball against the lockfile integrity rather than trusting a stale local build with the same version. |
 
 The [Vue 3.5.32 effect implementation](https://github.com/vuejs/core/blob/v3.5.32/packages/reactivity/src/effect.ts)
 also shows that native triggering runs only if dirty; a custom scheduler
@@ -243,10 +258,11 @@ universal library ranking. Further useful work is:
   installation in the timed section);
 - recorded power/thermal conditions for published runs (package versions and
   per-shard CPU models are recorded since v4);
-- an uncertainty interval for the overall geometric-mean score, not only per
-  row;
+- a resampling interval for the overall score (the machine-round range has
+  only three draws, and CPU models are not balanced across scenarios, so a
+  per-CPU-model score would be confounded with the scenario mix);
 - a dedicated benchmark host: shared CI runners make published numbers noisy,
-  which `BENCH_ROUNDS` exposes but cannot remove.
+  which process and machine rounds expose but cannot remove.
 
 Old logs cannot be recalculated into v4 measurements. Generate a complete fresh
 run before publishing a new leaderboard.
