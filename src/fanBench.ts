@@ -122,18 +122,18 @@ export function fanWorkload(
   });
   framework.withBatch(() => {});
   probe.verifyInitial(kind);
+  let offset = 0;
+  const writeBatch = single
+    ? () => scope.value[0].write(inputs!.writes[offset])
+    : () => {
+        for (let i = 0; i < MUTATIONS_PER_STEP; i++)
+          scope.value[inputs!.indices[offset + i]].write(inputs!.writes[offset + i]);
+      };
   const run = (start: number, count: number) => {
     for (let step = 0; step < count; step++) {
       probe.step = step + 1;
-      const offset = (start + step) * (single ? 1 : MUTATIONS_PER_STEP);
-      framework.withBatch(() => {
-        if (single) scope.value[0].write(inputs!.writes[offset]);
-        else
-          for (let i = 0; i < MUTATIONS_PER_STEP; i++)
-            scope.value[inputs!.indices[offset + i]].write(
-              inputs!.writes[offset + i]
-            );
-      });
+      offset = (start + step) * (single ? 1 : MUTATIONS_PER_STEP);
+      framework.withBatch(writeBatch);
     }
     return probe.snapshot();
   };

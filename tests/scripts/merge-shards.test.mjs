@@ -2,8 +2,8 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "vitest";
-import { mergeShardData, mergeShards } from "./merge-shards.mjs";
-import { parseBenchOutput } from "./render-results-page.mjs";
+import { mergeShardData, mergeShards } from "../../scripts/merge-shards.mjs";
+import { parseBenchOutput } from "../../scripts/render-results-page.mjs";
 
 const WIDTHS = [22, 60, 8, 8, 8, 8, 12, 24, 0];
 const line = (values) =>

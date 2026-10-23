@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { logPerfResult } from "./perfLogging";
+import { logPerfResult } from "../../src/util/perfLogging";
 import { parseBenchOutput } from "../../scripts/render-results-page.mjs";
 
 test("padding preserves complete scenario identities and diagnostic values", () => {

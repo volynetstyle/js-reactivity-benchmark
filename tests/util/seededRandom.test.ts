@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { SeededRandom } from "./seededRandom";
+import { SeededRandom } from "../../src/util/seededRandom";
 
 // Captured from random@5.4.1 `new Random("seed")`; 1,000,000 mixed float/int
 // draws over four seeds matched exactly before the dependency was removed.

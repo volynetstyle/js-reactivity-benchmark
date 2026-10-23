@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import catalog from "./frameworkCatalog.json";
-import { frameworkInfo } from "./config";
+import catalog from "../src/frameworkCatalog.json";
+import { frameworkInfo } from "../src/config";
 
 // The default run must cover exactly the built workers: an adapter silently
 // left out of either list would drop out of the published leaderboard.

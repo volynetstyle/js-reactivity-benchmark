@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { timingStatistics } from "./statistics";
+import { timingStatistics } from "../../src/util/statistics";
 
 test("small runs never masquerade as tail estimates", () => {
   const stats = timingStatistics([1, 2, 3, 4, 5]);

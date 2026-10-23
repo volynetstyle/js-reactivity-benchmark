@@ -1,7 +1,7 @@
-import { Counter, makeGraph, runGraph } from "./util/dependencyGraph";
+import { Counter, makeGraph, runGraph } from "../src/util/dependencyGraph";
 import { expect, test, vi } from "vitest";
-import { FrameworkInfo, TestConfig } from "./util/frameworkTypes";
-import { frameworkInfo } from "./config";
+import { FrameworkInfo, TestConfig } from "../src/util/frameworkTypes";
+import { frameworkInfo } from "../src/config";
 
 test("framework names are unique", () => {
   const names = frameworkInfo.map(({ framework }) => framework.name);

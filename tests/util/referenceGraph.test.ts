@@ -1,9 +1,9 @@
 import { expect, test } from "vitest";
-import { expectedGraphSum } from "./referenceGraph";
-import { perfTests, frameworkInfo } from "../config";
-import { Counter, makeGraph, runGraph } from "./dependencyGraph";
-import { verifyBenchResult } from "./perfTests";
-import { restoreWarmGraph } from "../dynamicBench";
+import { expectedGraphSum } from "../../src/util/referenceGraph";
+import { perfTests, frameworkInfo } from "../../src/config";
+import { Counter, makeGraph, runGraph } from "../../src/util/dependencyGraph";
+import { verifyBenchResult } from "../../src/util/perfTests";
+import { restoreWarmGraph } from "../../src/dynamicBench";
 
 test("historical expected sums agree with the numerical oracle", () => {
   const failures = perfTests.flatMap((config) => {

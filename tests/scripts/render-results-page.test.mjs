@@ -3,7 +3,7 @@ import {
   intervalsOverlap,
   parseBenchOutput,
   renderResultsPage,
-} from "./render-results-page.mjs";
+} from "../../scripts/render-results-page.mjs";
 
 describe("benchmark result quality", () => {
   test("reads capped status from the compact mitata format", () => {

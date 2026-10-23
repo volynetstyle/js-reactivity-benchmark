@@ -1,6 +1,6 @@
 import { expect, test, vi } from "vitest";
-import { fixtureScope } from "../util/fixtureScope";
-import { reactiveEngineFramework as framework } from "./reactiveEngine";
+import { fixtureScope } from "../../src/util/fixtureScope";
+import { reactiveEngineFramework as framework } from "../../src/frameworks/reactiveEngine";
 
 test("reactive-engine core keeps unobserved computations lazy and cached", () => {
   framework.resetBenchmark!();

@@ -7,7 +7,7 @@ import {
   readShard,
   scenarioWeights,
   shardScenarios,
-} from "./benchmark";
+} from "../../src/util/benchmark";
 
 describe("adaptive benchmark ceiling", () => {
   test("uses the absolute ceiling before a reference result exists", () => {

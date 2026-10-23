@@ -110,16 +110,19 @@ export function objectWorkload(
   framework.withBatch(() => {});
   probe.verifyInitial("object publication");
   probe.reset();
+  let nextValue = 0;
+  const publish = versioned
+    ? () => {
+        scope.value.shared.count = nextValue;
+        scope.value.version!.write(nextValue);
+      }
+    : () => scope.value.payload.write({ count: nextValue });
   return {
     run() {
       for (let value = 1; value <= iterations; value++) {
         probe.step = value;
-        framework.withBatch(() => {
-          if (versioned) {
-            scope.value.shared.count = value;
-            scope.value.version!.write(value);
-          } else scope.value.payload.write({ count: value });
-        });
+        nextValue = value;
+        framework.withBatch(publish);
       }
       return { delivery: probe.snapshot(), final: scope.value.derived.read() };
     },

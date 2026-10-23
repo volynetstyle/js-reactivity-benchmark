@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { Counter, makeGraph, runGraph } from "./dependencyGraph";
-import { ReactiveFramework } from "./reactiveFramework";
+import { Counter, makeGraph, runGraph } from "../../src/util/dependencyGraph";
+import { ReactiveFramework } from "../../src/util/reactiveFramework";
 
 function transactionProbe(name: string) {
   const events: string[] = [];

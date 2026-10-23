@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { frameworkInfo } from "./config";
-import { fixtureScope } from "./util/fixtureScope";
+import { frameworkInfo } from "../src/config";
+import { fixtureScope } from "../src/util/fixtureScope";
 
 const explicitCommitAdapters = new Set([
   "@solidjs/signals",

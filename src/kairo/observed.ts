@@ -202,12 +202,17 @@ export function historicalWorkload(
   framework.withBatch(() => {});
   probe.verifyInitial(kind);
 
+  let writeIndex = 0;
+  let writeValue = 0;
+  const write = () => graph.sources[writeIndex].write(writeValue);
   const run = (): HistoricalResult => {
     let pullChecksum = 0;
     for (let step = 0; step < writes.length; step++) {
       const [index, value] = writes[step];
       probe.step = step + 1;
-      framework.withBatch(() => graph.sources[index].write(value));
+      writeIndex = index;
+      writeValue = value;
+      framework.withBatch(write);
       sourceValues[index] = value;
       pullChecksum +=
         graph.outputs[kind === "mux" ? index : observerCount - 1].read();

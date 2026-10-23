@@ -1,10 +1,10 @@
 import { beforeEach, expect, test, vi } from "vitest";
-import { sbench } from "./sBench";
-import { frameworkInfo } from "./config";
-import { liteSignalFramework } from "./frameworks/liteSignal";
-import { registerBenchmark } from "./util/benchmark";
+import { sbench } from "../src/sBench";
+import { frameworkInfo } from "../src/config";
+import { liteSignalFramework } from "../src/frameworks/liteSignal";
+import { registerBenchmark } from "../src/util/benchmark";
 
-vi.mock("./util/benchmark", () => ({ registerBenchmark: vi.fn() }));
+vi.mock("../src/util/benchmark", () => ({ registerBenchmark: vi.fn() }));
 
 const register = vi.mocked(registerBenchmark);
 beforeEach(() => register.mockClear());

@@ -42,9 +42,8 @@ export function makeGraph(
   } = config;
 
   return framework.withBuild(() => {
-    const sources = new Array(sourcesCount)
-      .fill(0)
-      .map((_, i) => framework.signal(i));
+    const sources = new Array<Signal<number>>(sourcesCount);
+    for (let i = 0; i < sourcesCount; i++) sources[i] = framework.signal(i);
     const rows =
       graphKind === "rect"
         ? makeDependentRows(
@@ -106,15 +105,19 @@ export function runGraph(
       );
     }
     const leaves = layers[layers.length - 1];
-    const readLeaves = removeElems(
-      leaves,
-      Math.round(leaves.length * (1 - readFraction)),
-      new SeededRandom("seed")
-    );
-    const write = (iteration: number, update: number) => {
-      const tick = startTick + iteration * updatesPerIteration + update;
+    const removeCount = Math.round(leaves.length * (1 - readFraction));
+    // Full-drain rows need neither a copy nor a fresh random generator.
+    const readLeaves = removeCount === 0
+      ? leaves
+      : removeElems(leaves, removeCount, new SeededRandom("seed"));
+    let tick = startTick;
+    const write = () => {
       const sourceIndex = tick % sources.length;
       sources[sourceIndex].write(tick + sourceIndex);
+      tick++;
+    };
+    const writeBatch = () => {
+      for (let update = 0; update < updatesPerIteration; update++) write();
     };
     const read = () => {
       let sum = 0;
@@ -132,28 +135,19 @@ export function runGraph(
         }
       });
       graph.disposePushEffects = scope.dispose;
-      for (let iteration = 0; iteration < iterations; iteration++) {
-        framework.withBatch(() => {
-          for (let update = 0; update < updatesPerIteration; update++) {
-            write(iteration, update);
-          }
-        });
-      }
+      for (let iteration = 0; iteration < iterations; iteration++)
+        framework.withBatch(writeBatch);
       return latestValues.reduce((sum, value) => sum + value, 0);
     }
 
     for (let iteration = 0; iteration < iterations; iteration++) {
       if (mode === "mixed" && sinkReadMode === "per-update") {
         for (let update = 0; update < updatesPerIteration; update++) {
-          framework.withBatch(() => write(iteration, update));
+          framework.withBatch(write);
           read();
         }
       } else {
-        framework.withBatch(() => {
-          for (let update = 0; update < updatesPerIteration; update++) {
-            write(iteration, update);
-          }
-        });
+        framework.withBatch(writeBatch);
         if (mode === "mixed" && sinkReadMode === "per-batch") read();
       }
     }
@@ -235,10 +229,9 @@ function makeLayeredRows(
   const rows = [];
 
   for (let layer = 0; layer < numRows; layer++) {
-    const row = new Array(width)
-      .fill(0)
-      .map((_, nodeDex) =>
-        makeLayeredNode(
+    const row = new Array<Computed<number>>(width);
+    for (let nodeDex = 0; nodeDex < width; nodeDex++) {
+      row[nodeDex] = makeLayeredNode(
           prevRow,
           nodeDex,
           layer,
@@ -248,8 +241,8 @@ function makeLayeredRows(
           framework,
           graphKind,
           rand
-        )
-      );
+        );
+    }
     rows.push(row);
     prevRow = row;
   }
@@ -278,19 +271,19 @@ function makeRow(
     } else {
       // dynamic node, drops one of the sources depending on the value of the first element
       const first = mySources[0];
-      const tail = mySources.slice(1);
+      const tailLength = mySources.length - 1;
       const node = framework.computed(() => {
         counter.count++;
         counter.nodesVisited++;
         counter.edgesTraversed++;
         let sum = first.read();
         const shouldDrop = sum & 0x1;
-        const dropDex = sum % tail.length;
+        const dropDex = sum % tailLength;
 
-        for (let i = 0; i < tail.length; i++) {
-          if (shouldDrop && i === dropDex) continue;
+        for (let i = 1; i < mySources.length; i++) {
+          if (shouldDrop && i - 1 === dropDex) continue;
           counter.edgesTraversed++;
-          sum += tail[i].read();
+          sum += mySources[i].read();
         }
 
         return sum;
@@ -322,19 +315,19 @@ function makeLayeredNode(
   }
 
   const first = mySources[0];
-  const tail = mySources.slice(1);
+  const tailLength = mySources.length - 1;
   return framework.computed(() => {
     counter.count++;
     counter.nodesVisited++;
     counter.edgesTraversed++;
     let sum = first.read();
     const shouldDrop = (sum + layer + nodeDex) & 0x1;
-    const dropDex = tail.length === 0 ? 0 : (sum + nodeDex) % tail.length;
+    const dropDex = tailLength === 0 ? 0 : (sum + nodeDex) % tailLength;
 
-    for (let i = 0; i < tail.length; i++) {
-      if (shouldDrop && i === dropDex) continue;
+    for (let i = 1; i < mySources.length; i++) {
+      if (shouldDrop && i - 1 === dropDex) continue;
       counter.edgesTraversed++;
-      sum += tail[i].read();
+      sum += mySources[i].read();
     }
 
     return sum;

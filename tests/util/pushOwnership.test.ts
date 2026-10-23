@@ -1,8 +1,8 @@
 import { expect, test, vi } from "vitest";
-import { sFramework } from "../frameworks/s";
-import { solidFramework } from "../frameworks/solid";
-import { Counter, makeGraph, runGraph } from "./dependencyGraph";
-import { ReactiveFramework } from "./reactiveFramework";
+import { sFramework } from "../../src/frameworks/s";
+import { solidFramework } from "../../src/frameworks/solid";
+import { Counter, makeGraph, runGraph } from "../../src/util/dependencyGraph";
+import { ReactiveFramework } from "../../src/util/reactiveFramework";
 
 for (const base of [sFramework, solidFramework]) {
   test(`${base.name} | push effects own a scope, writes commit outside it, cleanup detaches effects`, () => {
