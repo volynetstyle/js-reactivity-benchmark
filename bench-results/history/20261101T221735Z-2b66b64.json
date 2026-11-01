@@ -1,0 +1,14 @@
+{
+  "commit": "2b66b64a567987c2d6b684f128d2bac0ca7a90c5",
+  "shortCommit": "2b66b64",
+  "ref": "main",
+  "runId": "41351582133",
+  "runNumber": "38",
+  "generatedAtUtc": "20261101T221735Z",
+  "logPath": "bench-results/history/20261101T221735Z-2b66b64.log",
+  "samplesPath": "bench-results/history/20261101T221735Z-2b66b64.samples.json",
+  "profile": "quick",
+  "rounds": "3",
+  "shards": "8",
+  "machineRounds": "3"
+}
