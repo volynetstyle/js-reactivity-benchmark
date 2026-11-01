@@ -33,8 +33,8 @@ Compatibility and performance are separate questions: CI checks that the suite
 installs, builds and runs on Node.js 22, 24 and 26 (plus the pinned release),
 while published numbers come only from the exact release in `.nvmrc`
 (`scripts/check-runtime.mjs` refuses anything else).
-All dependencies are pinned to exact versions, so `npm install` resolves the
-same libraries as the lockfile; see [Dependency versions](#dependency-versions).
+Install with pnpm and the lockfile: the workspace configuration also supplies
+missing package metadata; see [Dependency versions](#dependency-versions).
 
 ```bash
 pnpm install
@@ -232,8 +232,8 @@ leader's interval lies entirely below the runner-up's.
 Dependencies are pinned exactly. The restored adapters were checked against npm
 dist-tags on 2026-10-23. Kairo uses `0.8.0-alpha.2` (`alpha`) because the
 `latest` 0.6 RC fails dynamic graph correctness; its row is explicitly labeled. Second generations are measured next to the stable lines through
-npm aliases: `solid-js-2`, `solid-signals-2` (2.0.0-rc.17) and
-`vue-reactivity-3.6` (3.6.0-rc.12). The stable `@solidjs/signals` row stays on
+npm aliases: `solid-js-2`, `solid-signals-2` (2.0.0-rc.20) and
+`vue-reactivity-3.6` (3.6.0-rc.14). The stable `@solidjs/signals` row stays on
 0.13.13, because that package's `latest` tag points at a stale 2.0 release
 candidate. Update a library deliberately, run the
 full suite, and publish a fresh run; the page lists the measured versions.
