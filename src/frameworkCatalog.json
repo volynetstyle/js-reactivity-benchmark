@@ -7,6 +7,13 @@
     "pullCounts": true
   },
   {
+    "id": "reflex-quant",
+    "name": "reflex-quant",
+    "module": "reflexQuant",
+    "export": "reflexQuantFramework",
+    "pullCounts": true
+  },
+  {
     "id": "alien",
     "name": "alien-signals",
     "module": "alienSignals",

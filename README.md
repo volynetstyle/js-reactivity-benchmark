@@ -88,7 +88,7 @@ pnpm.cmd run run
 
 CI executes `pnpm test`, `pnpm build`, and `pnpm bench:smoke` on Node.js 22,
 24, 26 and the pinned release. The smoke
-checks 123 isolated rows across all 29 adapters, with two samples per row, plus
+checks isolated rows across all 30 adapters, with two samples per row, plus
 production build mode, recorded package versions, and a real two-shard run
 merged into one page; it is a correctness check, not a performance
 publication. A static check and a runtime guard (`BENCH_ASSERT_NO_CONSOLE=1`)

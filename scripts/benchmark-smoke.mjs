@@ -8,7 +8,7 @@ const outputPath = path.resolve("tmp/ci-benchmark.samples.json");
 await mkdir(path.dirname(outputPath), { recursive: true });
 const selections = [
   {
-    framework: "reflex,lite-signal",
+    framework: "reflex,reflex-quant,lite-signal",
     filter:
       "diamond,manySourcesIntoOneComputedEffect,molBench,mutable-object/,lifecycle/,createComputations1to1",
   },

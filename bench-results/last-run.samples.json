@@ -1,0 +1,906 @@
+{
+  "semantics": "v4",
+  "profile": "quick",
+  "policy": {
+    "profile": "quick",
+    "warmup": 2,
+    "minSamples": 2,
+    "maxSamples": 2,
+    "minTimeMs": 0,
+    "rounds": 1
+  },
+  "node": "v25.2.0",
+  "v8": "14.1.146.11-node.13",
+  "platform": "win32/x64",
+  "cpu": "12th Gen Intel(R) Core(TM) i5-1235U",
+  "cores": 12,
+  "ram": 16890978304,
+  "os": "Windows_NT 10.0.19045",
+  "machineRound": 1,
+  "bundleSha256": "84554fbdb91a0fe69a0d8fa4bafe1cd7a167fe8e6f6424b5b90776d748beecd0",
+  "gc": true,
+  "isolation": "row",
+  "order": "interleaved: scenario-major, framework rotation per scenario and round",
+  "nodeEnv": "production",
+  "limits": {
+    "heapMb": 4096,
+    "rowTimeoutMs": 180000
+  },
+  "capPolicy": {
+    "minCeilingMs": 1500,
+    "maxSlowdown": 3
+  },
+  "packages": {
+    "reflex-quant": {
+      "reflex-quant": "0.1.0"
+    },
+    "alien-signals": {
+      "alien-signals": "3.2.1"
+    }
+  },
+  "sampleOrder": "chronological; all observations retained",
+  "consoleGuard": true,
+  "lockfileSha256": "c7c865b997977f9bc40a5035a8f23e21760939256fe09afc2516e646d4842805",
+  "rows": [
+    {
+      "id": "reflex-quant :: diamond",
+      "framework": "reflex-quant",
+      "name": "diamond",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 0.3028499999999923,
+      "statistics": {
+        "count": 2,
+        "min": 0.2500999999999891,
+        "median": 0.3028499999999923,
+        "mean": 0.3028499999999923,
+        "max": 0.3555999999999955,
+        "cv": 0.2463257897149981
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 0.47339999999999094,
+          "warmupMs": [
+            0.8001000000000005,
+            0.5344000000000051
+          ],
+          "samplesMs": [
+            0.2500999999999891,
+            0.3555999999999955
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 0.2500999999999891,
+            "median": 0.3028499999999923,
+            "mean": 0.3028499999999923,
+            "max": 0.3555999999999955,
+            "cv": 0.2463257897149981
+          }
+        }
+      ],
+      "wallMs": 115.34290000000001
+    },
+    {
+      "id": "alien-signals :: diamond",
+      "framework": "alien-signals",
+      "name": "diamond",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "baseline",
+      "family": "historical propagation",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 0.3370999999999995,
+      "statistics": {
+        "count": 2,
+        "min": 0.31170000000000186,
+        "median": 0.3370999999999995,
+        "mean": 0.3370999999999995,
+        "max": 0.36249999999999716,
+        "cv": 0.10655895723605263
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 0.5847000000000051,
+          "warmupMs": [
+            0.7449000000000012,
+            0.45300000000000296
+          ],
+          "samplesMs": [
+            0.36249999999999716,
+            0.31170000000000186
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 0.31170000000000186,
+            "median": 0.3370999999999995,
+            "mean": 0.3370999999999995,
+            "max": 0.36249999999999716,
+            "cv": 0.10655895723605263
+          }
+        }
+      ],
+      "wallMs": 112.7767
+    },
+    {
+      "id": "alien-signals :: manySourcesIntoOneComputedEffectWithDirect",
+      "framework": "alien-signals",
+      "name": "manySourcesIntoOneComputedEffectWithDirect",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "push",
+      "family": "fan",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 78.28405000000001,
+      "statistics": {
+        "count": 2,
+        "min": 77.59330000000006,
+        "median": 78.28405000000001,
+        "mean": 78.28405000000001,
+        "max": 78.97479999999996,
+        "cv": 0.012478506390626786
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 79.905,
+          "warmupMs": [
+            82.7921,
+            78.5317
+          ],
+          "samplesMs": [
+            78.97479999999996,
+            77.59330000000006
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 77.59330000000006,
+            "median": 78.28405000000001,
+            "mean": 78.28405000000001,
+            "max": 78.97479999999996,
+            "cv": 0.012478506390626786
+          }
+        }
+      ],
+      "wallMs": 578.5102999999999
+    },
+    {
+      "id": "reflex-quant :: manySourcesIntoOneComputedEffectWithDirect",
+      "framework": "reflex-quant",
+      "name": "manySourcesIntoOneComputedEffectWithDirect",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "push",
+      "family": "fan",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 58.162799999999976,
+      "statistics": {
+        "count": 2,
+        "min": 53.82299999999998,
+        "median": 58.162799999999976,
+        "mean": 58.162799999999976,
+        "max": 62.50259999999997,
+        "cv": 0.1055211237764818
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 62.2007,
+          "warmupMs": [
+            57.68980000000002,
+            50.04069999999999
+          ],
+          "samplesMs": [
+            53.82299999999998,
+            62.50259999999997
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 53.82299999999998,
+            "median": 58.162799999999976,
+            "mean": 58.162799999999976,
+            "max": 62.50259999999997,
+            "cv": 0.1055211237764818
+          }
+        }
+      ],
+      "wallMs": 437.36300000000006
+    },
+    {
+      "id": "reflex-quant :: manySourcesIntoOneComputedEffect",
+      "framework": "reflex-quant",
+      "name": "manySourcesIntoOneComputedEffect",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "push",
+      "family": "fan",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 55.538250000000005,
+      "statistics": {
+        "count": 2,
+        "min": 50.9135,
+        "median": 55.538250000000005,
+        "mean": 55.538250000000005,
+        "max": 60.16300000000001,
+        "cv": 0.11776359846745224
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 60.22229999999999,
+          "warmupMs": [
+            77.78569999999999,
+            90.16039999999998
+          ],
+          "samplesMs": [
+            60.16300000000001,
+            50.9135
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 50.9135,
+            "median": 55.538250000000005,
+            "mean": 55.538250000000005,
+            "max": 60.16300000000001,
+            "cv": 0.11776359846745224
+          }
+        }
+      ],
+      "wallMs": 518.3109
+    },
+    {
+      "id": "alien-signals :: manySourcesIntoOneComputedEffect",
+      "framework": "alien-signals",
+      "name": "manySourcesIntoOneComputedEffect",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "push",
+      "family": "fan",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 74.49700000000001,
+      "statistics": {
+        "count": 2,
+        "min": 73.293,
+        "median": 74.49700000000001,
+        "mean": 74.49700000000001,
+        "max": 75.70100000000002,
+        "cv": 0.022856130167620402
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 93.742,
+          "warmupMs": [
+            77.80559999999997,
+            78.36959999999999
+          ],
+          "samplesMs": [
+            73.293,
+            75.70100000000002
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 73.293,
+            "median": 74.49700000000001,
+            "mean": 74.49700000000001,
+            "max": 75.70100000000002,
+            "cv": 0.022856130167620402
+          }
+        }
+      ],
+      "wallMs": 558.8123000000003
+    },
+    {
+      "id": "alien-signals :: molBench",
+      "framework": "alien-signals",
+      "name": "molBench",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "dynamic",
+      "family": "object publication",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 0.06615000000000038,
+      "statistics": {
+        "count": 2,
+        "min": 0.05850000000000222,
+        "median": 0.06615000000000038,
+        "mean": 0.06615000000000038,
+        "max": 0.07379999999999853,
+        "cv": 0.16354850721317477
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 0.24549999999999983,
+          "warmupMs": [
+            0.08650000000000091,
+            0.07930000000000348
+          ],
+          "samplesMs": [
+            0.05850000000000222,
+            0.07379999999999853
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 0.05850000000000222,
+            "median": 0.06615000000000038,
+            "mean": 0.06615000000000038,
+            "max": 0.07379999999999853,
+            "cv": 0.16354850721317477
+          }
+        }
+      ],
+      "wallMs": 76.29979999999978
+    },
+    {
+      "id": "reflex-quant :: molBench",
+      "framework": "reflex-quant",
+      "name": "molBench",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "dynamic",
+      "family": "object publication",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 0.07820000000000249,
+      "statistics": {
+        "count": 2,
+        "min": 0.06380000000000052,
+        "median": 0.07820000000000249,
+        "mean": 0.07820000000000249,
+        "max": 0.09260000000000446,
+        "cv": 0.26041784268765605
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 0.20550000000000068,
+          "warmupMs": [
+            0.13060000000000116,
+            0.08559999999999945
+          ],
+          "samplesMs": [
+            0.09260000000000446,
+            0.06380000000000052
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 0.06380000000000052,
+            "median": 0.07820000000000249,
+            "mean": 0.07820000000000249,
+            "max": 0.09260000000000446,
+            "cv": 0.26041784268765605
+          }
+        }
+      ],
+      "wallMs": 74.26900000000023
+    },
+    {
+      "id": "reflex-quant :: mutable-object/immutable replacement",
+      "framework": "reflex-quant",
+      "name": "mutable-object/immutable replacement",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "dynamic",
+      "family": "object publication",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 0.4484499999999976,
+      "statistics": {
+        "count": 2,
+        "min": 0.42899999999999494,
+        "median": 0.4484499999999976,
+        "mean": 0.4484499999999976,
+        "max": 0.4679000000000002,
+        "cv": 0.061336723800112763
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 2.5544999999999973,
+          "warmupMs": [
+            1.5131999999999977,
+            0.7100000000000009
+          ],
+          "samplesMs": [
+            0.4679000000000002,
+            0.42899999999999494
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 0.42899999999999494,
+            "median": 0.4484499999999976,
+            "mean": 0.4484499999999976,
+            "max": 0.4679000000000002,
+            "cv": 0.061336723800112763
+          }
+        }
+      ],
+      "wallMs": 86.56870000000026
+    },
+    {
+      "id": "alien-signals :: mutable-object/immutable replacement",
+      "framework": "alien-signals",
+      "name": "mutable-object/immutable replacement",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "dynamic",
+      "family": "object publication",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 1.0694000000000017,
+      "statistics": {
+        "count": 2,
+        "min": 0.46580000000000155,
+        "median": 1.0694000000000017,
+        "mean": 1.0694000000000017,
+        "max": 1.6730000000000018,
+        "cv": 0.7982226540568533
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 3.292900000000003,
+          "warmupMs": [
+            2.7813000000000017,
+            1.8087000000000018
+          ],
+          "samplesMs": [
+            1.6730000000000018,
+            0.46580000000000155
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 0.46580000000000155,
+            "median": 1.0694000000000017,
+            "mean": 1.0694000000000017,
+            "max": 1.6730000000000018,
+            "cv": 0.7982226540568533
+          }
+        }
+      ],
+      "wallMs": 93.13740000000007
+    },
+    {
+      "id": "alien-signals :: mutable-object/in-place versioned",
+      "framework": "alien-signals",
+      "name": "mutable-object/in-place versioned",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "dynamic",
+      "family": "object publication",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 1.776849999999996,
+      "statistics": {
+        "count": 2,
+        "min": 1.7750000000000057,
+        "median": 1.776849999999996,
+        "mean": 1.776849999999996,
+        "max": 1.7786999999999864,
+        "cv": 0.001472434415047189
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 3.017400000000002,
+          "warmupMs": [
+            1.9844000000000008,
+            1.9772000000000034
+          ],
+          "samplesMs": [
+            1.7750000000000057,
+            1.7786999999999864
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 1.7750000000000057,
+            "median": 1.776849999999996,
+            "mean": 1.776849999999996,
+            "max": 1.7786999999999864,
+            "cv": 0.001472434415047189
+          }
+        }
+      ],
+      "wallMs": 97.80150000000003
+    },
+    {
+      "id": "reflex-quant :: mutable-object/in-place versioned",
+      "framework": "reflex-quant",
+      "name": "mutable-object/in-place versioned",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "dynamic",
+      "family": "object publication",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 0.6205000000000034,
+      "statistics": {
+        "count": 2,
+        "min": 0.5900000000000034,
+        "median": 0.6205000000000034,
+        "mean": 0.6205000000000034,
+        "max": 0.6510000000000034,
+        "cv": 0.06951412353324597
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 2.549500000000002,
+          "warmupMs": [
+            1.616500000000002,
+            0.507799999999996
+          ],
+          "samplesMs": [
+            0.6510000000000034,
+            0.5900000000000034
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 0.5900000000000034,
+            "median": 0.6205000000000034,
+            "mean": 0.6205000000000034,
+            "max": 0.6510000000000034,
+            "cv": 0.06951412353324597
+          }
+        }
+      ],
+      "wallMs": 94.16390000000001
+    },
+    {
+      "id": "reflex-quant :: createComputations1to1",
+      "framework": "reflex-quant",
+      "name": "createComputations1to1",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 10.318000000000012,
+      "statistics": {
+        "count": 2,
+        "min": 9.807099999999991,
+        "median": 10.318000000000012,
+        "mean": 10.318000000000012,
+        "max": 10.828900000000033,
+        "cv": 0.07002536431638329
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 31.944500000000005,
+          "warmupMs": [
+            8.014499999999998,
+            10.262199999999979
+          ],
+          "samplesMs": [
+            9.807099999999991,
+            10.828900000000033
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 9.807099999999991,
+            "median": 10.318000000000012,
+            "mean": 10.318000000000012,
+            "max": 10.828900000000033,
+            "cv": 0.07002536431638329
+          }
+        }
+      ],
+      "wallMs": 291.6842999999999
+    },
+    {
+      "id": "alien-signals :: createComputations1to1",
+      "framework": "alien-signals",
+      "name": "createComputations1to1",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 6.990349999999992,
+      "statistics": {
+        "count": 2,
+        "min": 6.538899999999984,
+        "median": 6.990349999999992,
+        "mean": 6.990349999999992,
+        "max": 7.441800000000001,
+        "cv": 0.09133258173529883
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 25.2992,
+          "warmupMs": [
+            8.663899999999998,
+            6.253100000000018
+          ],
+          "samplesMs": [
+            7.441800000000001,
+            6.538899999999984
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 6.538899999999984,
+            "median": 6.990349999999992,
+            "mean": 6.990349999999992,
+            "max": 7.441800000000001,
+            "cv": 0.09133258173529883
+          }
+        }
+      ],
+      "wallMs": 206.55090000000018
+    },
+    {
+      "id": "alien-signals :: createComputations1to1000",
+      "framework": "alien-signals",
+      "name": "createComputations1to1000",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 17.26140000000001,
+      "statistics": {
+        "count": 2,
+        "min": 11.373700000000014,
+        "median": 17.26140000000001,
+        "mean": 17.26140000000001,
+        "max": 23.149100000000004,
+        "cv": 0.48237484741585623
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 45.6709,
+          "warmupMs": [
+            17.631200000000007,
+            18.995099999999994
+          ],
+          "samplesMs": [
+            11.373700000000014,
+            23.149100000000004
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 11.373700000000014,
+            "median": 17.26140000000001,
+            "mean": 17.26140000000001,
+            "max": 23.149100000000004,
+            "cv": 0.48237484741585623
+          }
+        }
+      ],
+      "wallMs": 212.57420000000002
+    },
+    {
+      "id": "reflex-quant :: createComputations1to1000",
+      "framework": "reflex-quant",
+      "name": "createComputations1to1000",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "creation",
+      "family": "initialized construction",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 11.188400000000001,
+      "statistics": {
+        "count": 2,
+        "min": 10.283000000000015,
+        "median": 11.188400000000001,
+        "mean": 11.188400000000001,
+        "max": 12.093799999999987,
+        "cv": 0.11444254400741663
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 59.2088,
+          "warmupMs": [
+            21.758499999999998,
+            24.817700000000002
+          ],
+          "samplesMs": [
+            12.093799999999987,
+            10.283000000000015
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 10.283000000000015,
+            "median": 11.188400000000001,
+            "mean": 11.188400000000001,
+            "max": 12.093799999999987,
+            "cv": 0.11444254400741663
+          }
+        }
+      ],
+      "wallMs": 272.3316999999997
+    },
+    {
+      "id": "reflex-quant :: dynamic/stable diamond mesh warm",
+      "framework": "reflex-quant",
+      "name": "dynamic/stable diamond mesh warm",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "diamond-mesh",
+      "fixture": "warm-reused",
+      "capped": false,
+      "estimateMs": 5.61985,
+      "statistics": {
+        "count": 2,
+        "min": 5.090599999999995,
+        "median": 5.61985,
+        "mean": 5.61985,
+        "max": 6.149100000000004,
+        "cv": 0.13318371982988286
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 7.036899999999989,
+          "warmupMs": [
+            5.904200000000003,
+            5.09790000000001
+          ],
+          "samplesMs": [
+            5.090599999999995,
+            6.149100000000004
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 5.090599999999995,
+            "median": 5.61985,
+            "mean": 5.61985,
+            "max": 6.149100000000004,
+            "cv": 0.13318371982988286
+          }
+        }
+      ],
+      "wallMs": 211.56900000000041
+    },
+    {
+      "id": "alien-signals :: dynamic/stable diamond mesh warm",
+      "framework": "alien-signals",
+      "name": "dynamic/stable diamond mesh warm",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "large_graph",
+      "family": "diamond-mesh",
+      "fixture": "warm-reused",
+      "capped": false,
+      "estimateMs": 4.918749999999989,
+      "statistics": {
+        "count": 2,
+        "min": 4.8571999999999775,
+        "median": 4.918749999999989,
+        "mean": 4.918749999999989,
+        "max": 4.9803,
+        "cv": 0.01769653769028308
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 5.7727,
+          "warmupMs": [
+            5.8262,
+            4.7286
+          ],
+          "samplesMs": [
+            4.8571999999999775,
+            4.9803
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 4.8571999999999775,
+            "median": 4.918749999999989,
+            "mean": 4.918749999999989,
+            "max": 4.9803,
+            "cv": 0.01769653769028308
+          }
+        }
+      ],
+      "wallMs": 179.15239999999994
+    },
+    {
+      "id": "alien-signals :: lifecycle/owned graph create-update-dispose",
+      "framework": "alien-signals",
+      "name": "lifecycle/owned graph create-update-dispose",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "lifecycle",
+      "family": "native ownership",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 7.862849999999995,
+      "statistics": {
+        "count": 2,
+        "min": 7.1303999999999945,
+        "median": 7.862849999999995,
+        "mean": 7.862849999999995,
+        "max": 8.595299999999995,
+        "cv": 0.13173858381632286
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 21.431900000000006,
+          "warmupMs": [
+            11.9422,
+            10.740700000000004
+          ],
+          "samplesMs": [
+            7.1303999999999945,
+            8.595299999999995
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 7.1303999999999945,
+            "median": 7.862849999999995,
+            "mean": 7.862849999999995,
+            "max": 8.595299999999995,
+            "cv": 0.13173858381632286
+          }
+        }
+      ],
+      "wallMs": 139.1944999999996
+    },
+    {
+      "id": "alien-signals :: lifecycle/dispose retained graph",
+      "framework": "alien-signals",
+      "name": "lifecycle/dispose retained graph",
+      "profile": "quick",
+      "validation": "passed",
+      "group": "lifecycle",
+      "family": "native ownership",
+      "fixture": "fresh",
+      "capped": false,
+      "estimateMs": 0.11255000000000237,
+      "statistics": {
+        "count": 2,
+        "min": 0.07670000000000243,
+        "median": 0.11255000000000237,
+        "mean": 0.11255000000000237,
+        "max": 0.1484000000000023,
+        "cv": 0.45046251631341006
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pilotMs": 0.5616999999999948,
+          "warmupMs": [
+            0.14000000000000057,
+            0.2680999999999969
+          ],
+          "samplesMs": [
+            0.1484000000000023,
+            0.07670000000000243
+          ],
+          "statistics": {
+            "count": 2,
+            "min": 0.07670000000000243,
+            "median": 0.11255000000000237,
+            "mean": 0.11255000000000237,
+            "max": 0.1484000000000023,
+            "cv": 0.45046251631341006
+          }
+        }
+      ],
+      "wallMs": 81.9366
+    }
+  ]
+}

@@ -18,6 +18,7 @@ import { vueReactivityFramework } from "./frameworks/vueReactivity";
 import { svelteFramework } from "./frameworks/svelte";
 import { tansuFramework } from "./frameworks/tansu";
 import { reflexFramework } from "./frameworks/reflex";
+import { reflexQuantFramework } from "./frameworks/reflexQuant";
 import { solidSignalsFramework } from "./frameworks/solid-signals";
 import { liteSignalFramework } from "./frameworks/liteSignal";
 import { solidSignals2Framework } from "./frameworks/solidSignals2";
@@ -32,6 +33,7 @@ import { rescriptSignalsFramework } from "./frameworks/rescriptSignals";
 import { kairoFramework } from "./frameworks/kairo";
 
 export const frameworkInfo: FrameworkInfo[] = [
+  { framework: reflexQuantFramework, testPullCounts: true },
   { framework: reflexFramework, testPullCounts: true },
   { framework: alienFramework, testPullCounts: true },
   { framework: reactiveEngineFramework, testPullCounts: true },
