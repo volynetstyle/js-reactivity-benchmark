@@ -33,8 +33,8 @@ import { rescriptSignalsFramework } from "./frameworks/rescriptSignals";
 import { kairoFramework } from "./frameworks/kairo";
 
 export const frameworkInfo: FrameworkInfo[] = [
-  { framework: reflexQuantFramework, testPullCounts: true },
   { framework: reflexFramework, testPullCounts: true },
+  { framework: reflexQuantFramework, testPullCounts: true },
   { framework: alienFramework, testPullCounts: true },
   { framework: reactiveEngineFramework, testPullCounts: true },
   { framework: liteSignalFramework, testPullCounts: true },
