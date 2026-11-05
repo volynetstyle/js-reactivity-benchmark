@@ -71,8 +71,8 @@ importers:
         specifier: 15.1.2
         version: 15.1.2
       reflex-quant:
-        specifier: 0.1.0
-        version: 0.1.0
+        specifier: 1.0.0
+        version: 1.0.0
       rescript-signals:
         specifier: 3.2.0
         version: 3.2.0
@@ -919,8 +919,8 @@ packages:
     resolution: {integrity: sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA==}
     engines: {node: '>=0.10.0'}
 
-  reflex-quant@0.1.0:
-    resolution: {integrity: sha512-opCIOIa/vzGPja+lk8wlsMD1HtIzJoTc/D8kzzzAtQUTfqIp7luZzF6uUUNehyM6LG1dQS3egLCsdwWVxO8FZw==}
+  reflex-quant@1.0.0:
+    resolution: {integrity: sha512-Ye0hN+iNFJ3UZHcxflKfNj+chhqpgt7jGcR+q+KDz7Vdmbu668rYGv+m5eXO8x5lO9Ymu/9SF8rspHQ5q6lqqw==}
     engines: {node: '>=18'}
 
   rescript-signals@3.2.0:
@@ -1645,7 +1645,7 @@ snapshots:
   react@19.2.5:
     optional: true
 
-  reflex-quant@0.1.0: {}
+  reflex-quant@1.0.0: {}
 
   rescript-signals@3.2.0:
     dependencies:

@@ -55,7 +55,7 @@
     "mobx": "7.1.4",
     "mol_wire_lib": "1.0.1830",
     "oby": "15.1.2",
-    "reflex-quant": "0.1.0",
+    "reflex-quant": "1.0.0",
     "rescript-signals": "3.2.0",
     "s-js": "0.4.9",
     "signal-polyfill": "0.2.2",
