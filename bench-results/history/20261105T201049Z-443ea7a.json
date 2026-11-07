@@ -1,0 +1,14 @@
+{
+  "commit": "443ea7a9ac13c747f08bbae0e6958bdd51fe3414",
+  "shortCommit": "443ea7a",
+  "ref": "main",
+  "runId": "42091862323",
+  "runNumber": "42",
+  "generatedAtUtc": "20261105T201049Z",
+  "logPath": "bench-results/history/20261105T201049Z-443ea7a.log",
+  "samplesPath": "bench-results/history/20261105T201049Z-443ea7a.samples.json",
+  "profile": "quick",
+  "rounds": "3",
+  "shards": "8",
+  "machineRounds": "3"
+}
