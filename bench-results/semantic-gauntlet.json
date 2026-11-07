@@ -1,0 +1,2034 @@
+{
+  "node": "v25.2.0",
+  "results": [
+    {
+      "name": "quant",
+      "workload": "workflow",
+      "checks": [
+        {
+          "name": "initial route",
+          "actual": [
+            51
+          ],
+          "expected": [
+            51
+          ],
+          "matches": true
+        },
+        {
+          "name": "cutoff suppresses route",
+          "actual": [
+            0,
+            [
+              51
+            ]
+          ],
+          "expected": [
+            0,
+            [
+              51
+            ]
+          ],
+          "matches": true
+        },
+        {
+          "name": "selection fallback",
+          "actual": "out-0",
+          "expected": "out-0",
+          "matches": true
+        },
+        {
+          "name": "self-write obligation",
+          "actual": [
+            "out-1",
+            "out-1",
+            "out-0"
+          ],
+          "expected": [
+            "out-1",
+            "out-1",
+            "out-0"
+          ],
+          "matches": true
+        },
+        {
+          "name": "fresh read during batch",
+          "actual": 54,
+          "expected": 54,
+          "matches": true
+        },
+        {
+          "name": "render deferred in batch",
+          "actual": [
+            51
+          ],
+          "expected": [
+            51
+          ],
+          "matches": true
+        },
+        {
+          "name": "single batched render",
+          "actual": [
+            51,
+            54
+          ],
+          "expected": [
+            51,
+            54
+          ],
+          "matches": true
+        },
+        {
+          "name": "branch switch",
+          "actual": 72,
+          "expected": 72,
+          "matches": true
+        },
+        {
+          "name": "old branch detached",
+          "actual": 3,
+          "expected": 3,
+          "matches": true
+        },
+        {
+          "name": "new branch live",
+          "actual": 74,
+          "expected": 74,
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "1.1.1",
+      "outcome": "match",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "quant",
+      "workload": "handoff",
+      "checks": [
+        {
+          "name": "validation error",
+          "actual": "expired credentials",
+          "expected": "expired credentials",
+          "matches": true
+        },
+        {
+          "name": "old resource retained",
+          "actual": [
+            "connect A:valid"
+          ],
+          "expected": [
+            "connect A:valid"
+          ],
+          "matches": true
+        },
+        {
+          "name": "recovery error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "handoff events",
+          "actual": [
+            "connect A:valid",
+            "close A:valid",
+            "connect B:renewed"
+          ],
+          "expected": [
+            "connect A:valid",
+            "close A:valid",
+            "connect B:renewed"
+          ],
+          "matches": true
+        },
+        {
+          "name": "dispose closes resource",
+          "actual": "close B:renewed",
+          "expected": "close B:renewed",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "1.1.1",
+      "outcome": "match",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "quant",
+      "workload": "compiler",
+      "checks": [
+        {
+          "name": "initial compile",
+          "actual": "A",
+          "expected": "A",
+          "matches": true
+        },
+        {
+          "name": "switch write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "first failed demand",
+          "actual": "syntax error",
+          "expected": "syntax error",
+          "matches": true
+        },
+        {
+          "name": "second failed demand",
+          "actual": "syntax error",
+          "expected": "syntax error",
+          "matches": true
+        },
+        {
+          "name": "failed demand retries",
+          "actual": 1,
+          "expected": 1,
+          "matches": true
+        },
+        {
+          "name": "obsolete backend write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "repair write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "recovered compile",
+          "actual": "B",
+          "expected": "B",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "1.1.1",
+      "outcome": "match",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "quant",
+      "workload": "combined",
+      "checks": [
+        {
+          "name": "batch error",
+          "actual": "parse failed",
+          "expected": "parse failed",
+          "matches": true
+        },
+        {
+          "name": "route during batch",
+          "actual": 4,
+          "expected": 4,
+          "matches": true
+        },
+        {
+          "name": "render deferred",
+          "actual": [
+            "attach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK"
+          ],
+          "matches": true
+        },
+        {
+          "name": "resource survives failed validation",
+          "actual": [
+            "attach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK"
+          ],
+          "matches": true
+        },
+        {
+          "name": "repair error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "selection recovered",
+          "actual": "out-0",
+          "expected": "out-0",
+          "matches": true
+        },
+        {
+          "name": "render handoff",
+          "actual": [
+            "attach 2:OK",
+            "detach 2:OK",
+            "attach 4:FIXED"
+          ],
+          "expected": [
+            "attach 2:OK",
+            "detach 2:OK",
+            "attach 4:FIXED"
+          ],
+          "matches": true
+        },
+        {
+          "name": "disposed renderer",
+          "actual": "detach 4:FIXED",
+          "expected": "detach 4:FIXED",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "1.1.1",
+      "outcome": "match",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "preact",
+      "workload": "workflow",
+      "checks": [
+        {
+          "name": "initial route",
+          "actual": [
+            51
+          ],
+          "expected": [
+            51
+          ],
+          "matches": true
+        },
+        {
+          "name": "cutoff suppresses route",
+          "actual": [
+            0,
+            [
+              51
+            ]
+          ],
+          "expected": [
+            0,
+            [
+              51
+            ]
+          ],
+          "matches": true
+        },
+        {
+          "name": "selection fallback",
+          "actual": "out-0",
+          "expected": "out-0",
+          "matches": true
+        },
+        {
+          "name": "self-write obligation",
+          "actual": [
+            "out-1",
+            "out-1",
+            "out-0"
+          ],
+          "expected": [
+            "out-1",
+            "out-1",
+            "out-0"
+          ],
+          "matches": true
+        },
+        {
+          "name": "fresh read during batch",
+          "actual": 54,
+          "expected": 54,
+          "matches": true
+        },
+        {
+          "name": "render deferred in batch",
+          "actual": [
+            51
+          ],
+          "expected": [
+            51
+          ],
+          "matches": true
+        },
+        {
+          "name": "single batched render",
+          "actual": [
+            51,
+            54
+          ],
+          "expected": [
+            51,
+            54
+          ],
+          "matches": true
+        },
+        {
+          "name": "branch switch",
+          "actual": 72,
+          "expected": 72,
+          "matches": true
+        },
+        {
+          "name": "old branch detached",
+          "actual": 3,
+          "expected": 3,
+          "matches": true
+        },
+        {
+          "name": "new branch live",
+          "actual": 74,
+          "expected": 74,
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "1.14.5",
+      "outcome": "match",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "preact",
+      "workload": "handoff",
+      "checks": [
+        {
+          "name": "validation error",
+          "actual": "expired credentials",
+          "expected": "expired credentials",
+          "matches": true
+        },
+        {
+          "name": "old resource retained",
+          "actual": [
+            "connect A:valid",
+            "close A:valid"
+          ],
+          "expected": [
+            "connect A:valid"
+          ],
+          "matches": false
+        },
+        {
+          "name": "recovery error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "handoff events",
+          "actual": [
+            "connect A:valid",
+            "close A:valid",
+            "connect B:renewed"
+          ],
+          "expected": [
+            "connect A:valid",
+            "close A:valid",
+            "connect B:renewed"
+          ],
+          "matches": true
+        },
+        {
+          "name": "dispose closes resource",
+          "actual": "close B:renewed",
+          "expected": "close B:renewed",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "1.14.5",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "preact",
+      "workload": "compiler",
+      "checks": [
+        {
+          "name": "initial compile",
+          "actual": "A",
+          "expected": "A",
+          "matches": true
+        },
+        {
+          "name": "switch write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "first failed demand",
+          "actual": "syntax error",
+          "expected": "syntax error",
+          "matches": true
+        },
+        {
+          "name": "second failed demand",
+          "actual": "syntax error",
+          "expected": "syntax error",
+          "matches": true
+        },
+        {
+          "name": "failed demand retries",
+          "actual": 0,
+          "expected": 1,
+          "matches": false
+        },
+        {
+          "name": "obsolete backend write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "repair write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "recovered compile",
+          "actual": "B",
+          "expected": "B",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "1.14.5",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "preact",
+      "workload": "combined",
+      "checks": [
+        {
+          "name": "batch error",
+          "actual": "parse failed",
+          "expected": "parse failed",
+          "matches": true
+        },
+        {
+          "name": "route during batch",
+          "actual": 4,
+          "expected": 4,
+          "matches": true
+        },
+        {
+          "name": "render deferred",
+          "actual": [
+            "attach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK"
+          ],
+          "matches": true
+        },
+        {
+          "name": "resource survives failed validation",
+          "actual": [
+            "attach 2:OK",
+            "detach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK"
+          ],
+          "matches": false
+        },
+        {
+          "name": "repair error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "selection recovered",
+          "actual": "out-0",
+          "expected": "out-0",
+          "matches": true
+        },
+        {
+          "name": "render handoff",
+          "actual": [
+            "attach 2:OK",
+            "detach 2:OK",
+            "attach 4:FIXED"
+          ],
+          "expected": [
+            "attach 2:OK",
+            "detach 2:OK",
+            "attach 4:FIXED"
+          ],
+          "matches": true
+        },
+        {
+          "name": "disposed renderer",
+          "actual": "detach 4:FIXED",
+          "expected": "detach 4:FIXED",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "1.14.5",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "alien",
+      "workload": "workflow",
+      "checks": [
+        {
+          "name": "initial route",
+          "actual": [
+            51
+          ],
+          "expected": [
+            51
+          ],
+          "matches": true
+        },
+        {
+          "name": "cutoff suppresses route",
+          "actual": [
+            0,
+            [
+              51
+            ]
+          ],
+          "expected": [
+            0,
+            [
+              51
+            ]
+          ],
+          "matches": true
+        },
+        {
+          "name": "selection fallback",
+          "actual": "out-0",
+          "expected": "out-0",
+          "matches": true
+        },
+        {
+          "name": "self-write obligation",
+          "actual": [
+            "out-1",
+            "out-1"
+          ],
+          "expected": [
+            "out-1",
+            "out-1",
+            "out-0"
+          ],
+          "matches": false
+        },
+        {
+          "name": "fresh read during batch",
+          "actual": 54,
+          "expected": 54,
+          "matches": true
+        },
+        {
+          "name": "render deferred in batch",
+          "actual": [
+            51
+          ],
+          "expected": [
+            51
+          ],
+          "matches": true
+        },
+        {
+          "name": "single batched render",
+          "actual": [
+            51,
+            54
+          ],
+          "expected": [
+            51,
+            54
+          ],
+          "matches": true
+        },
+        {
+          "name": "branch switch",
+          "actual": 72,
+          "expected": 72,
+          "matches": true
+        },
+        {
+          "name": "old branch detached",
+          "actual": 3,
+          "expected": 3,
+          "matches": true
+        },
+        {
+          "name": "new branch live",
+          "actual": 74,
+          "expected": 74,
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "3.2.1",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "alien",
+      "workload": "handoff",
+      "checks": [
+        {
+          "name": "validation error",
+          "actual": "expired credentials",
+          "expected": "expired credentials",
+          "matches": true
+        },
+        {
+          "name": "old resource retained",
+          "actual": [
+            "connect A:valid",
+            "close A:valid"
+          ],
+          "expected": [
+            "connect A:valid"
+          ],
+          "matches": false
+        },
+        {
+          "name": "recovery error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "handoff events",
+          "actual": [
+            "connect A:valid",
+            "close A:valid"
+          ],
+          "expected": [
+            "connect A:valid",
+            "close A:valid",
+            "connect B:renewed"
+          ],
+          "matches": false
+        },
+        {
+          "name": "dispose closes resource",
+          "actual": "close A:valid",
+          "expected": "close B:renewed",
+          "matches": false
+        }
+      ],
+      "error": null,
+      "version": "3.2.1",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "alien",
+      "workload": "compiler",
+      "checks": [
+        {
+          "name": "initial compile",
+          "actual": "A",
+          "expected": "A",
+          "matches": true
+        },
+        {
+          "name": "switch write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "first failed demand",
+          "actual": "syntax error",
+          "expected": "syntax error",
+          "matches": true
+        },
+        {
+          "name": "second failed demand",
+          "actual": "returned A",
+          "expected": "syntax error",
+          "matches": false
+        },
+        {
+          "name": "failed demand retries",
+          "actual": 0,
+          "expected": 1,
+          "matches": false
+        },
+        {
+          "name": "obsolete backend write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "repair write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "recovered compile",
+          "actual": "B",
+          "expected": "B",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "3.2.1",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "alien",
+      "workload": "combined",
+      "checks": [
+        {
+          "name": "batch error",
+          "actual": "parse failed",
+          "expected": "parse failed",
+          "matches": true
+        },
+        {
+          "name": "route during batch",
+          "actual": 4,
+          "expected": 4,
+          "matches": true
+        },
+        {
+          "name": "render deferred",
+          "actual": [
+            "attach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK"
+          ],
+          "matches": true
+        },
+        {
+          "name": "resource survives failed validation",
+          "actual": [
+            "attach 2:OK",
+            "detach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK"
+          ],
+          "matches": false
+        },
+        {
+          "name": "repair error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "selection recovered",
+          "actual": "out-1",
+          "expected": "out-0",
+          "matches": false
+        },
+        {
+          "name": "render handoff",
+          "actual": [
+            "attach 2:OK",
+            "detach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK",
+            "detach 2:OK",
+            "attach 4:FIXED"
+          ],
+          "matches": false
+        },
+        {
+          "name": "disposed renderer",
+          "actual": "detach 2:OK",
+          "expected": "detach 4:FIXED",
+          "matches": false
+        }
+      ],
+      "error": null,
+      "version": "3.2.1",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "vue",
+      "workload": "workflow",
+      "checks": [
+        {
+          "name": "initial route",
+          "actual": [
+            51
+          ],
+          "expected": [
+            51
+          ],
+          "matches": true
+        },
+        {
+          "name": "cutoff suppresses route",
+          "actual": [
+            0,
+            [
+              51
+            ]
+          ],
+          "expected": [
+            0,
+            [
+              51
+            ]
+          ],
+          "matches": true
+        },
+        {
+          "name": "selection fallback",
+          "actual": "out-0",
+          "expected": "out-0",
+          "matches": true
+        },
+        {
+          "name": "self-write obligation",
+          "actual": [
+            "out-1",
+            "out-1"
+          ],
+          "expected": [
+            "out-1",
+            "out-1",
+            "out-0"
+          ],
+          "matches": false
+        },
+        {
+          "name": "fresh read during batch",
+          "actual": 54,
+          "expected": 54,
+          "matches": true
+        },
+        {
+          "name": "render deferred in batch",
+          "actual": [
+            51
+          ],
+          "expected": [
+            51
+          ],
+          "matches": true
+        },
+        {
+          "name": "single batched render",
+          "actual": [
+            51,
+            54
+          ],
+          "expected": [
+            51,
+            54
+          ],
+          "matches": true
+        },
+        {
+          "name": "branch switch",
+          "actual": 72,
+          "expected": 72,
+          "matches": true
+        },
+        {
+          "name": "old branch detached",
+          "actual": 3,
+          "expected": 3,
+          "matches": true
+        },
+        {
+          "name": "new branch live",
+          "actual": 74,
+          "expected": 74,
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "3.5.45",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "vue",
+      "workload": "handoff",
+      "checks": [
+        {
+          "name": "validation error",
+          "actual": "expired credentials",
+          "expected": "expired credentials",
+          "matches": true
+        },
+        {
+          "name": "old resource retained",
+          "actual": [
+            "connect A:valid",
+            "close A:valid"
+          ],
+          "expected": [
+            "connect A:valid"
+          ],
+          "matches": false
+        },
+        {
+          "name": "recovery error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "handoff events",
+          "actual": [
+            "connect A:valid",
+            "close A:valid",
+            "connect B:renewed"
+          ],
+          "expected": [
+            "connect A:valid",
+            "close A:valid",
+            "connect B:renewed"
+          ],
+          "matches": true
+        },
+        {
+          "name": "dispose closes resource",
+          "actual": "close B:renewed",
+          "expected": "close B:renewed",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "3.5.45",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "vue",
+      "workload": "compiler",
+      "checks": [
+        {
+          "name": "initial compile",
+          "actual": "A",
+          "expected": "A",
+          "matches": true
+        },
+        {
+          "name": "switch write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "first failed demand",
+          "actual": "syntax error",
+          "expected": "syntax error",
+          "matches": true
+        },
+        {
+          "name": "second failed demand",
+          "actual": "returned A",
+          "expected": "syntax error",
+          "matches": false
+        },
+        {
+          "name": "failed demand retries",
+          "actual": 0,
+          "expected": 1,
+          "matches": false
+        },
+        {
+          "name": "obsolete backend write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "repair write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "recovered compile",
+          "actual": "B",
+          "expected": "B",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "3.5.45",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "vue",
+      "workload": "combined",
+      "checks": [
+        {
+          "name": "batch error",
+          "actual": "parse failed",
+          "expected": "parse failed",
+          "matches": true
+        },
+        {
+          "name": "route during batch",
+          "actual": 4,
+          "expected": 4,
+          "matches": true
+        },
+        {
+          "name": "render deferred",
+          "actual": [
+            "attach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK"
+          ],
+          "matches": true
+        },
+        {
+          "name": "resource survives failed validation",
+          "actual": [
+            "attach 2:OK",
+            "detach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK"
+          ],
+          "matches": false
+        },
+        {
+          "name": "repair error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "selection recovered",
+          "actual": "out-0",
+          "expected": "out-0",
+          "matches": true
+        },
+        {
+          "name": "render handoff",
+          "actual": [
+            "attach 2:OK",
+            "detach 2:OK",
+            "attach 4:FIXED"
+          ],
+          "expected": [
+            "attach 2:OK",
+            "detach 2:OK",
+            "attach 4:FIXED"
+          ],
+          "matches": true
+        },
+        {
+          "name": "disposed renderer",
+          "actual": "detach 4:FIXED",
+          "expected": "detach 4:FIXED",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "3.5.45",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "vue36",
+      "workload": "workflow",
+      "checks": [
+        {
+          "name": "initial route",
+          "actual": [
+            51
+          ],
+          "expected": [
+            51
+          ],
+          "matches": true
+        },
+        {
+          "name": "cutoff suppresses route",
+          "actual": [
+            0,
+            [
+              51
+            ]
+          ],
+          "expected": [
+            0,
+            [
+              51
+            ]
+          ],
+          "matches": true
+        },
+        {
+          "name": "selection fallback",
+          "actual": "out-0",
+          "expected": "out-0",
+          "matches": true
+        },
+        {
+          "name": "self-write obligation",
+          "actual": [
+            "out-1",
+            "out-1"
+          ],
+          "expected": [
+            "out-1",
+            "out-1",
+            "out-0"
+          ],
+          "matches": false
+        },
+        {
+          "name": "fresh read during batch",
+          "actual": 54,
+          "expected": 54,
+          "matches": true
+        },
+        {
+          "name": "render deferred in batch",
+          "actual": [
+            51
+          ],
+          "expected": [
+            51
+          ],
+          "matches": true
+        },
+        {
+          "name": "single batched render",
+          "actual": [
+            51,
+            54
+          ],
+          "expected": [
+            51,
+            54
+          ],
+          "matches": true
+        },
+        {
+          "name": "branch switch",
+          "actual": 72,
+          "expected": 72,
+          "matches": true
+        },
+        {
+          "name": "old branch detached",
+          "actual": 3,
+          "expected": 3,
+          "matches": true
+        },
+        {
+          "name": "new branch live",
+          "actual": 74,
+          "expected": 74,
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "3.6.0-rc.14",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "vue36",
+      "workload": "handoff",
+      "checks": [
+        {
+          "name": "validation error",
+          "actual": "expired credentials",
+          "expected": "expired credentials",
+          "matches": true
+        },
+        {
+          "name": "old resource retained",
+          "actual": [
+            "connect A:valid",
+            "close A:valid"
+          ],
+          "expected": [
+            "connect A:valid"
+          ],
+          "matches": false
+        },
+        {
+          "name": "recovery error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "handoff events",
+          "actual": [
+            "connect A:valid",
+            "close A:valid"
+          ],
+          "expected": [
+            "connect A:valid",
+            "close A:valid",
+            "connect B:renewed"
+          ],
+          "matches": false
+        },
+        {
+          "name": "dispose closes resource",
+          "actual": "close A:valid",
+          "expected": "close B:renewed",
+          "matches": false
+        }
+      ],
+      "error": null,
+      "version": "3.6.0-rc.14",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "vue36",
+      "workload": "compiler",
+      "checks": [
+        {
+          "name": "initial compile",
+          "actual": "A",
+          "expected": "A",
+          "matches": true
+        },
+        {
+          "name": "switch write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "first failed demand",
+          "actual": "syntax error",
+          "expected": "syntax error",
+          "matches": true
+        },
+        {
+          "name": "second failed demand",
+          "actual": "returned A",
+          "expected": "syntax error",
+          "matches": false
+        },
+        {
+          "name": "failed demand retries",
+          "actual": 0,
+          "expected": 1,
+          "matches": false
+        },
+        {
+          "name": "obsolete backend write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "repair write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "recovered compile",
+          "actual": "B",
+          "expected": "B",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "3.6.0-rc.14",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "vue36",
+      "workload": "combined",
+      "checks": [
+        {
+          "name": "batch error",
+          "actual": "parse failed",
+          "expected": "parse failed",
+          "matches": true
+        },
+        {
+          "name": "route during batch",
+          "actual": 4,
+          "expected": 4,
+          "matches": true
+        },
+        {
+          "name": "render deferred",
+          "actual": [
+            "attach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK"
+          ],
+          "matches": true
+        },
+        {
+          "name": "resource survives failed validation",
+          "actual": [
+            "attach 2:OK",
+            "detach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK"
+          ],
+          "matches": false
+        },
+        {
+          "name": "repair error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "selection recovered",
+          "actual": "out-1",
+          "expected": "out-0",
+          "matches": false
+        },
+        {
+          "name": "render handoff",
+          "actual": [
+            "attach 2:OK",
+            "detach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK",
+            "detach 2:OK",
+            "attach 4:FIXED"
+          ],
+          "matches": false
+        },
+        {
+          "name": "disposed renderer",
+          "actual": "detach 2:OK",
+          "expected": "detach 4:FIXED",
+          "matches": false
+        }
+      ],
+      "error": null,
+      "version": "3.6.0-rc.14",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "mobx",
+      "workload": "workflow",
+      "checks": [
+        {
+          "name": "initial route",
+          "actual": [
+            51
+          ],
+          "expected": [
+            51
+          ],
+          "matches": true
+        },
+        {
+          "name": "cutoff suppresses route",
+          "actual": [
+            0,
+            [
+              51
+            ]
+          ],
+          "expected": [
+            0,
+            [
+              51
+            ]
+          ],
+          "matches": true
+        },
+        {
+          "name": "selection fallback",
+          "actual": "out-0",
+          "expected": "out-0",
+          "matches": true
+        },
+        {
+          "name": "self-write obligation",
+          "actual": [
+            "out-1",
+            "out-1",
+            "out-0"
+          ],
+          "expected": [
+            "out-1",
+            "out-1",
+            "out-0"
+          ],
+          "matches": true
+        },
+        {
+          "name": "fresh read during batch",
+          "actual": 54,
+          "expected": 54,
+          "matches": true
+        },
+        {
+          "name": "render deferred in batch",
+          "actual": [
+            51
+          ],
+          "expected": [
+            51
+          ],
+          "matches": true
+        },
+        {
+          "name": "single batched render",
+          "actual": [
+            51,
+            54
+          ],
+          "expected": [
+            51,
+            54
+          ],
+          "matches": true
+        },
+        {
+          "name": "branch switch",
+          "actual": 72,
+          "expected": 72,
+          "matches": true
+        },
+        {
+          "name": "old branch detached",
+          "actual": 3,
+          "expected": 3,
+          "matches": true
+        },
+        {
+          "name": "new branch live",
+          "actual": 74,
+          "expected": 74,
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "7.1.5",
+      "outcome": "match",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "mobx",
+      "workload": "handoff",
+      "checks": [
+        {
+          "name": "validation error",
+          "actual": "none",
+          "expected": "expired credentials",
+          "matches": false
+        },
+        {
+          "name": "old resource retained",
+          "actual": [
+            "connect A:valid",
+            "close A:valid"
+          ],
+          "expected": [
+            "connect A:valid"
+          ],
+          "matches": false
+        },
+        {
+          "name": "recovery error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "handoff events",
+          "actual": [
+            "connect A:valid",
+            "close A:valid",
+            "connect B:renewed"
+          ],
+          "expected": [
+            "connect A:valid",
+            "close A:valid",
+            "connect B:renewed"
+          ],
+          "matches": true
+        },
+        {
+          "name": "dispose closes resource",
+          "actual": "close B:renewed",
+          "expected": "close B:renewed",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "7.1.5",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": "[mobx] Encountered an uncaught exception that was thrown by a reaction or observer component, in: 'Reaction[Autorun@5]' Error: expired credentials\n    at file:///D:/PersonalProjects/js-reactivity-benchmark/scripts/semantic-gauntlet/compare.mjs:291:36\n    at trackDerivedFunction (D:\\PersonalProjects\\js-reactivity-benchmark\\node_modules\\.pnpm\\mobx@7.1.5\\node_modules\\mobx\\dist\\mobx.cjs.development.js:1623:18)\n    at ComputedValue.computeValue_ (D:\\PersonalProjects\\js-reactivity-benchmark\\node_modules\\.pnpm\\mobx@7.1.5\\node_modules\\mobx\\dist\\mobx.cjs.development.js:1471:13)\n    at ComputedValue.trackAndCompute (D:\\PersonalProjects\\js-reactivity-benchmark\\node_modules\\.pnpm\\mobx@7.1.5\\node_modules\\mobx\\dist\\mobx.cjs.development.js:1448:27)\n    at ComputedValue.get (D:\\PersonalProjects\\js-reactivity-benchmark\\node_modules\\.pnpm\\mobx@7.1.5\\node_modules\\mobx\\dist\\mobx.cjs.development.js:1413:18)\n    at Object.read (file:///D:/PersonalProjects/js-reactivity-benchmark/scripts/semantic-gauntlet/compare.mjs:150:32)\n    at file:///D:/PersonalProjects/js-reactivity-benchmark/scripts/semantic-gauntlet/compare.mjs:297:32\n    at file:///D:/PersonalProjects/js-reactivity-benchmark/scripts/semantic-gauntlet/compare.mjs:158:21\n    at reactionRunner (D:\\PersonalProjects\\js-reactivity-benchmark\\node_modules\\.pnpm\\mobx@7.1.5\\node_modules\\mobx\\dist\\mobx.cjs.development.js:2524:5)\n    at trackDerivedFunction (D:\\PersonalProjects\\js-reactivity-benchmark\\node_modules\\.pnpm\\mobx@7.1.5\\node_modules\\mobx\\dist\\mobx.cjs.development.js:1623:18)"
+    },
+    {
+      "name": "mobx",
+      "workload": "compiler",
+      "checks": [
+        {
+          "name": "initial compile",
+          "actual": "A",
+          "expected": "A",
+          "matches": true
+        },
+        {
+          "name": "switch write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "first failed demand",
+          "actual": "syntax error",
+          "expected": "syntax error",
+          "matches": true
+        },
+        {
+          "name": "second failed demand",
+          "actual": "syntax error",
+          "expected": "syntax error",
+          "matches": true
+        },
+        {
+          "name": "failed demand retries",
+          "actual": 0,
+          "expected": 1,
+          "matches": false
+        },
+        {
+          "name": "obsolete backend write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "repair write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "recovered compile",
+          "actual": "B",
+          "expected": "B",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "7.1.5",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "mobx",
+      "workload": "combined",
+      "checks": [
+        {
+          "name": "batch error",
+          "actual": "none",
+          "expected": "parse failed",
+          "matches": false
+        },
+        {
+          "name": "route during batch",
+          "actual": 4,
+          "expected": 4,
+          "matches": true
+        },
+        {
+          "name": "render deferred",
+          "actual": [
+            "attach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK"
+          ],
+          "matches": true
+        },
+        {
+          "name": "resource survives failed validation",
+          "actual": [
+            "attach 2:OK",
+            "detach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK"
+          ],
+          "matches": false
+        },
+        {
+          "name": "repair error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "selection recovered",
+          "actual": "out-0",
+          "expected": "out-0",
+          "matches": true
+        },
+        {
+          "name": "render handoff",
+          "actual": [
+            "attach 2:OK",
+            "detach 2:OK",
+            "attach 4:FIXED"
+          ],
+          "expected": [
+            "attach 2:OK",
+            "detach 2:OK",
+            "attach 4:FIXED"
+          ],
+          "matches": true
+        },
+        {
+          "name": "disposed renderer",
+          "actual": "detach 4:FIXED",
+          "expected": "detach 4:FIXED",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "7.1.5",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": "[mobx] Encountered an uncaught exception that was thrown by a reaction or observer component, in: 'Reaction[Autorun@8]' Error: parse failed\n    at file:///D:/PersonalProjects/js-reactivity-benchmark/scripts/semantic-gauntlet/compare.mjs:395:28\n    at trackDerivedFunction (D:\\PersonalProjects\\js-reactivity-benchmark\\node_modules\\.pnpm\\mobx@7.1.5\\node_modules\\mobx\\dist\\mobx.cjs.development.js:1623:18)\n    at ComputedValue.computeValue_ (D:\\PersonalProjects\\js-reactivity-benchmark\\node_modules\\.pnpm\\mobx@7.1.5\\node_modules\\mobx\\dist\\mobx.cjs.development.js:1471:13)\n    at ComputedValue.trackAndCompute (D:\\PersonalProjects\\js-reactivity-benchmark\\node_modules\\.pnpm\\mobx@7.1.5\\node_modules\\mobx\\dist\\mobx.cjs.development.js:1448:27)\n    at ComputedValue.get (D:\\PersonalProjects\\js-reactivity-benchmark\\node_modules\\.pnpm\\mobx@7.1.5\\node_modules\\mobx\\dist\\mobx.cjs.development.js:1413:18)\n    at Object.read (file:///D:/PersonalProjects/js-reactivity-benchmark/scripts/semantic-gauntlet/compare.mjs:150:32)\n    at file:///D:/PersonalProjects/js-reactivity-benchmark/scripts/semantic-gauntlet/compare.mjs:405:26\n    at file:///D:/PersonalProjects/js-reactivity-benchmark/scripts/semantic-gauntlet/compare.mjs:158:21\n    at reactionRunner (D:\\PersonalProjects\\js-reactivity-benchmark\\node_modules\\.pnpm\\mobx@7.1.5\\node_modules\\mobx\\dist\\mobx.cjs.development.js:2524:5)\n    at trackDerivedFunction (D:\\PersonalProjects\\js-reactivity-benchmark\\node_modules\\.pnpm\\mobx@7.1.5\\node_modules\\mobx\\dist\\mobx.cjs.development.js:1623:18)"
+    },
+    {
+      "name": "solid",
+      "workload": "workflow",
+      "checks": [
+        {
+          "name": "initial route",
+          "actual": [
+            51
+          ],
+          "expected": [
+            51
+          ],
+          "matches": true
+        },
+        {
+          "name": "cutoff suppresses route",
+          "actual": [
+            0,
+            [
+              51
+            ]
+          ],
+          "expected": [
+            0,
+            [
+              51
+            ]
+          ],
+          "matches": true
+        },
+        {
+          "name": "selection fallback",
+          "actual": "out-0",
+          "expected": "out-0",
+          "matches": true
+        },
+        {
+          "name": "self-write obligation",
+          "actual": [
+            "out-1",
+            "out-1",
+            "out-0"
+          ],
+          "expected": [
+            "out-1",
+            "out-1",
+            "out-0"
+          ],
+          "matches": true
+        },
+        {
+          "name": "fresh read during batch",
+          "actual": 54,
+          "expected": 54,
+          "matches": true
+        },
+        {
+          "name": "render deferred in batch",
+          "actual": [
+            51
+          ],
+          "expected": [
+            51
+          ],
+          "matches": true
+        },
+        {
+          "name": "single batched render",
+          "actual": [
+            51,
+            54
+          ],
+          "expected": [
+            51,
+            54
+          ],
+          "matches": true
+        },
+        {
+          "name": "branch switch",
+          "actual": 72,
+          "expected": 72,
+          "matches": true
+        },
+        {
+          "name": "old branch detached",
+          "actual": 3,
+          "expected": 3,
+          "matches": true
+        },
+        {
+          "name": "new branch live",
+          "actual": 74,
+          "expected": 74,
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "1.9.18",
+      "outcome": "match",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "solid",
+      "workload": "handoff",
+      "checks": [
+        {
+          "name": "validation error",
+          "actual": "expired credentials",
+          "expected": "expired credentials",
+          "matches": true
+        },
+        {
+          "name": "old resource retained",
+          "actual": [
+            "connect A:valid"
+          ],
+          "expected": [
+            "connect A:valid"
+          ],
+          "matches": true
+        },
+        {
+          "name": "recovery error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "handoff events",
+          "actual": [
+            "connect A:valid"
+          ],
+          "expected": [
+            "connect A:valid",
+            "close A:valid",
+            "connect B:renewed"
+          ],
+          "matches": false
+        },
+        {
+          "name": "dispose closes resource",
+          "actual": "close A:valid",
+          "expected": "close B:renewed",
+          "matches": false
+        }
+      ],
+      "error": null,
+      "version": "1.9.18",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "solid",
+      "workload": "compiler",
+      "checks": [
+        {
+          "name": "initial compile",
+          "actual": "A",
+          "expected": "A",
+          "matches": true
+        },
+        {
+          "name": "switch write error",
+          "actual": "syntax error",
+          "expected": "none",
+          "matches": false
+        },
+        {
+          "name": "first failed demand",
+          "actual": "syntax error",
+          "expected": "syntax error",
+          "matches": true
+        },
+        {
+          "name": "second failed demand",
+          "actual": "syntax error",
+          "expected": "syntax error",
+          "matches": true
+        },
+        {
+          "name": "failed demand retries",
+          "actual": 1,
+          "expected": 1,
+          "matches": true
+        },
+        {
+          "name": "obsolete backend write error",
+          "actual": "obsolete backend",
+          "expected": "none",
+          "matches": false
+        },
+        {
+          "name": "repair write error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "recovered compile",
+          "actual": "B",
+          "expected": "B",
+          "matches": true
+        }
+      ],
+      "error": null,
+      "version": "1.9.18",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "name": "solid",
+      "workload": "combined",
+      "checks": [
+        {
+          "name": "batch error",
+          "actual": "parse failed",
+          "expected": "parse failed",
+          "matches": true
+        },
+        {
+          "name": "route during batch",
+          "actual": 4,
+          "expected": 4,
+          "matches": true
+        },
+        {
+          "name": "render deferred",
+          "actual": [
+            "attach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK"
+          ],
+          "matches": true
+        },
+        {
+          "name": "resource survives failed validation",
+          "actual": [
+            "attach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK"
+          ],
+          "matches": true
+        },
+        {
+          "name": "repair error",
+          "actual": "none",
+          "expected": "none",
+          "matches": true
+        },
+        {
+          "name": "selection recovered",
+          "actual": "out-1",
+          "expected": "out-0",
+          "matches": false
+        },
+        {
+          "name": "render handoff",
+          "actual": [
+            "attach 2:OK"
+          ],
+          "expected": [
+            "attach 2:OK",
+            "detach 2:OK",
+            "attach 4:FIXED"
+          ],
+          "matches": false
+        },
+        {
+          "name": "disposed renderer",
+          "actual": "detach 2:OK",
+          "expected": "detach 4:FIXED",
+          "matches": false
+        }
+      ],
+      "error": null,
+      "version": "1.9.18",
+      "outcome": "difference",
+      "exitCode": 0,
+      "stderr": ""
+    }
+  ]
+}

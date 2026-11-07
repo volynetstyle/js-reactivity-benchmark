@@ -316,6 +316,7 @@ primitives. These policies and current stress limits are recorded in the recheck
 - [scripts/bench-and-update.mjs](scripts/bench-and-update.mjs) - full benchmark-and-refresh pipeline
 - [scripts/render-results-page.mjs](scripts/render-results-page.mjs) - log parser and profile-oriented HTML report generator
 - [tests/frameworks.test.ts](tests/frameworks.test.ts) - adapter sanity checks with `vitest`
+- [Semantic application gauntlet](docs/semantic-application-gauntlet.md) - application-shaped correctness checks, separate from timed benchmarks
 
 ## Notes
 
