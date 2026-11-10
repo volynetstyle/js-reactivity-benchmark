@@ -7,6 +7,99 @@ import {
   rangeCoverage,
   renderResultsPage,
 } from "../../scripts/render-results-page.mjs";
+import { pairedComparison } from "../../scripts/paired-statistics.mjs";
+
+test("stress failures and lifecycle gaps leave a common core leaderboard with explicit coverage", () => {
+  const parsed = parseBenchOutput(
+    [
+      "a , common , 10 , , , , update , stable , samples=10",
+      "b , common , 20 , , , , update , stable , samples=10",
+      'a , heavy , FAILED , , , , large_graph , dag , FAILED kind=stack-overflow reason="deep graph"',
+      "b , heavy , >1500 , , , , large_graph , dag , CENSORED samples=0 ceiling=1500ms",
+      'a , native lifecycle , FAILED , , , , lifecycle , native , FAILED kind=error reason="dispose"',
+    ].join("\n")
+  );
+  expect(parsed.commonTests).toEqual(["common"]);
+  expect(
+    parsed.frameworks.map(({ name, relativeScore, unranked }) => [
+      name,
+      relativeScore,
+      unranked,
+    ])
+  ).toEqual([
+    ["a", 1, false],
+    ["b", 2, false],
+  ]);
+  expect(parsed.frameworks[0].stressCoverage).toMatchObject({
+    completed: 0,
+    total: 1,
+    failed: 1,
+  });
+  expect(parsed.frameworks[1].capabilityCoverage).toMatchObject({
+    total: 1,
+    unsupported: 1,
+  });
+  const html = renderResultsPage(parsed);
+  expect(html).toContain(
+    "3 scenarios total · 1 in core performance score · 1 stress / scalability scenarios · 1 lifecycle capability scenarios"
+  );
+  expect(html).toContain("Stress / Scalability Suite");
+  expect(html).toContain("Stress coverage: 0/1 completed · 1 failed");
+  expect(html).toContain("FAILED");
+  expect(html).toContain("CENSORED");
+});
+
+test("no shared core evidence gives every framework no score, including stress-only runs", () => {
+  for (const log of [
+    "a , t , 1\nb , t , >1500 , CENSORED samples=0 ceiling=1500ms",
+    "a , stress , 1 , , , , large_graph , dag , samples=10",
+    'a , core , FAILED , , , , update , stable , FAILED kind=incorrect reason="wrong value"',
+  ]) {
+    const parsed = parseBenchOutput(log);
+    expect(parsed.commonTests).toEqual([]);
+    expect(
+      parsed.frameworks.every(
+        (framework) =>
+          framework.unranked && Number.isNaN(framework.relativeScore)
+      )
+    ).toBe(true);
+    expect(renderResultsPage(parsed)).toContain("No ranked results");
+  }
+});
+
+test("partial evidence pairs only identical machine IDs and never invents missing hosts", () => {
+  const left = {
+    partial: true,
+    machineIds: [1, 3],
+    machineEstimates: [10, 40],
+    processEstimates: [
+      [9, 10, 11],
+      [36, 40, 44],
+    ],
+  };
+  const right = {
+    machineIds: [1, 2, 3],
+    machineEstimates: [20, 800, 80],
+    processEstimates: [
+      [18, 20, 22],
+      [700, 800, 900],
+      [72, 80, 88],
+    ],
+  };
+  expect(pairedComparison(left, right)).toMatchObject({
+    machineRatios: [0.5, 0.5],
+    processRatios: [
+      [0.5, 0.5, 0.5],
+      [0.5, 0.5, 0.5],
+    ],
+  });
+  expect(
+    pairedComparison(left, { machineIds: [2], machineEstimates: [800] })
+  ).toBeUndefined();
+  expect(
+    pairedComparison({ ...left, machineIds: undefined }, right)
+  ).toBeUndefined();
+});
 
 describe("benchmark result quality", () => {
   test("reads capped status from the compact mitata format", () => {
@@ -36,13 +129,21 @@ test("censored pilots never set the best time or enter an exact score", () => {
     [
       "a , t , 2000 , , , , update , stable , samples=10",
       "b , t , >1500 , , , , update , stable , CENSORED samples=0 ceiling=1500ms",
+      "a , common , 1 , , , , update , stable , samples=10",
+      "b , common , 2 , , , , update , stable , samples=10",
     ].join("\n")
   );
   expect(parsed.frameworks[0]).toMatchObject({ name: "a", relativeScore: 1 });
-  expect(parsed.frameworks[1]).toMatchObject({ name: "b", unranked: true });
-  expect(parsed.frameworks[1].relativeScore).toBeNaN();
+  expect(parsed.frameworks[1]).toMatchObject({
+    name: "b",
+    unranked: false,
+    relativeScore: 2,
+  });
+  expect(parsed.commonTests).toEqual(["common"]);
   expect(renderResultsPage(parsed)).toContain("&gt;1500.00 ms");
-  expect(renderResultsPage(parsed)).toContain("not ranked: 1 censored");
+  expect(renderResultsPage(parsed)).toContain(
+    "1 core scenarios excluded for all participants"
+  );
 });
 
 test("an entirely censored publication renders without inventing a leader", () => {
@@ -178,9 +279,9 @@ test("failed rows are results: shown, not scored, and never ranked on a subset",
       "a , easy , 1 , , , , update , stable , samples=10",
       "b , easy , 2 , , , , update , stable , samples=10",
       "c , easy , 0.5 , , , , update , stable , samples=10",
-      "a , hard , 10 , , , , large_graph , dag , samples=10",
-      "b , hard , 20 , , , , large_graph , dag , samples=10",
-      'c , hard , FAILED , , , , large_graph , dag , FAILED kind=out-of-memory reason="worker exited with code 134"',
+      "a , hard , 10 , , , , update , dag , samples=10",
+      "b , hard , 20 , , , , update , dag , samples=10",
+      'c , hard , FAILED , , , , update , dag , FAILED kind=out-of-memory reason="worker exited with code 134"',
     ].join("\n")
   );
   const c = parsed.frameworks.find((framework) => framework.name === "c");
@@ -197,7 +298,7 @@ test("failed rows are results: shown, not scored, and never ranked on a subset",
   ]);
   expect(parsed.frameworks[0].relativeScore).toBeCloseTo(Math.sqrt(2));
   // ...but gets no group score where it failed.
-  expect(c.groupScores.large_graph).toBeUndefined();
+  expect(c.groupScores.update).toBeUndefined();
   const page = renderResultsPage(parsed);
   expect(page).toContain("not ranked: 1 failed");
   expect(page).toContain("out-of-memory");

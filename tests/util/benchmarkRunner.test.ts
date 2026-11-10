@@ -170,6 +170,83 @@ test("the slow-row cap does not depend on registration or run order", async () =
   expect(rows.fast.metrics).toContain("samples=3");
 });
 
+test("steady censoring uses validated post-warmup time even when the cold call is slow", async () => {
+  const { registerBenchmark, runBenchmarks } =
+    await import("../../src/util/benchmark");
+  const read = samplesFile();
+  for (const framework of ["cold-slow", "steady-slow", "fast"]) {
+    let invocation = 0;
+    registerBenchmark({
+      framework,
+      name: "phase probe",
+      gc: "steady",
+      setup: () => null,
+      benchmark: () => {
+        const cold = invocation++ === 0;
+        clock += cold
+          ? framework === "cold-slow"
+            ? 10_000
+            : 1
+          : framework === "steady-slow"
+            ? 5000
+            : 2;
+        return 1;
+      },
+      validate: (value) => expect(value).toBe(1),
+    });
+  }
+  await runBenchmarks();
+  const records = read().rows;
+  const cold = records.find((row: any) => row.framework === "cold-slow");
+  expect(cold).toMatchObject({ capped: false, estimateMs: 2 });
+  expect(cold.rounds[0]).toMatchObject({
+    pilotMs: 10_000,
+    censorMs: 2,
+    warmupMs: [2, 2],
+    samplesMs: [2, 2, 2],
+  });
+  const steady = records.find((row: any) => row.framework === "steady-slow");
+  expect(steady).toMatchObject({
+    capped: true,
+    censorPhase: "steady",
+    ceilingMs: 1500,
+  });
+  expect(steady.rounds[0]).toMatchObject({
+    pilotMs: 1,
+    censorMs: 5000,
+    warmupMs: [5000, 5000],
+    samplesMs: [],
+  });
+  expect(read().measurementVersion).toBe("v3");
+});
+
+test("creation still censors the cold pilot before warmup", async () => {
+  const { registerBenchmark, runBenchmarks } =
+    await import("../../src/util/benchmark");
+  const read = samplesFile();
+  for (const [framework, duration] of [
+    ["slow", 5000],
+    ["fast", 1],
+  ] as const) {
+    registerBenchmark({
+      framework,
+      name: "creation probe",
+      group: "creation",
+      setup: () => null,
+      benchmark: () => (clock += duration),
+      validate: () => {},
+    });
+  }
+  await runBenchmarks();
+  expect(
+    read().rows.find((row: any) => row.framework === "slow")
+  ).toMatchObject({
+    capped: true,
+    censorPhase: "cold",
+    rounds: [{ pilotMs: 5000, censorMs: 5000, warmupMs: [], samplesMs: [] }],
+  });
+});
+
 test("rounds report the median of round medians and their range", async () => {
   vi.stubEnv("BENCH_ROUNDS", "3");
   const { registerBenchmark, runBenchmarks } =

@@ -217,7 +217,7 @@ The report groups benchmarks into these families:
 ### Sampling
 
 Each row runs in a fresh process: one pilot (cold), validated warmup
-invocations, then measured samples. Measurement protocol **v2** uses `cold` GC
+invocations, then measured samples. Measurement protocol **v3** uses `cold` GC
 for creation (after each fixture setup, before each timed call) and `steady` GC
 for other workloads (once, after the first fixture setup). `throughput` runs
 with natural GC only. Steady sampling also includes any natural GC triggered
@@ -261,33 +261,57 @@ Rows run scenario-major: all frameworks for one scenario, then the next. The
 framework order follows a deterministic seeded permutation, its reverse, then
 a half rotation. Later blocks shift the base permutation. In the first round,
 available `alien-signals`, `reflex-quant` and `reflex` anchors run first to
-establish a conservative pilot ceiling; other rounds use the full schedule.
+establish a conservative invocation ceiling; other rounds use the full schedule.
 
 ### Adaptive performance ceiling
 
 The default ceiling is:
 
 ```txt
-max(1500 ms, 3 * fastest completed reference pilot for the same scenario)
+max(1500 ms, 3 * fastest completed reference invocation in the same phase and scenario)
 ```
 
-Once a reference exists, a watchdog starts on the worker's pilot-start message
-and kills it when that invocation exceeds the ceiling. Setup, import and forced
-GC do not consume that budget. Until a reference exists, pilots above the floor
-are deferred; after all available pilots, they are censored or remeasured in a
+For `cold` workloads (creation by default), the censor probe is the cold pilot.
+For `steady` and `throughput`, it is the first invocation after validated warmup.
+The cold call and warmup are protected only by `BENCH_ROW_TIMEOUT_MS`, the
+catastrophic watchdog. A successful steady probe is the first measured sample;
+the sample count, chronological order, warmup budget and GC policy stay unchanged.
+
+Once a reference exists, a watchdog starts on the worker's censor-start message
+and kills it when that invocation exceeds the ceiling. Setup, import, IPC and forced
+GC do not consume that budget. Until a reference exists, probes above the floor
+are deferred; after all available probes, they are censored or remeasured in a
 fresh process. Earlier references may make a ceiling more permissive than the
 eventual global best, never stricter. An in-process diagnostic cannot interrupt
-a synchronous pilot and uses deferral only.
+a synchronous invocation and uses deferral only.
 
 A censored row is printed as `>threshold ms CENSORED samples=0`. It has no
-`estimateMs`, measured-sample statistics or uncertainty interval, and its
-framework is unranked overall. A completed pilot remains in the raw rounds for
-audit, but never becomes a measured sample. An interrupted pilot has validation
-`not-completed`. The bound concerns the cold pilot; it does not establish a lower
-bound on the unknown warmed median. If only one machine censors the row, that
-machine is identified and the other records are preserved; no exact merged
-median is computed. Historical `SLOW/CAPPED` rows are likewise excluded from
-scores. Configure with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`.
+`estimateMs`, measured-sample statistics or uncertainty interval. `censor_phase`
+identifies `cold` or `steady`. A completed probe remains in the raw rounds as
+`censorMs` with its cold pilot and warmup for audit, but never becomes a measured
+sample. An interrupted probe has validation `not-completed`. The bound concerns
+that invocation; it does not establish a lower bound on an unknown median.
+Historical `SLOW/CAPPED` rows are likewise excluded from scores. Configure with
+`BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`.
+
+If one machine censors while others measure, the row is **partial**: it retains
+the measured machines' median/range, their real `machine_ids`, measured/total
+coverage, censored machine IDs and all raw machine records. This is not a complete
+multi-machine estimate. No measurements are invented for censored machines.
+Any correctness failure still makes the scenario failed on merge.
+
+### Core eligibility and suite coverage
+
+Declared workload groups determine suites before measurement: `large_graph`
+is stress/scalability (13 scenarios), `lifecycle` is capability (2), and all
+other groups are core (36). This policy never depends on which library wins.
+Only failures in core scenarios prevent core eligibility. Every eligible
+participant is scored on the same fully measured core intersection. Missing,
+censored or partial core evidence excludes that scenario from all core scores,
+not its participant. If that intersection is empty, there is no ranked result.
+The page lists excluded scenario names and total/core/stress/capability counts.
+Stress and lifecycle failures, censoring, partial measurements and unsupported
+capabilities stay visible with coverage counts, without affecting core ranking.
 
 ### Uncertainty
 
@@ -366,10 +390,11 @@ Fast incorrect results are benchmark failures, not wins.
 
 A failure is also a result. A row that is incorrect, throws, crashes, runs
 out of memory, overflows the stack, or times out is logged as `FAILED` with
-its kind, and the remaining rows are still measured. The framework is listed
-but not ranked overall, and gets no score for a workload group in which it
-failed: a score over only the scenarios it survived would describe an easier
-workload set. Outside the publication workflow (`BENCH_ALLOW_FAILURES=1`), any
+its kind, and the remaining rows are still measured. A core failure prevents
+core ranking; stress and lifecycle failures affect their respective coverage.
+There is no group score for a group in which the framework failed: scoring only
+the scenarios it survived would describe an easier workload set.
+Outside the publication workflow (`BENCH_ALLOW_FAILURES=1`), any
 failure still fails the run.
 
 ## Fairness Rules

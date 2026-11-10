@@ -235,19 +235,29 @@ export function mergeShardData(shards) {
     // on one CPU is not reported by its luckier machines).
     const failed = entries.find((entry) => entry.row.status === "failed");
     const censored = entries.find((entry) => entry.row.capped);
+    const measured = entries.filter(
+      (entry) => !entry.row.capped && entry.row.status !== "failed"
+    );
+    const partial =
+      !failed && measured.length > 0 && measured.length < entries.length;
     const paired = pairedById.get(rowId);
     const noise =
-      failed || censored
+      failed || !measured.length
         ? undefined
-        : noiseComponents(entries.map((entry) => entry.row));
-    if (entries.length === 1 || failed || censored) {
+        : noiseComponents(measured.map((entry) => entry.row));
+    if (entries.length === 1 || failed || !measured.length) {
       const chosen = failed ?? censored ?? entries[0];
       const ceilingMs = chosen.row.ceilingMs ?? chosen.row.estimateMs;
       outLines.push(
         failed
           ? chosen.line
           : censored
-            ? censoredLine(chosen.line, ceilingMs, chosen.id)
+            ? censoredLine(
+                chosen.line,
+                ceilingMs,
+                chosen.id,
+                chosen.row.censorPhase ?? "cold"
+              )
             : appendMetrics(chosen.line, [
                 ...noiseTokens(noise),
                 ...pairedTokens(paired),
@@ -285,30 +295,41 @@ export function mergeShardData(shards) {
       });
       continue;
     }
-    const estimates = entries.map((entry) => entry.row.estimateMs);
+    const estimates = measured.map((entry) => entry.row.estimateMs);
     const sorted = [...estimates].sort((a, b) => a - b);
     const estimateMs = median(estimates);
-    const capped = entries.some((entry) => entry.row.capped);
-    const samples = entries.reduce(
+    const capped = false;
+    const samples = measured.reduce(
       (sum, entry) => sum + entry.row.statistics.count,
       0
     );
     outLines.push(
       appendMetrics(
-        rewriteLine(entries[0].line, {
+        rewriteLine(measured[0].line, {
           time: estimateMs,
           samples,
-          machines: entries.length,
+          machines: measured.length,
           range: [sorted[0], sorted[sorted.length - 1]],
           capped,
         }),
         [
+          `machine_ids=${measured.map((entry) => entry.id).join(";")}`,
+          ...(partial
+            ? [
+                "partial=true",
+                `machines_total=${entries.length}`,
+                `censor_machines=${entries
+                  .filter((entry) => entry.row.capped)
+                  .map((entry) => entry.id)
+                  .join(";")}`,
+              ]
+            : []),
           // In machine-round order, so a reader can form ratios within one
           // machine instead of between medians taken from different machines.
           `machine_estimates=${estimates.map((value) => value.toFixed(6)).join(";")}`,
-          ...(entries.every((entry) => processEstimatesOf(entry.row).length)
+          ...(measured.every((entry) => processEstimatesOf(entry.row).length)
             ? [
-                `process_estimates=${entries
+                `process_estimates=${measured
                   .map((entry) =>
                     processEstimatesOf(entry.row)
                       .map((value) => value.toFixed(6))
@@ -330,10 +351,22 @@ export function mergeShardData(shards) {
       group: entries[0].row.group,
       family: entries[0].row.family,
       fixture: entries[0].row.fixture,
-      validation: entries.every((entry) => entry.row.validation === "passed")
+      gcMode: entries[0].row.gcMode,
+      validation: measured.every((entry) => entry.row.validation === "passed")
         ? "passed"
         : "absent",
       capped,
+      partial,
+      measuredMachines: measured.length,
+      totalMachines: entries.length,
+      machineIds: measured.map((entry) => entry.id),
+      censoredMachines: entries
+        .filter((entry) => entry.row.capped)
+        .map((entry) => ({
+          machineRound: entry.id,
+          ceilingMs: entry.row.ceilingMs,
+          censorPhase: entry.row.censorPhase ?? "cold",
+        })),
       estimateMs,
       interval: {
         kind: "machine-median-range",
@@ -423,13 +456,13 @@ function pairedTokens(paired) {
   ];
 }
 
-function censoredLine(line, ceilingMs, machineRound) {
+function censoredLine(line, ceilingMs, machineRound, phase) {
   const parts = line.split(" , ");
   parts[2] = `>${ceilingMs.toFixed(6)}`;
   for (const i of [3, 4, 5]) parts[i] = "";
   return [
     ...parts.slice(0, 8),
-    `CENSORED samples=0 ceiling=${ceilingMs.toFixed(6)}ms pilot=cold censor_machine=${machineRound}`,
+    `CENSORED samples=0 ceiling=${ceilingMs.toFixed(6)}ms censor_phase=${phase} censor_machine=${machineRound}`,
   ].join(" , ");
 }
 

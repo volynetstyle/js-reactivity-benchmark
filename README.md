@@ -16,14 +16,18 @@ The project bundles the runner with `esbuild`, runs benchmarks under `node --exp
 The current workload contract is **semantics v4**: v3's validated values,
 effect delivery and native lifecycle workloads, plus production library builds,
 exact dependency versions, interleaved run order and chronological sampling.
-The measurement protocol is now **v2**: family-specific GC, censored pilots,
-paired comparisons and family-balanced scoring. Compare runs with the same
+The measurement protocol is now **v3**: family-specific GC, censoring in the
+measured workload phase, paired comparisons and family-balanced core scoring. Compare runs with the same
 workload semantics, measurement version and profile; earlier logs need a fresh run. See
 [the research and decisions](docs/benchmark-methodology.md).
 
 Measurement is centralized in [`src/util/benchmark.ts`](src/util/benchmark.ts). Each framework/scenario pair runs in a fresh worker process that loads only the selected library, bundled with `NODE_ENV=production`. Creation uses `cold` GC before every invocation. Other workloads use `steady`: one GC after the first fixture setup, then natural GC during warmup and sampling. Cases can select `throughput` to disable forced GC entirely. Preparation, validation, cleanup, and reporting stay outside timing. No automatic batching or sample trimming is used. Creation fixtures stay fresh; explicitly warm static graphs restore an exact checkpoint between samples.
 
-Every case starts with a cold pilot, excluded from the score. Completed invocations are validated. Pilots exceeding the adaptive ceiling (`max(1500 ms, 3x a completed reference pilot for that scenario)`) are censored. Available anchor implementations (`alien-signals`, `reflex-quant`, `reflex`) calibrate the first round first; the remaining order follows a seeded permutation, its reverse, then a half rotation. A parent watchdog can kill a slow pilot after the ceiling, excluding import, setup and forced GC time. Without a reference, a completed slow pilot is deferred until all available pilots are known. Censored rows show `>threshold ms CENSORED samples=0`, have no exact estimate, and make their framework unranked. This is a bound on the cold pilot, not on an unknown warmed median. Override the ceiling with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`. In-process diagnostics cannot interrupt synchronous JavaScript and use completed-pilot deferral only.
+Every case starts with a cold pilot, excluded from the score. Completed invocations are validated. For `cold` workloads (creation by default), the pilot determines censoring. For `steady` and `throughput`, the cold pilot and warmup are protected only by the catastrophic row watchdog; the first invocation after warmup determines censoring and, if measured, is the first chronological sample. The adaptive ceiling is `max(1500 ms, 3x a completed reference invocation in the same phase for that scenario)`. Available anchor implementations (`alien-signals`, `reflex-quant`, `reflex`) calibrate the first round first; the remaining order follows a seeded permutation, its reverse, then a half rotation. A parent watchdog can interrupt the censor probe, excluding import, setup, IPC and forced GC time. Without a reference, a completed slow probe is deferred until all available probes are known. Censored rows show `>threshold ms CENSORED samples=0`, have no exact median, and identify `censor_phase=cold|steady`. The threshold bounds that invocation, not an unknown median. Override it with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`. In-process diagnostics cannot interrupt synchronous JavaScript and use completed-probe deferral only.
+
+The report separates **Core Leaderboard**, **Stress / Scalability Suite** (the 13 `large_graph` scenarios), and **Lifecycle Capability Scenarios**. This classification uses declared workload groups, never observed speed or failures. Core correctness failures prevent ranking; performance censoring does not disqualify a library. Every core score uses the same intersection of fully measured scenarios across all eligible participants. A missing, censored or partial core scenario is excluded for everyone, with the excluded names and counts shown. Stress and lifecycle failures remain visible alongside completed, partial, censored and unsupported coverage.
+
+When some machines measure a row and others censor it, the merge retains the successful measurements as **partial**, for example `2/3 machines measured`. Its median and range describe only the measured machines; it has no complete core score contribution. All original machine records and their censor thresholds remain in the samples JSON. A failure on any machine still makes that scenario failed. Protocol v2 files can be re-rendered with the new score separation, but require a fresh run to apply post-warmup censoring.
 
 ## Quick Start
 
@@ -71,7 +75,7 @@ samples until both the case minimum (10; 6 for expensive graph/fan cases) and
 exactly 1000 untrimmed samples per uncapped row after 20 warmup invocations.
 `BENCH_SAMPLES` sets an exact count. p95 is reported at 200 samples and p99 at
 1000, with 95% order-statistic intervals. These are workload-duration
-distributions. Slow rows retain one pilot and cannot establish tails.
+distributions. Censored probes are retained for audit and cannot establish tails.
 
 `BENCH_ROUNDS=3` repeats every row in three fresh processes and reports the
 median of the round medians with their range. Publication runs use it: it shows
@@ -136,8 +140,9 @@ shard outputs (`<name>.log` + `<name>.samples.json` pairs) with
 A row that produces a wrong value, throws, crashes, runs out of memory,
 overflows the stack, or exceeds `BENCH_ROW_TIMEOUT_MS` is recorded as a
 `FAILED` row with its classified reason, and the run continues. Such a
-framework is shown, but it is not ranked overall: scoring it only over the
-scenarios it completed would rank it on an easier workload set. The run still
+framework is shown, but a failed core scenario prevents core ranking: scoring it only over the
+scenarios it completed would rank it on an easier workload set. Stress and lifecycle
+failures affect their respective coverage, not the core score. The run still
 exits non-zero unless `BENCH_ALLOW_FAILURES=1`, which only the publication
 workflow sets; tests and the smoke stay strict. For a complete local run that
 includes libraries with known failures, use
@@ -232,13 +237,14 @@ ratio. A `≈` next to a rank means the paired machine-set score ratios cross 1.
 
 Lower is better. Each semantic workload group has equal weight, and scenarios
 within a group have equal weight. The legacy flat score remains visible for continuity.
-Censored rows never enter either score, and their framework is unranked overall.
-Overall scores use the same scenario intersection for every framework.
+Censored and partial rows never enter either core score. Only core correctness
+failures prevent ranking. Overall scores use the same fully measured core
+scenario intersection for every eligible framework.
 Lifecycle is compared within its supported group; unsupported ownership is
 absent, never a fabricated zero. Per-test comparisons use the range of paired
 time ratios across machines, or matched process rounds on one machine. A range
 crossing 1 gets `≈`; a win requires ratios below 1 against every measured
-competitor and no failed or censored competitor. With a single process, median
+competitor and no failed, censored or partial competitor. With a single process, median
 intervals are the fallback. A three-machine ratio range is descriptive, not a
 95% confidence interval. `sd_ratio_process` and `sd_ratio_machine` expose the
 SD of log ratios to a fixed fully measured reference per scenario.

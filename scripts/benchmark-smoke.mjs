@@ -97,7 +97,7 @@ for (const selection of selections) {
   const raw = JSON.parse(await readFile(outputPath, "utf8"));
   if (
     raw.semantics !== "v4" ||
-    raw.measurementVersion !== "v2" ||
+    raw.measurementVersion !== "v3" ||
     raw.nodeEnv !== "production" ||
     raw.rows.length !== parsed.rows.length ||
     raw.rows.some(

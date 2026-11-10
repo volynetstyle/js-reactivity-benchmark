@@ -99,6 +99,7 @@ export function parseBenchOutput(text) {
         failure: { kind, reason: reason ? JSON.parse(reason) : "" },
         group: group || "baseline",
         family: family || "baseline",
+        suite: scenarioSuite(group),
       });
       continue;
     }
@@ -138,6 +139,30 @@ export function parseBenchOutput(text) {
       machineEstimates?.some((value) => !Number.isFinite(value) || !(value > 0))
     )
       throw new Error(`Invalid machine estimates for ${framework} / ${test}`);
+    const machineIds = metric("machine_ids")?.split(";").map(Number);
+    const partial = metric("partial") === "true";
+    const censoredMachineRounds =
+      metric("censor_machines")?.split(";").map(Number) ?? [];
+    if (
+      machineIds &&
+      (machineIds.some((id) => !Number.isInteger(id) || id < 1) ||
+        new Set(machineIds).size !== machineIds.length ||
+        machineIds.length !== machineEstimates?.length ||
+        machineIds.length !== count("machines"))
+    )
+      throw new Error(`Invalid machine IDs for ${framework} / ${test}`);
+    if (
+      partial &&
+      (!machineIds?.length ||
+        !(count("machines_total") > count("machines")) ||
+        censoredMachineRounds.length !==
+          count("machines_total") - count("machines") ||
+        censoredMachineRounds.some(
+          (id) => !Number.isInteger(id) || id < 1 || machineIds.includes(id)
+        ) ||
+        new Set(censoredMachineRounds).size !== censoredMachineRounds.length)
+    )
+      throw new Error(`Invalid partial coverage for ${framework} / ${test}`);
     const noise = Object.fromEntries(
       Object.entries(NOISE_TOKENS)
         .map(([key, token]) => [key, Number(metric(token))])
@@ -161,7 +186,13 @@ export function parseBenchOutput(text) {
       cv: Number.parseFloat(cvText),
       group: group || "baseline",
       family: family || "baseline",
+      suite: scenarioSuite(group),
       capped,
+      partial,
+      totalMachines: count("machines_total") ?? count("machines"),
+      machineIds,
+      censoredMachineRounds,
+      censorPhase: metric("censor_phase") ?? "cold",
       samples: capped ? 0 : samples,
       // Uncertainty of the primary score: a 95% order-statistic interval
       // for the median, or the range of round medians for multi-round runs.
@@ -223,7 +254,13 @@ export function parseBenchOutput(text) {
       cv: row.cv,
       group: row.group,
       family: row.family,
+      suite: row.suite,
       capped: row.capped,
+      partial: row.partial,
+      totalMachines: row.totalMachines,
+      machineIds: row.machineIds,
+      censoredMachineRounds: row.censoredMachineRounds,
+      censorPhase: row.censorPhase,
       samples: row.samples,
       interval: row.interval,
       intervalKind: row.intervalKind,
@@ -245,32 +282,49 @@ export function parseBenchOutput(text) {
   const bestByTest = new Map();
   for (const test of tests) {
     const best = rows
-      .filter((row) => row.test === test && !row.failed && !row.capped)
+      .filter(
+        (row) => row.test === test && !row.failed && !row.capped && !row.partial
+      )
       .reduce((min, row) => Math.min(min, row.time), Number.POSITIVE_INFINITY);
     bestByTest.set(test, best);
   }
 
-  // A framework with a failed row is shown but not ranked: scoring it over
-  // the scenarios it survived would rank it on an easier workload set.
-  const complete = Array.from(byFramework.values()).filter((framework) =>
-    framework.entries.every((entry) => !entry.failed && !entry.capped)
+  const coreTests = tests.filter(
+    (test) => rows.find((row) => row.test === test).suite === "core"
   );
-  const commonTests = tests.filter((test) =>
-    complete.every((framework) =>
-      framework.entries.some((entry) => entry.test === test)
-    )
+  const stressTests = tests.filter(
+    (test) => rows.find((row) => row.test === test).suite === "stress"
   );
-  if (!commonTests.length)
-    throw new Error(
-      "No shared scenarios: frameworks cannot be ranked together"
-    );
+  const capabilityTests = tests.filter(
+    (test) => rows.find((row) => row.test === test).suite === "capability"
+  );
+  // Correctness determines core eligibility. Incomplete performance evidence
+  // removes a scenario from everyone's score, never just one participant's.
+  const complete = Array.from(byFramework.values()).filter(
+    (framework) =>
+      framework.entries.some((entry) => entry.suite === "core") &&
+      framework.entries.every(
+        (entry) => entry.suite !== "core" || !entry.failed
+      )
+  );
+  const commonTests = coreTests.filter(
+    (test) =>
+      complete.length > 0 &&
+      complete.every((framework) =>
+        framework.entries.some(
+          (entry) => entry.test === test && !entry.capped && !entry.partial
+        )
+      )
+  );
   const groupTests = new Map();
   for (const group of new Set(rows.map((row) => row.group))) {
     const participants = Array.from(byFramework.values()).filter(
       (framework) =>
         framework.entries.some((entry) => entry.group === group) &&
         framework.entries.every(
-          (entry) => entry.group !== group || (!entry.failed && !entry.capped)
+          (entry) =>
+            entry.group !== group ||
+            (!entry.failed && !entry.capped && !entry.partial)
         )
     );
     groupTests.set(
@@ -289,21 +343,29 @@ export function parseBenchOutput(text) {
   const frameworks = Array.from(byFramework.values())
     .map((framework) => ({
       framework,
-      overall: complete.includes(framework)
-        ? score(
-            framework.entries.filter((entry) =>
-              commonTests.includes(entry.test)
-            ),
-            true
-          )
-        : undefined,
+      overall:
+        complete.includes(framework) && commonTests.length > 0
+          ? score(
+              framework.entries.filter((entry) =>
+                commonTests.includes(entry.test)
+              ),
+              true
+            )
+          : undefined,
     }))
     .map(({ framework, overall }) => ({
       ...framework,
       average: framework.totals / framework.entries.length,
-      unranked: !complete.includes(framework),
+      unranked: !overall,
+      unrankedReason: framework.entries.some(
+        (entry) => entry.suite === "core" && entry.failed
+      )
+        ? `${framework.entries.filter((entry) => entry.suite === "core" && entry.failed).length} failed core scenarios`
+        : "no shared fully measured core scenarios",
       failedTests: framework.entries.filter((entry) => entry.failed),
       censoredTests: framework.entries.filter((entry) => entry.capped),
+      stressCoverage: suiteCoverage(framework.entries, stressTests),
+      capabilityCoverage: suiteCoverage(framework.entries, capabilityTests),
       relativeScore: overall?.value ?? Number.NaN,
       flatScore: overall?.flatValue,
       // Range of the per-machine-round scores (machine rounds only).
@@ -320,7 +382,8 @@ export function parseBenchOutput(text) {
             groupTests.get(entry.group)?.includes(entry.test) &&
             !framework.entries.some(
               (other) =>
-                (other.failed || other.capped) && other.group === entry.group
+                (other.failed || other.capped || other.partial) &&
+                other.group === entry.group
             )
         ),
         score
@@ -346,12 +409,51 @@ export function parseBenchOutput(text) {
     rows,
     tests,
     commonTests,
+    coreTests,
+    stressTests,
+    capabilityTests,
+    excludedCoreTests: coreTests.filter((test) => !commonTests.includes(test)),
     frameworks,
     meta,
     packages,
     machineRounds: score.machineRounds,
     noise: summarizeNoise(rows),
   };
+}
+
+/** Fixed before looking at results; failures never move a scenario's suite. */
+function scenarioSuite(group) {
+  return group === "large_graph"
+    ? "stress"
+    : group === "lifecycle"
+      ? "capability"
+      : "core";
+}
+
+function suiteCoverage(entries, tests) {
+  const members = entries.filter((entry) => tests.includes(entry.test));
+  return {
+    total: tests.length,
+    completed: members.filter(
+      (entry) => !entry.failed && !entry.capped && !entry.partial
+    ).length,
+    partial: members.filter((entry) => entry.partial).length,
+    censored: members.filter((entry) => entry.capped).length,
+    failed: members.filter((entry) => entry.failed).length,
+    unsupported: tests.length - members.length,
+  };
+}
+
+function coverageLabel(coverage) {
+  return `${coverage.completed}/${coverage.total} completed${[
+    "partial",
+    "censored",
+    "failed",
+    "unsupported",
+  ]
+    .filter((key) => coverage[key])
+    .map((key) => ` · ${coverage[key]} ${key}`)
+    .join("")}`;
 }
 
 /**
@@ -365,7 +467,9 @@ export function parseBenchOutput(text) {
  * microarchitectures inside one ratio.
  */
 function scorer(rows, tests, bestByTest) {
-  const measured = rows.filter((row) => !row.failed && !row.capped);
+  const measured = rows.filter(
+    (row) => !row.failed && !row.capped && !row.partial
+  );
   const aggregate = (entries, ratios, balanced) => {
     if (!balanced) return geometricMean(ratios);
     const groups = new Map();
@@ -455,6 +559,8 @@ export function rangeCoverage(n) {
 export function describeInterval(entry) {
   if (!entry?.interval) return "no interval (fewer than 6 samples or capped)";
   const bounds = `${entry.interval[0].toFixed(6)}..${entry.interval[1].toFixed(6)} ms`;
+  if (entry.partial)
+    return `partial: range over ${entry.machines}/${entry.totalMachines} measured machines ${bounds}; no estimate for censored machines`;
   if (entry.intervalKind === "machine_range") {
     const n = entry.machines ?? entry.machineEstimates?.length;
     return `range over ${n ?? "several"} machines ${bounds}${n ? ` (covers the cross-machine median with ~${Math.round(rangeCoverage(n) * 100)}% probability)` : ""}`;
@@ -484,7 +590,15 @@ export function intervalsOverlap(left, right) {
 }
 
 export function decisive(left, right) {
-  if (!left || left.failed || left.capped || right?.failed || right?.capped)
+  if (
+    !left ||
+    left.failed ||
+    left.capped ||
+    left.partial ||
+    right?.failed ||
+    right?.capped ||
+    right?.partial
+  )
     return false;
   if (!right) return true;
   const paired = pairedComparison(left, right);
@@ -557,7 +671,7 @@ function escapeHtml(value) {
 /** Score cell text: incomplete frameworks are listed, never ranked. */
 function scoreLabel(framework) {
   return framework.unranked
-    ? `not ranked: ${[framework.failedTests.length ? `${framework.failedTests.length} failed` : "", framework.censoredTests.length ? `${framework.censoredTests.length} censored` : ""].filter(Boolean).join(", ")}`
+    ? `not ranked: ${framework.unrankedReason}`
     : `${framework.relativeScore.toFixed(2)}x`;
 }
 
@@ -631,7 +745,9 @@ function renderPerTestComparison(frameworks, tests) {
           capped: framework.cappedByTest[test] === true,
           evidence: framework.entries.find((entry) => entry.test === test),
         }))
-        .filter((entry) => typeof entry.time === "number")
+        .filter(
+          (entry) => typeof entry.time === "number" && !entry.evidence.partial
+        )
         .sort((left, right) => left.time - right.time);
 
       if (
@@ -691,12 +807,22 @@ function renderPerTestComparison(frameworks, tests) {
             .filter((entry) => entry.test === test && entry.capped)
             .map(
               (entry) =>
-                `<div class="comparison-row" title="Cold pilot exceeded the invocation budget${entry.censorMachineRound ? ` on machine round ${entry.censorMachineRound}` : ""}; warmed median unknown; excluded from scoring"><div class="comparison-rank">–</div><div class="comparison-name">${escapeHtml(framework.name)}</div><div class="comparison-bar"></div><div class="comparison-time">&gt;${formatTime(entry.time)} ms</div><div class="comparison-delta">CENSORED</div></div>`
+                `<div class="comparison-row" title="${entry.censorPhase === "steady" ? "Post-warmup invocation" : "Cold pilot"} exceeded the invocation budget${entry.censorMachineRound ? ` on machine round ${entry.censorMachineRound}` : ""}; steady median unknown; excluded from scoring"><div class="comparison-rank">–</div><div class="comparison-name">${escapeHtml(framework.name)}</div><div class="comparison-bar"></div><div class="comparison-time">&gt;${formatTime(entry.time)} ms</div><div class="comparison-delta">CENSORED</div></div>`
             )
         )
         .join("");
 
-      return `<article class="comparison-card" style="--card-delay:${testIndex * 55}ms"><h3>${escapeHtml(test)}</h3><div class="comparison-list">${rows}${censored}${failures}</div></article>`;
+      const partial = frameworks
+        .flatMap((framework) =>
+          framework.entries
+            .filter((entry) => entry.test === test && entry.partial)
+            .map(
+              (entry) =>
+                `<div class="comparison-row" title="${entry.machines}/${entry.totalMachines} machines measured; censored machine rounds: ${entry.censoredMachineRounds.join(", ")}; median of measured machines only; excluded from the common core score"><div class="comparison-rank">–</div><div class="comparison-name">${escapeHtml(framework.name)}</div><div class="comparison-bar"></div><div class="comparison-time">${formatTime(entry.time)} ms</div><div class="comparison-delta">${entry.machines}/${entry.totalMachines} measured · PARTIAL</div></div>`
+            )
+        )
+        .join("");
+      return `<article class="comparison-card" style="--card-delay:${testIndex * 55}ms"><h3>${escapeHtml(test)}</h3><div class="comparison-list">${rows}${partial}${censored}${failures}</div></article>`;
     })
     .join("");
 }
@@ -786,7 +912,9 @@ function countWins(frameworks, tests) {
         .every((entry) => decisive(ranked[0].evidence, entry.evidence)) &&
       !frameworks.some((framework) =>
         framework.entries.some(
-          (entry) => entry.test === test && (entry.capped || entry.failed)
+          (entry) =>
+            entry.test === test &&
+            (entry.capped || entry.failed || entry.partial)
         )
       )
     ) {
@@ -800,7 +928,7 @@ function countWins(frameworks, tests) {
 function renderSpotlight(frameworks, tests) {
   const [winner, runnerUp] = rankedOnly(frameworks);
   if (!winner)
-    return '<section class="hero-shell"><h1>JS Reactivity Benchmark</h1><p>No ranked results: every framework has a failed or censored row.</p></section>';
+    return '<section class="hero-shell"><h1>JS Reactivity Benchmark</h1><p>No ranked results: no shared fully measured core scenarios among eligible frameworks.</p></section>';
   const wins = countWins(frameworks, tests);
   const lead =
     runnerUp && winner.relativeScore > 0
@@ -817,7 +945,7 @@ function renderSpotlight(frameworks, tests) {
         <p class="subtitle">Reactive graph benchmarks reported as topology profiles. Lower relative score means lower median times across the included scenarios.</p>
         <div class="hero-notes">
           <div class="hero-chip">Leader: ${escapeHtml(winner.name)}</div>
-          <div class="hero-chip">Tests: ${tests.length}</div>
+          <div class="hero-chip">Core scenarios scored: ${tests.length}</div>
           <div class="hero-chip">Frameworks: ${frameworks.length}</div>
         </div>
       </div>
@@ -864,7 +992,7 @@ function renderStatCards(frameworks, tests, generatedAt, sourceLabel) {
       </article>
       <article class="stat-card">
         <span class="stat-label">Tail Snapshot</span>
-        <strong>${tests.length} tests</strong>
+        <strong>${tests.length} core scenarios</strong>
         <p>Updated ${escapeHtml(formatDate(generatedAt))}. Leader p95 avg: ${Number.isFinite(winner.p95Average) ? formatTime(winner.p95Average) + " ms" : "n/a"}. Spread: ${spread.toFixed(2)}x.</p>
       </article>
     </section>
@@ -892,18 +1020,15 @@ function renderLeaderboardCards(frameworks, tests) {
           <h3>${escapeHtml(framework.name)}</h3>
           <div class="leader-time">${
             framework.unranked
-              ? `not ranked <span>${framework.failedTests
-                  .map((entry) => entry.failure.kind)
-                  .filter((kind, i, all) => all.indexOf(kind) === i)
-                  .join(
-                    ", "
-                  )}${framework.censoredTests.length ? " censored" : ""}</span>`
+              ? `not ranked <span>${escapeHtml(framework.unrankedReason)}</span>`
               : `${framework.relativeScore.toFixed(2)}x <span>family balanced</span>`
           }</div>
           <div class="leader-meta">
             ${scoreRangeLabel(framework) ? `<span>${escapeHtml(scoreRangeLabel(framework))}${rankOverlapsPrevious(frameworks, index) ? ", overlaps #" + index : ""}</span>` : ""}
             <span>${wins.get(framework.name) ?? 0} decisive wins</span>
             <span>${framework.entries.filter((entry) => entry.capped).length} censored</span>
+            <span>Stress coverage: ${coverageLabel(framework.stressCoverage)}</span>
+            <span>Lifecycle capability: ${coverageLabel(framework.capabilityCoverage)}</span>
             ${Number.isFinite(framework.flatScore) ? `<span>Legacy flat score: ${framework.flatScore.toFixed(2)}x</span>` : ""}
             ${framework.failedTests.length ? `<span>${framework.failedTests.length} failed</span>` : ""}
           </div>
@@ -1004,11 +1129,11 @@ function uncertaintyText(parsed) {
     : machines > 1
       ? ""
       : " The leaderboard score has no interval of its own: it was measured on one VM per scenario, and different scenarios ran on different CPU models.";
-  return `${design} ${interval}${score} Each workload group has equal weight in the overall score; the legacy flat score is also shown. With repeated estimates, ≈ and decisive wins use paired ratios on the same machine (or matched process rounds on one machine), rather than overlapping absolute time ranges. These descriptive ranges are not 95% confidence intervals. Single-process comparisons use median intervals. Censored rows record a cold-pilot budget exceedance, not a warmed median or its lower bound; they have no measured samples or exact score, and their frameworks are unranked. All intervals describe repeat measurements of this run, not the speed of a runtime on other hardware.`;
+  return `${design} ${interval}${score} Each workload group has equal weight in the overall score; the legacy flat score is also shown. With repeated estimates, ≈ and decisive wins use paired ratios on the same machine (or matched process rounds on one machine), rather than overlapping absolute time ranges. These descriptive ranges are not 95% confidence intervals. Single-process comparisons use median intervals. Censored rows record an invocation budget exceedance (cold for creation, post-warmup for steady workloads in protocol v3), not a median or its lower bound. Partial rows retain measured machines with their coverage. Neither censoring nor stress failures remove a framework from the core leaderboard; incomplete core scenarios are excluded for every participant. All intervals describe repeat measurements of this run, not the speed of a runtime on other hardware.`;
 }
 
 function renderBenchmarkInterpretation(parsed) {
-  const { frameworks, tests } = parsed;
+  const { frameworks, commonTests: tests } = parsed;
   const [winner, runnerUp] = rankedOnly(frameworks);
   if (!winner) return "";
   const incomplete = frameworks.filter((framework) => framework.unranked);
@@ -1078,8 +1203,8 @@ function renderEnvironment({ meta = {}, packages = {} }) {
   const warning =
     meta.semantics && meta.semantics !== "v4"
       ? `<p class="note">This log uses semantics ${escapeHtml(meta.semantics)}; do not compare it with v4 runs.</p>`
-      : meta.measurement !== "v2"
-        ? '<p class="note">This log predates measurement protocol v2. Fresh measurements are required for comparisons with the current GC and censoring policy.</p>'
+      : meta.measurement !== "v3"
+        ? '<p class="note">This log predates measurement protocol v3. Its original cold-pilot censoring is retained; fresh measurements are required to apply post-warmup censoring.</p>'
         : "";
   return `
     <section class="card detail-only">
@@ -1418,6 +1543,7 @@ export function renderResultsPage(parsed, options = {}) {
   }
   .leaderboard-stack {
     display: grid;
+    min-width: 0;
     gap: 16px;
   }
   .leader-grid {
@@ -1470,11 +1596,15 @@ export function renderResultsPage(parsed, options = {}) {
   }
   .leader-meta {
     margin-top: 14px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
     font-size: 13px;
     color: var(--muted);
   }
   .card {
     border-radius: var(--radius-xl);
+    min-width: 0;
+    overflow-x: auto;
     padding: 24px;
     animation: fade-up 560ms ease both;
   }
@@ -1832,14 +1962,16 @@ export function renderResultsPage(parsed, options = {}) {
 </head>
 <body data-density="detailed">
 <main>
-  ${renderSpotlight(frameworks, tests)}
-  ${renderStatCards(frameworks, tests, generatedAt, sourceLabel)}
+  ${renderSpotlight(frameworks, parsed.commonTests)}
+  ${renderStatCards(frameworks, parsed.commonTests, generatedAt, sourceLabel)}
+  <p class="meta">${tests.length} scenarios total · ${parsed.commonTests.length} in core performance score · ${parsed.stressTests.length} stress / scalability scenarios · ${parsed.capabilityTests.length} lifecycle capability scenarios · ${parsed.excludedCoreTests.length} core scenarios excluded for all participants (missing or incomplete evidence).</p>
+  ${parsed.excludedCoreTests.length ? `<details class="card"><summary>Core scenarios excluded from every score</summary><ul>${parsed.excludedCoreTests.map((test) => `<li>${escapeHtml(test)}</li>`).join("")}</ul></details>` : ""}
   ${renderTestFilter(tests)}
 
   <section class="dashboard-grid">
     <div class="leaderboard-stack">
       <article class="card">
-        <h2>Leaderboard</h2>
+        <h2>Core Leaderboard</h2>
         <table>
           <thead>
             <tr>
@@ -1850,10 +1982,10 @@ export function renderResultsPage(parsed, options = {}) {
           </thead>
           <tbody>${renderRows(frameworks)}</tbody>
         </table>
-      <p class="note">Family-balanced geometric mean across ${parsed.commonTests.length} shared scenarios: average within each workload group, then give groups equal weight${parsed.machineRounds ? `; median of ${parsed.machineRounds} machine-set scores, with their range. ≈ marks paired score ratios crossing 1` : ""}. Frameworks with failed or censored rows are unranked.</p>
+      <p class="note">Family-balanced geometric mean across ${parsed.commonTests.length} shared core scenarios: average within each workload group, then give groups equal weight${parsed.machineRounds ? `; median of ${parsed.machineRounds} machine-set scores, with their range. ≈ marks paired score ratios crossing 1` : ""}. Core correctness failures prevent ranking. Censored, partial or missing core scenarios are excluded from every participant's score. Stress and lifecycle results describe coverage separately.</p>
       </article>
       <section class="leader-grid">
-        ${renderLeaderboardCards(frameworks, tests)}
+        ${renderLeaderboardCards(frameworks, parsed.commonTests)}
       </section>
       ${renderGroupProfile(frameworks)}
     </div>
@@ -1866,10 +1998,12 @@ export function renderResultsPage(parsed, options = {}) {
   </section>
 
   <section class="card remarks">
-    <h2>Per-Test Comparison</h2>
+    <h2>Core Performance Scenarios</h2>
     <p class="meta">Every card ranks frameworks for a single scenario, so outliers and specialists stay visible.</p>
-    <div class="comparison-grid">${renderPerTestComparison(frameworks, tests)}</div>
+    <div class="comparison-grid">${renderPerTestComparison(frameworks, parsed.coreTests)}</div>
   </section>
+  ${parsed.stressTests.length ? `<section class="card remarks"><h2>Stress / Scalability Suite</h2><p class="meta">Large graph scenarios show scaling limits. Failures, censoring and partial machine coverage remain visible and do not change core eligibility or score.</p><div class="comparison-grid">${renderPerTestComparison(frameworks, parsed.stressTests)}</div></section>` : ""}
+  ${parsed.capabilityTests.length ? `<section class="card remarks"><h2>Lifecycle Capability Scenarios</h2><p class="meta">Native lifecycle support is reported separately from core performance.</p><div class="comparison-grid">${renderPerTestComparison(frameworks, parsed.capabilityTests)}</div></section>` : ""}
 
   ${renderBenchmarkInterpretation(parsed)}
   ${renderNoiseBudget(parsed)}

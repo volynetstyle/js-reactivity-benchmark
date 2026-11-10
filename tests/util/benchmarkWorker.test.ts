@@ -9,7 +9,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-test("a supervised pilot is killed at its ceiling while setup and incorrect results remain separate", async () => {
+test("the post-warmup probe is supervised while slow cold calls, setup and correctness remain separate", async () => {
   vi.resetModules();
   for (const [key, value] of Object.entries({
     BENCH_IN_PROCESS: "",
@@ -21,7 +21,7 @@ test("a supervised pilot is killed at its ceiling while setup and incorrect resu
     BENCH_ROUNDS: "1",
     BENCH_MIN_CEILING_MS: "50",
     BENCH_MAX_SLOWDOWN: "3",
-    BENCH_ROW_TIMEOUT_MS: "8000",
+    BENCH_ROW_TIMEOUT_MS: "2000",
     BENCH_ALLOW_FAILURES: "1",
   }))
     vi.stubEnv(key, value);
@@ -40,7 +40,14 @@ test("a supervised pilot is killed at its ceiling while setup and incorrect resu
   vi.stubEnv("BENCH_SAMPLES_FILE", samples);
   const { registerBenchmark, registerFrameworkWorker, runBenchmarks } =
     await import("../../src/util/benchmark");
-  for (const framework of ["slow", "slow-setup", "alien-signals", "invalid"]) {
+  for (const framework of [
+    "slow",
+    "slow-setup",
+    "cold-slow",
+    "cold-hang",
+    "alien-signals",
+    "invalid",
+  ]) {
     registerFrameworkWorker(framework, worker);
     registerBenchmark({
       framework,
@@ -60,6 +67,15 @@ test("a supervised pilot is killed at its ceiling while setup and incorrect resu
   });
   expect(slow.estimateMs).toBeUndefined();
   expect(slow.statistics).toBeUndefined();
+  expect(slow.censorPhase).toBe("steady");
+  const cold = rows.find((row: any) => row.framework === "cold-slow");
+  expect(cold.capped).toBe(false);
+  expect(cold.rounds[0].pilotMs).toBeGreaterThan(100);
+  expect(cold.rounds[0].censorMs).toBeLessThan(50);
+  expect(rows.find((row: any) => row.framework === "cold-hang")).toMatchObject({
+    status: "failed",
+    failure: { kind: "timeout" },
+  });
   const setup = rows.find((row: any) => row.framework === "slow-setup");
   expect(setup.capped).toBe(false);
   expect(setup.statistics.count).toBe(2);

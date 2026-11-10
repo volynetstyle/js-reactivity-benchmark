@@ -387,17 +387,19 @@ test("paired ratio noise cancels common host and process speed", () => {
   expect(renderResultsPage(parsed)).toContain("paired ratios between machines");
 });
 
-test("censoring on one machine never becomes an exact multi-machine median", () => {
+test("censoring on one machine preserves measured machines as partial evidence", () => {
   const shards = [1, 2, 3].map((round) =>
     shard({
       round,
       index: 1,
       count: 1,
-      scenarios: ["s"],
+      scenarios: ["s", "common"],
       cpu: `cpu ${round}`,
       rows: [
         ["a", "s", 10],
         ["b", "s", 20],
+        ["a", "common", 4],
+        ["b", "common", 8],
       ],
     })
   );
@@ -424,16 +426,36 @@ test("censoring on one machine never becomes an exact multi-machine median", () 
   );
   const { log, samples } = mergeShardData(shards);
   const b = samples.rows.find((row) => row.framework === "b");
-  expect(b.censorMachineRound).toBe(2);
-  expect(b.estimateMs).toBeUndefined();
+  expect(b).toMatchObject({
+    capped: false,
+    partial: true,
+    measuredMachines: 2,
+    totalMachines: 3,
+    estimateMs: 20,
+    machineIds: [1, 3],
+    machineEstimatesMs: [20, 20],
+  });
+  expect(b.censoredMachines).toEqual([
+    { machineRound: 2, ceilingMs: 1500, censorPhase: "cold" },
+  ]);
   expect(b.statistics).toBeUndefined();
-  expect(b.interval).toBeUndefined();
+  expect(b.interval).toMatchObject({ lowMs: 20, highMs: 20 });
   expect(b.machines).toHaveLength(3);
   const parsed = parseBenchOutput(log);
   expect(
     parsed.frameworks.find((framework) => framework.name === "b").unranked
-  ).toBe(true);
-  expect(log).toContain("censor_machine=2");
+  ).toBe(false);
+  expect(parsed.commonTests).toEqual(["common"]);
+  expect(
+    parsed.rows.find((row) => row.framework === "b" && row.test === "s")
+  ).toMatchObject({
+    partial: true,
+    machines: 2,
+    totalMachines: 3,
+    machineIds: [1, 3],
+  });
+  expect(renderResultsPage(parsed)).toContain("2/3 measured · PARTIAL");
+  expect(log).toContain("censor_machines=2");
 });
 
 test("rounds must cover the same rows with the same partition", () => {

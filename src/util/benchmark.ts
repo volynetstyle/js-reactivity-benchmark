@@ -60,6 +60,8 @@ export interface RoundRecord {
   round: number;
   /** First, cold invocation. Excluded from uncapped statistics. */
   pilotMs: number;
+  /** Cold pilot or first post-warmup invocation used for censoring. */
+  censorMs?: number;
   /** Validated invocations after the pilot, excluded from statistics. */
   warmupMs: number[];
   /** Measured durations in chronological order; nothing is trimmed. */
@@ -76,6 +78,7 @@ export interface TimingRecord {
   censored?: boolean;
   gcMode: "cold" | "steady" | "throughput";
   ceilingMs?: number;
+  censorPhase?: "cold" | "steady";
   /** Primary row score: the median, or the median of round medians. */
   estimateMs?: number;
   interval?: {
@@ -135,7 +138,14 @@ export interface FailedRecord {
 
 type CaseOutcome =
   | { kind: "measured"; id: string; round: RoundRecord; row: PerfRowStrings }
-  | { kind: "deferred"; id: string; pilotMs: number; row: PerfRowStrings }
+  | {
+      kind: "deferred";
+      id: string;
+      pilotMs: number;
+      censorMs: number;
+      warmupMs: number[];
+      row: PerfRowStrings;
+    }
   | { kind: "censored"; id: string; ceilingMs: number }
   | { kind: "failed"; id: string; failure: RowFailure };
 
@@ -463,7 +473,7 @@ export async function runBenchmarks(): Promise<void> {
   const machineRound = readPositiveInteger("BENCH_MACHINE_ROUND", 1);
   const bundle = bundleSha256();
   console.log(
-    `# semantics=${SEMANTICS_VERSION} measurement=v2 gc_policy=family profile=${policy.profile} rounds=${policy.rounds} warmup=${policy.warmup} min_samples=${process.env.BENCH_SAMPLES?.trim() || "per-case"} max_samples=${policy.maxSamples} min_time_ms=${policy.minTimeMs} node=${process.version} v8=${process.versions.v8} platform=${process.platform}/${process.arch} cpu=${(cpus()[0]?.model ?? "unknown").trim().replace(/\s+/g, "_")} cores=${cpus().length} ram=${totalmem()} gc=${!!globalThis.gc} isolation=${isolation} order=seeded-balanced node_env=production instrumented=${process.env.BENCH_INSTRUMENT === "1"} shard=${shard ? `${shard.index}/${shard.count}` : "none"} machine_round=${machineRound} bundle=${bundle.slice(0, 12)} heap_mb=${WORKER_HEAP_MB} row_timeout_s=${Math.round(ROW_TIMEOUT_MS / 1000)}`
+    `# semantics=${SEMANTICS_VERSION} measurement=v3 gc_policy=family profile=${policy.profile} rounds=${policy.rounds} warmup=${policy.warmup} min_samples=${process.env.BENCH_SAMPLES?.trim() || "per-case"} max_samples=${policy.maxSamples} min_time_ms=${policy.minTimeMs} node=${process.version} v8=${process.versions.v8} platform=${process.platform}/${process.arch} cpu=${(cpus()[0]?.model ?? "unknown").trim().replace(/\s+/g, "_")} cores=${cpus().length} ram=${totalmem()} gc=${!!globalThis.gc} isolation=${isolation} order=seeded-balanced node_env=production instrumented=${process.env.BENCH_INSTRUMENT === "1"} shard=${shard ? `${shard.index}/${shard.count}` : "none"} machine_round=${machineRound} bundle=${bundle.slice(0, 12)} heap_mb=${WORKER_HEAP_MB} row_timeout_s=${Math.round(ROW_TIMEOUT_MS / 1000)}`
   );
   const packages = packageVersions();
   for (const [framework, versions] of Object.entries(packages))
@@ -500,7 +510,12 @@ interface RowState {
   entry: RegisteredCase;
   rounds: RoundRecord[];
   row?: PerfRowStrings;
-  capped?: { pilotMs?: number; ceilingMs: number };
+  capped?: {
+    pilotMs?: number;
+    censorMs?: number;
+    warmupMs?: number[];
+    ceilingMs: number;
+  };
   failure?: RowFailure;
   wallMs?: number;
 }
@@ -546,7 +561,12 @@ async function runPlan(
   };
 
   for (let round = 1; round <= policy.rounds; round++) {
-    const deferred: { state: RowState; pilotMs: number }[] = [];
+    const deferred: {
+      state: RowState;
+      pilotMs: number;
+      censorMs: number;
+      warmupMs: number[];
+    }[] = [];
     const pilots = new Map<string, number>();
     const note = (name: string, pilotMs: number) =>
       pilots.set(name, Math.min(pilots.get(name) ?? Infinity, pilotMs));
@@ -580,17 +600,22 @@ async function runPlan(
       }
       state.row = outcome.row;
       if (outcome.kind === "deferred") {
-        note(state.entry.name, outcome.pilotMs);
-        deferred.push({ state, pilotMs: outcome.pilotMs });
+        note(state.entry.name, outcome.censorMs);
+        deferred.push({
+          state,
+          pilotMs: outcome.pilotMs,
+          censorMs: outcome.censorMs,
+          warmupMs: outcome.warmupMs,
+        });
         return;
       }
-      note(state.entry.name, outcome.round.pilotMs);
+      note(state.entry.name, outcome.round.censorMs ?? outcome.round.pilotMs);
       state.rounds.push(outcome.round);
       if (round === policy.rounds) finish(state);
     };
 
     const order = executionOrder(registeredCases, round);
-    // Calibrate with known fast implementations before supervising other pilots.
+    // Calibrate with known fast implementations before supervising other probes.
     // Sorting is stable and scenario-major; all later rounds use the full schedule.
     const anchors = new Set(["alien-signals", "reflex-quant", "reflex"]);
     const scenarioIndex = new Map(
@@ -605,20 +630,24 @@ async function runPlan(
     for (const entry of order) {
       const state = states.get(entry.id)!;
       if (state.failure || state.capped) continue;
-      // Only the first round calibrates/censors pilots; later rounds measure.
+      // Only the first round calibrates/censors invocation probes; later rounds measure.
       await attempt(state, round === 1);
     }
 
-    // Order-independent cap: every pilot of the scenario is known now. Decide
-    // all deferred rows from this snapshot before any rerun adds new pilots.
-    const decisions = deferred.map(({ state, pilotMs }) => ({
-      state,
-      pilotMs,
-      ceilingMs: performanceCeilingMs(pilots.get(state.entry.name)),
-    }));
-    for (const { state, pilotMs, ceilingMs } of decisions) {
-      if (pilotMs > ceilingMs) {
-        state.capped = { pilotMs, ceilingMs };
+    // Order-independent cap: every censor probe of the scenario is known now. Decide
+    // all deferred rows from this snapshot before any rerun adds new probes.
+    const decisions = deferred.map(
+      ({ state, pilotMs, censorMs, warmupMs }) => ({
+        state,
+        pilotMs,
+        censorMs,
+        warmupMs,
+        ceilingMs: performanceCeilingMs(pilots.get(state.entry.name)),
+      })
+    );
+    for (const { state, pilotMs, censorMs, warmupMs, ceilingMs } of decisions) {
+      if (censorMs > ceilingMs) {
+        state.capped = { pilotMs, censorMs, warmupMs, ceilingMs };
         finish(state);
       } else {
         started--; // The full measurement replaces the deferred attempt.
@@ -648,7 +677,7 @@ async function runRow(
     let outcome: CaseOutcome | undefined;
     let timedOut = false;
     let censored = false;
-    let pilotTimer: ReturnType<typeof setTimeout> | undefined;
+    let censorTimer: ReturnType<typeof setTimeout> | undefined;
     // Keep the end of the worker's diagnostics to classify crashes.
     let tail = "";
     const remember = (chunk: Buffer) => {
@@ -665,7 +694,7 @@ async function runRow(
           BENCH_CASE: entry.id,
           BENCH_ROUND: String(round),
           BENCH_DEFER_CAP: allowDefer ? "1" : "",
-          BENCH_SUPERVISE_PILOT: ceilingMs === undefined ? "" : "1",
+          BENCH_SUPERVISE_CENSOR: ceilingMs === undefined ? "" : "1",
         },
         execArgv: [
           ...process.execArgv.filter(
@@ -688,18 +717,18 @@ async function runRow(
       (
         message:
           | CaseOutcome
-          | { kind: "pilot-start"; id: string }
-          | { kind: "pilot-end"; id: string }
+          | { kind: "censor-start"; id: string }
+          | { kind: "censor-end"; id: string }
       ) => {
         if (message?.id !== entry.id) return;
-        if (message.kind === "pilot-start") {
-          if (ceilingMs !== undefined && !pilotTimer)
-            pilotTimer = setTimeout(() => {
+        if (message.kind === "censor-start") {
+          if (ceilingMs !== undefined && !censorTimer)
+            censorTimer = setTimeout(() => {
               censored = true;
               child.kill("SIGKILL");
             }, ceilingMs);
-        } else if (message.kind === "pilot-end") {
-          clearTimeout(pilotTimer);
+        } else if (message.kind === "censor-end") {
+          clearTimeout(censorTimer);
         } else outcome = message;
       }
     );
@@ -708,7 +737,7 @@ async function runRow(
     );
     child.on("close", (code, signal) => {
       clearTimeout(timer);
-      clearTimeout(pilotTimer);
+      clearTimeout(censorTimer);
       if (censored)
         resolve({ kind: "censored", id: entry.id, ceilingMs: ceilingMs! });
       else if (timedOut)
@@ -800,7 +829,7 @@ function measureCase(
   const mode = gcMode(entry);
   const hasGc = mode !== "throughput" && typeof globalThis.gc === "function";
   let collected = false;
-  let pilot = true;
+  let censorProbe = mode === "cold";
   let fixture: unknown;
   let hasFixture = false;
   let result: unknown;
@@ -845,17 +874,17 @@ function measureCase(
     let start = 0;
     let end = 0;
     try {
+      // Supervise only the invocation appropriate to this workload. Cold
+      // setup and warmup remain protected by the catastrophic row watchdog.
+      if (censorProbe && process.env.BENCH_SUPERVISE_CENSOR === "1")
+        process.send?.({ kind: "censor-start", id: entry.id });
       start = performance.now();
-      // Pilot IPC is excluded from warmed statistics. The parent starts its
-      // deadline after this message, so setup/GC never consume that budget.
-      if (pilot && process.env.BENCH_SUPERVISE_PILOT === "1")
-        process.send?.({ kind: "pilot-start", id: entry.id });
       result = entry.benchmark(fixture);
       end = performance.now();
     } finally {
       guard.measured = false;
-      if (pilot && process.env.BENCH_SUPERVISE_PILOT === "1")
-        process.send?.({ kind: "pilot-end", id: entry.id });
+      if (censorProbe && process.env.BENCH_SUPERVISE_CENSOR === "1")
+        process.send?.({ kind: "censor-end", id: entry.id });
     }
     pendingValidation = true;
     if (entry.blackhole) blackholeSink.value = result;
@@ -874,22 +903,36 @@ function measureCase(
 
   try {
     const pilotMs = invoke();
-    pilot = false;
+    censorProbe = false;
     validatePending();
-    // Only a pilot above the absolute floor can be capped; the parent decides
-    // once the pilots of every framework for this scenario are known.
-    if (allowDefer && pilotMs > MIN_PERFORMANCE_CEILING_MS)
-      return { kind: "deferred", id: entry.id, pilotMs, row: report(pilotMs) };
-
     const warmupMs: number[] = [];
+    const defer = (censorMs: number): CaseOutcome => ({
+      kind: "deferred",
+      id: entry.id,
+      pilotMs,
+      censorMs,
+      warmupMs,
+      row: report(censorMs),
+    });
+    if (mode === "cold" && allowDefer && pilotMs > MIN_PERFORMANCE_CEILING_MS)
+      return defer(pilotMs);
     for (let i = 0; i < policy.warmup; i++) warmupMs.push(invoke());
     const samplesMs: number[] = [];
+    let censorMs = pilotMs;
     let measuredMs = 0;
     while (
       samplesMs.length < policy.maxSamples &&
       (samplesMs.length < policy.minSamples || measuredMs < policy.minTimeMs)
     ) {
+      censorProbe = mode !== "cold" && samplesMs.length === 0;
       const duration = invoke();
+      if (censorProbe) {
+        censorMs = duration;
+        validatePending();
+        if (allowDefer && duration > MIN_PERFORMANCE_CEILING_MS)
+          return defer(duration);
+      }
+      censorProbe = false;
       samplesMs.push(duration);
       measuredMs += duration;
     }
@@ -898,7 +941,7 @@ function measureCase(
     return {
       kind: "measured",
       id: entry.id,
-      round: { round, pilotMs, warmupMs, samplesMs, statistics },
+      round: { round, pilotMs, censorMs, warmupMs, samplesMs, statistics },
       row: report(statistics.median),
     };
   } finally {
@@ -933,7 +976,12 @@ function consoleGuard() {
 function summarize(
   entry: RegisteredCase,
   rounds: RoundRecord[],
-  capped?: { pilotMs?: number; ceilingMs: number }
+  capped?: {
+    pilotMs?: number;
+    censorMs?: number;
+    warmupMs?: number[];
+    ceilingMs: number;
+  }
 ): TimingRecord {
   const [defaultGroup, defaultFamily] = workloadFamily(entry.name);
   const base = {
@@ -953,6 +1001,7 @@ function summarize(
       capped: true,
       censored: true,
       ceilingMs: capped.ceilingMs,
+      censorPhase: gcMode(entry) === "cold" ? "cold" : "steady",
       validation:
         capped.pilotMs === undefined ? "not-completed" : base.validation,
       rounds:
@@ -962,7 +1011,8 @@ function summarize(
               {
                 round: 1,
                 pilotMs: capped.pilotMs,
-                warmupMs: [],
+                censorMs: capped.censorMs,
+                warmupMs: capped.warmupMs ?? [],
                 samplesMs: [],
               },
             ],
@@ -1015,7 +1065,7 @@ function formatRow(
   const tokens: string[] = [];
   if (record.capped) {
     tokens.push(
-      `CENSORED samples=0 ceiling=${record.ceilingMs!.toFixed(6)}ms pilot=cold validation=${record.validation}`
+      `CENSORED samples=0 ceiling=${record.ceilingMs!.toFixed(6)}ms censor_phase=${record.censorPhase} validation=${record.validation}`
     );
   } else {
     const statistics = record.statistics!;
@@ -1082,7 +1132,7 @@ async function saveTimingRecords(
     JSON.stringify(
       {
         semantics: SEMANTICS_VERSION,
-        measurementVersion: "v2",
+        measurementVersion: "v3",
         profile: policy.profile,
         policy: {
           ...policy,
@@ -1108,6 +1158,7 @@ async function saveTimingRecords(
         nodeEnv: "production",
         limits: { heapMb: WORKER_HEAP_MB, rowTimeoutMs: ROW_TIMEOUT_MS },
         capPolicy: {
+          phase: "cold-for-creation; post-warmup-for-steady",
           minCeilingMs: MIN_PERFORMANCE_CEILING_MS,
           maxSlowdown: MAX_SLOWDOWN_FACTOR,
         },
