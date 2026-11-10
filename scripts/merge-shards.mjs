@@ -2,6 +2,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { updateResultsPage } from "./render-results-page.mjs";
+import { pairedComparison } from "./paired-statistics.mjs";
 
 /**
  * Merge CI shard outputs (`<name>.log` + `<name>.samples.json` pairs) into one
@@ -58,12 +59,14 @@ async function loadShards(dir) {
 /** Fields that must be identical for shards to be one comparable measurement. */
 const SHARED_FIELDS = [
   "semantics",
+  "measurementVersion",
   "profile",
   "policy",
   "node",
   "v8",
   "platform",
   "gc",
+  "cpuAffinity",
   "isolation",
   "order",
   "nodeEnv",
@@ -172,6 +175,42 @@ export function mergeShardData(shards) {
       if (!records.has(`${id}\u0000${rowId}`))
         throw new Error(`Machine round ${id} has no result for ${rowId}`);
 
+  // Choose one fixed, fully measured reference per scenario. Pair only records
+  // from the same machine round and the same fresh-process round number.
+  const pairedById = new Map();
+  const evidence = (rowId) => {
+    const rows = roundIds.map((id) => records.get(`${id}\u0000${rowId}`).row);
+    return {
+      capped: rows.some((row) => row.capped),
+      failed: rows.some((row) => row.status === "failed"),
+      machineEstimates: rows.map((row) => row.estimateMs),
+      processEstimates: rows.map(processEstimatesOf),
+    };
+  };
+  for (const scenario of new Set(
+    ids.map((id) => records.get(`${roundIds[0]}\u0000${id}`).row.name)
+  )) {
+    const candidates = ids
+      .filter(
+        (id) => records.get(`${roundIds[0]}\u0000${id}`).row.name === scenario
+      )
+      .map((id) => ({ id, evidence: evidence(id) }))
+      .filter(({ evidence }) => !evidence.failed && !evidence.capped);
+    candidates.sort(
+      (a, b) =>
+        median(a.evidence.machineEstimates) -
+          median(b.evidence.machineEstimates) || a.id.localeCompare(b.id)
+    );
+    const reference = candidates[0];
+    if (!reference) continue;
+    for (const candidate of candidates)
+      pairedById.set(candidate.id, {
+        referenceFramework: records.get(`${roundIds[0]}\u0000${reference.id}`)
+          .row.framework,
+        ...pairedComparison(candidate.evidence, reference.evidence),
+      });
+  }
+
   const machines = shards
     .map(({ json }) => ({
       machineRound: json.machineRound ?? 1,
@@ -195,22 +234,53 @@ export function mergeShardData(shards) {
     // A failure on any machine is the row's result (a library that crashes
     // on one CPU is not reported by its luckier machines).
     const failed = entries.find((entry) => entry.row.status === "failed");
-    const noise = failed
-      ? undefined
-      : noiseComponents(entries.map((entry) => entry.row));
-    if (entries.length === 1 || failed) {
-      const chosen = failed ?? entries[0];
+    const censored = entries.find((entry) => entry.row.capped);
+    const paired = pairedById.get(rowId);
+    const noise =
+      failed || censored
+        ? undefined
+        : noiseComponents(entries.map((entry) => entry.row));
+    if (entries.length === 1 || failed || censored) {
+      const chosen = failed ?? censored ?? entries[0];
+      const ceilingMs = chosen.row.ceilingMs ?? chosen.row.estimateMs;
       outLines.push(
-        failed ? chosen.line : appendMetrics(chosen.line, noiseTokens(noise))
+        failed
+          ? chosen.line
+          : censored
+            ? censoredLine(chosen.line, ceilingMs, chosen.id)
+            : appendMetrics(chosen.line, [
+                ...noiseTokens(noise),
+                ...pairedTokens(paired),
+                ...(processEstimatesOf(chosen.row).length &&
+                !chosen.line.includes("process_estimates=")
+                  ? [
+                      `process_estimates=${processEstimatesOf(chosen.row)
+                        .map((value) => value.toFixed(6))
+                        .join(";")}`,
+                    ]
+                  : []),
+              ])
       );
       outRows.push({
         ...chosen.row,
+        ...(!failed && censored
+          ? {
+              capped: true,
+              censored: true,
+              ceilingMs,
+              estimateMs: undefined,
+              statistics: undefined,
+              interval: undefined,
+              censorMachineRound: chosen.id,
+            }
+          : {}),
         ...(noise ? { noise } : {}),
+        ...(paired ? { paired } : {}),
         machines: entries.map((entry) => ({
           machineRound: entry.id,
           shard: entry.shard.shard.index,
           cpu: entry.shard.cpu,
-          ...(entries.length > 1 ? { record: entry.row } : {}),
+          record: entry.row,
         })),
       });
       continue;
@@ -236,7 +306,19 @@ export function mergeShardData(shards) {
           // In machine-round order, so a reader can form ratios within one
           // machine instead of between medians taken from different machines.
           `machine_estimates=${estimates.map((value) => value.toFixed(6)).join(";")}`,
+          ...(entries.every((entry) => processEstimatesOf(entry.row).length)
+            ? [
+                `process_estimates=${entries
+                  .map((entry) =>
+                    processEstimatesOf(entry.row)
+                      .map((value) => value.toFixed(6))
+                      .join(";")
+                  )
+                  .join("/")}`,
+              ]
+            : []),
           ...noiseTokens(noise),
+          ...pairedTokens(paired),
         ]
       )
     );
@@ -260,6 +342,7 @@ export function mergeShardData(shards) {
       },
       machineEstimatesMs: estimates,
       ...(noise ? { noise } : {}),
+      ...(paired ? { paired } : {}),
       machines: entries.map((entry) => ({
         machineRound: entry.id,
         shard: entry.shard.shard.index,
@@ -313,6 +396,41 @@ export function mergeShardData(shards) {
     rows: outRows,
   };
   return { log: log + "\n", samples };
+}
+
+function processEstimatesOf(record) {
+  const rounds = [...(record.rounds ?? [])].sort((a, b) => a.round - b.round);
+  if (
+    !rounds.every(
+      (round, i) => round.round === i + 1 && round.statistics?.median > 0
+    )
+  )
+    return [];
+  return rounds.map((round) => round.statistics.median);
+}
+
+function pairedTokens(paired) {
+  if (!paired) return [];
+  return [
+    `ratio_reference=${encodeURIComponent(paired.referenceFramework)}`,
+    `machine_ratios=${paired.machineRatios.map((value) => value.toFixed(6)).join(";")}`,
+    ...(paired.sdRatioMachine !== undefined
+      ? [`sd_ratio_machine=${paired.sdRatioMachine.toFixed(6)}`]
+      : []),
+    ...(paired.sdRatioProcess !== undefined
+      ? [`sd_ratio_process=${paired.sdRatioProcess.toFixed(6)}`]
+      : []),
+  ];
+}
+
+function censoredLine(line, ceilingMs, machineRound) {
+  const parts = line.split(" , ");
+  parts[2] = `>${ceilingMs.toFixed(6)}`;
+  for (const i of [3, 4, 5]) parts[i] = "";
+  return [
+    ...parts.slice(0, 8),
+    `CENSORED samples=0 ceiling=${ceilingMs.toFixed(6)}ms pilot=cold censor_machine=${machineRound}`,
+  ].join(" , ");
 }
 
 const Z95 = 1.959963984540054;
@@ -452,7 +570,7 @@ function rewriteLine(line, { time, samples, machines, range, capped }) {
     .split(/\s+/)
     .filter(
       (token) =>
-        !/^(median_ci95|round_range|p95_ci95|p99_ci95|machine_range)=/.test(
+        !/^(median_ci95|round_range|p95_ci95|p99_ci95|machine_range|process_estimates)=/.test(
           token
         )
     )

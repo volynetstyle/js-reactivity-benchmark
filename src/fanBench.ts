@@ -162,7 +162,7 @@ export function fanBench(framework: ReactiveFramework): void {
       benchmark: (fixture) => fixture.run(),
       validate: (result, fixture) => fixture.validate(result),
       teardown: (fixture) => fixture.dispose(),
-      gc: "inner",
+      gc: "steady",
       blackhole: true,
       // Six samples are the minimum for a 95% order-statistic median interval.
       samples: 6,

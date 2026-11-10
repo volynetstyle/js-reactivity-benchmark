@@ -147,7 +147,7 @@ export function sbench(framework: ReactiveFramework, count = COUNT) {
           );
         }
       },
-      gc: "inner",
+      gc: "cold",
       blackhole: true,
     });
   }
@@ -189,7 +189,7 @@ export function sbench(framework: ReactiveFramework, count = COUNT) {
           );
         }
       },
-      gc: "inner",
+      gc: "steady",
       blackhole: true,
     });
   }

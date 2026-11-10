@@ -112,7 +112,7 @@ export function lifecycleBench(framework: ReactiveFramework): void {
     },
     benchmark: (fixture) => fixture.run(),
     validate: (result, fixture) => fixture.validate(result),
-    gc: "inner",
+    gc: "steady",
     blackhole: true,
   });
   registerBenchmark({
@@ -128,7 +128,7 @@ export function lifecycleBench(framework: ReactiveFramework): void {
     },
     validate: (_, fixture) => fixture.validate(),
     teardown: (fixture) => fixture.dispose(),
-    gc: "inner",
+    gc: "steady",
     blackhole: true,
   });
 }

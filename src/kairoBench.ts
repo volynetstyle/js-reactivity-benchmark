@@ -29,7 +29,7 @@ export function kairoBench(framework: ReactiveFramework): void {
       validate: (result, fixture) => fixture.validate(result),
       teardown: (fixture) => fixture.dispose(),
       blackhole: true,
-      gc: "inner",
+      gc: "steady",
     });
   }
 }

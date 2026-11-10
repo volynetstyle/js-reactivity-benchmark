@@ -160,7 +160,7 @@ export function molBench(framework: ReactiveFramework): void {
       benchmark: (fixture) => fixture.run(),
       validate: (result, fixture) => fixture.validate(result),
       teardown: (fixture) => fixture.dispose(),
-      gc: "inner",
+      gc: "steady",
       blackhole: true,
     });
 }

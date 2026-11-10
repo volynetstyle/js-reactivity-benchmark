@@ -296,6 +296,10 @@ test("the leaderboard is scored per machine round, not from merged medians", () 
 test("refuses to merge results that are not one comparable measurement", () => {
   const [one, two] = twoShards();
   const variants = {
+    "differs in measurementVersion": [
+      one,
+      { ...two, json: { ...two.json, measurementVersion: "v2" } },
+    ],
     "differs in bundleSha256": [
       one,
       { ...two, json: { ...two.json, bundleSha256: "other" } },
@@ -326,6 +330,110 @@ test("refuses to merge results that are not one comparable measurement", () => {
   };
   for (const [message, shards] of Object.entries(variants))
     expect(() => mergeShardData(shards), message).toThrow(message);
+});
+
+test("paired ratio noise cancels common host and process speed", () => {
+  const shards = [1, 2, 10].map((speed, i) =>
+    shard({
+      round: i + 1,
+      index: 1,
+      count: 1,
+      scenarios: ["s"],
+      cpu: `cpu ${i}`,
+      rows: [
+        [
+          "a",
+          "s",
+          2 * speed,
+          [
+            [speed, speed * 0.9, speed * 1.1],
+            [speed * 3, speed * 2.9, speed * 3.1],
+          ],
+        ],
+        [
+          "b",
+          "s",
+          4 * speed,
+          [
+            [speed * 2, speed * 1.9, speed * 2.1],
+            [speed * 6, speed * 5.9, speed * 6.1],
+          ],
+        ],
+      ],
+    })
+  );
+  const { log, samples } = mergeShardData(shards);
+  const b = samples.rows.find((row) => row.framework === "b");
+  expect(b.noise.betweenMachine).toBeGreaterThan(0.5);
+  expect(b.paired).toMatchObject({
+    referenceFramework: "a",
+    machineRatios: [2, 2, 2],
+    processRatios: [
+      [2, 2],
+      [2, 2],
+      [2, 2],
+    ],
+  });
+  expect(b.paired.sdRatioMachine).toBeCloseTo(0);
+  expect(b.paired.sdRatioProcess).toBeCloseTo(0);
+  const parsed = parseBenchOutput(log);
+  const parsedB = parsed.rows.find((row) => row.framework === "b");
+  expect(parsedB.processEstimates).toEqual([
+    [2, 6],
+    [4, 12],
+    [20, 60],
+  ]);
+  expect(parsedB.paired.sdRatioProcess).toBe(0);
+  expect(renderResultsPage(parsed)).toContain("paired ratios between machines");
+});
+
+test("censoring on one machine never becomes an exact multi-machine median", () => {
+  const shards = [1, 2, 3].map((round) =>
+    shard({
+      round,
+      index: 1,
+      count: 1,
+      scenarios: ["s"],
+      cpu: `cpu ${round}`,
+      rows: [
+        ["a", "s", 10],
+        ["b", "s", 20],
+      ],
+    })
+  );
+  Object.assign(shards[1].json.rows[1], {
+    capped: true,
+    censored: true,
+    ceilingMs: 1500,
+    estimateMs: undefined,
+    statistics: undefined,
+  });
+  shards[1].log = shards[1].log.replace(
+    /^b\s+ , s\s+ , .*$/m,
+    line([
+      "b",
+      "s",
+      ">1500",
+      "",
+      "",
+      "",
+      "update",
+      "stable",
+      "CENSORED samples=0 ceiling=1500ms",
+    ])
+  );
+  const { log, samples } = mergeShardData(shards);
+  const b = samples.rows.find((row) => row.framework === "b");
+  expect(b.censorMachineRound).toBe(2);
+  expect(b.estimateMs).toBeUndefined();
+  expect(b.statistics).toBeUndefined();
+  expect(b.interval).toBeUndefined();
+  expect(b.machines).toHaveLength(3);
+  const parsed = parseBenchOutput(log);
+  expect(
+    parsed.frameworks.find((framework) => framework.name === "b").unranked
+  ).toBe(true);
+  expect(log).toContain("censor_machine=2");
 });
 
 test("rounds must cover the same rows with the same partition", () => {

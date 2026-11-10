@@ -66,7 +66,7 @@ export function cellxbench(framework: ReactiveFramework): void {
         }
       },
       teardown: (fixture) => fixture.dispose(),
-      gc: "inner",
+      gc: "steady",
       blackhole: true,
     });
   }

@@ -163,8 +163,9 @@ test("the slow-row cap does not depend on registration or run order", async () =
   );
   // Ceiling = max(1500, 3 x fastest pilot 2000) = 6000 ms.
   expect(rows.slowest.metrics).toContain(
-    "SLOW/CAPPED samples=1 ceiling=6000ms"
+    "CENSORED samples=0 ceiling=6000.000000ms"
   );
+  expect(rows.slowest.time).toBe(">6000.000000");
   expect(rows.slow.metrics).toContain("samples=3");
   expect(rows.fast.metrics).toContain("samples=3");
 });
@@ -190,15 +191,85 @@ test("rounds report the median of round medians and their range", async () => {
   expect(row.metrics).toContain("round_range=2.000000..9.000000");
 });
 
-test("execution order is scenario-major and rotates frameworks", async () => {
+test("execution order is seeded, scenario-major, reversed, then half rotated", async () => {
   const { executionOrder } = await import("../../src/util/benchmark");
   const cases = ["x", "y"].flatMap((name) =>
     ["a", "b", "c"].map((framework) => ({ name, framework }))
   );
   const order = (round: number) =>
     executionOrder(cases, round).map((c) => `${c.name}${c.framework}`);
-  expect(order(1)).toEqual(["xa", "xb", "xc", "yb", "yc", "ya"]);
-  expect(order(2)).toEqual(["xb", "xc", "xa", "yc", "ya", "yb"]);
+  expect(order(1)).toEqual(order(1));
+  for (const name of ["x", "y"]) {
+    const members = (round: number) =>
+      order(round).filter((id) => id.startsWith(name));
+    expect(members(1).slice().sort()).toEqual([
+      `${name}a`,
+      `${name}b`,
+      `${name}c`,
+    ]);
+    expect(members(2)).toEqual([...members(1)].reverse());
+    expect(members(3)).toEqual([
+      ...members(1).slice(1),
+      ...members(1).slice(0, 1),
+    ]);
+  }
+  expect(
+    order(1)
+      .slice(0, 3)
+      .every((id) => id.startsWith("x"))
+  ).toBe(true);
+});
+
+test.each(["cold", "steady", "throughput"] as const)(
+  "%s GC runs outside timing and after setup",
+  async (gc) => {
+    const { registerBenchmark, runBenchmarks } =
+      await import("../../src/util/benchmark");
+    const events: string[] = [];
+    vi.stubGlobal("gc", () => {
+      events.push("gc");
+      clock += 100;
+    });
+    try {
+      registerBenchmark({
+        framework: "probe",
+        name: "gc",
+        gc,
+        reuseFixture: true,
+        setup: () => {
+          events.push("setup");
+          return null;
+        },
+        prepareSample: () => {
+          events.push("reset");
+        },
+        benchmark: () => {
+          events.push("run");
+          clock += 1;
+        },
+      });
+      await runBenchmarks();
+      expect(events[0]).toBe("setup");
+      expect(events.filter((event) => event === "gc")).toHaveLength(
+        gc === "cold" ? 6 : gc === "steady" ? 1 : 0
+      );
+      expect(rowFor("gc").time).toBe("1.000000");
+      if (gc !== "throughput")
+        expect(events.slice(0, 3)).toEqual(["setup", "gc", "run"]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  }
+);
+
+test("creation defaults to cold GC and other workloads to steady", async () => {
+  const { gcMode } = await import("../../src/util/benchmark");
+  expect(gcMode({ name: "createComputations1to1" })).toBe("cold");
+  expect(gcMode({ name: "diamond" })).toBe("steady");
+  expect(gcMode({ name: "custom", group: "creation" })).toBe("cold");
+  expect(gcMode({ name: "custom", gc: "inner" })).toBe("cold");
+  expect(gcMode({ name: "custom", gc: "once" })).toBe("steady");
+  expect(gcMode({ name: "custom", gc: false })).toBe("throughput");
 });
 
 test("an incorrect intermediate sample fails the row before it is reported", async () => {

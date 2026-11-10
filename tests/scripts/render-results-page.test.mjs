@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   describeInterval,
+  decisive,
   intervalsOverlap,
   parseBenchOutput,
   rangeCoverage,
@@ -28,6 +29,79 @@ describe("benchmark result quality", () => {
       family: "stable update",
     });
   });
+});
+
+test("censored pilots never set the best time or enter an exact score", () => {
+  const parsed = parseBenchOutput(
+    [
+      "a , t , 2000 , , , , update , stable , samples=10",
+      "b , t , >1500 , , , , update , stable , CENSORED samples=0 ceiling=1500ms",
+    ].join("\n")
+  );
+  expect(parsed.frameworks[0]).toMatchObject({ name: "a", relativeScore: 1 });
+  expect(parsed.frameworks[1]).toMatchObject({ name: "b", unranked: true });
+  expect(parsed.frameworks[1].relativeScore).toBeNaN();
+  expect(renderResultsPage(parsed)).toContain("&gt;1500.00 ms");
+  expect(renderResultsPage(parsed)).toContain("not ranked: 1 censored");
+});
+
+test("an entirely censored publication renders without inventing a leader", () => {
+  const parsed = parseBenchOutput(
+    "a , t , >1500 , CENSORED samples=0 ceiling=1500ms"
+  );
+  expect(renderResultsPage(parsed)).toContain("No ranked results");
+});
+
+test("families have equal weight and the flat score remains available", () => {
+  const parsed = parseBenchOutput(
+    [
+      "a , u1 , 1 , , , , update , stable , samples=10",
+      "a , u2 , 1 , , , , update , stable , samples=10",
+      "a , c1 , 9 , , , , creation , allocation , samples=10",
+      "b , u1 , 3 , , , , update , stable , samples=10",
+      "b , u2 , 3 , , , , update , stable , samples=10",
+      "b , c1 , 1 , , , , creation , allocation , samples=10",
+    ].join("\n")
+  );
+  const a = parsed.frameworks.find((framework) => framework.name === "a");
+  const b = parsed.frameworks.find((framework) => framework.name === "b");
+  expect(a.relativeScore).toBeCloseTo(3);
+  expect(b.relativeScore).toBeCloseTo(Math.sqrt(3));
+  expect(a.flatScore).toBeCloseTo(9 ** (1 / 3));
+  expect(b.flatScore).toBeCloseTo(9 ** (1 / 3));
+});
+
+test("paired machine ratios cancel shared host speed despite overlapping absolute ranges", () => {
+  const parsed = parseBenchOutput(
+    [
+      "a , t , 2 , , , , update , stable , samples=30 machines=3 machine_range=1..4 machine_estimates=1;2;4",
+      "b , t , 2.8 , , , , update , stable , samples=30 machines=3 machine_range=1.4..5.6 machine_estimates=1.4;2.8;5.6",
+    ].join("\n")
+  );
+  expect(intervalsOverlap(...parsed.rows)).toBe(false);
+  expect(decisive(...parsed.rows)).toBe(true);
+  expect(renderResultsPage(parsed)).toContain("1 decisive test wins");
+});
+
+test("paired ratios crossing 1 preclude a decisive win", () => {
+  const parsed = parseBenchOutput(
+    [
+      "a , t , 2 , , , , update , stable , samples=30 machines=3 machine_range=1..4 machine_estimates=1;2;4",
+      "b , t , 3 , , , , update , stable , samples=30 machines=3 machine_range=0.9..6 machine_estimates=0.9;3;6",
+    ].join("\n")
+  );
+  expect(intervalsOverlap(...parsed.rows)).toBe(true);
+  expect(decisive(...parsed.rows)).toBe(false);
+});
+
+test("matched process ratios are used on a single machine", () => {
+  const parsed = parseBenchOutput(
+    [
+      "a , t , 2 , , , , update , stable , samples=30 round_range=1..4 process_estimates=1;2;4",
+      "b , t , 3 , , , , update , stable , samples=30 round_range=1.5..6 process_estimates=1.5;3;6",
+    ].join("\n")
+  );
+  expect(decisive(...parsed.rows)).toBe(true);
 });
 
 test("overall scores use the same scenario intersection despite lifecycle gaps", () => {

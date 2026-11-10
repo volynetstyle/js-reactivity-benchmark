@@ -106,7 +106,7 @@ export function dynamicBench(frameworkInfo: FrameworkInfo): void {
       teardown: (fixture) => fixture.graph?.disposePushEffects?.(),
       report: (result, timeMs) =>
         perfRowStrings(framework.name, config, timeMs, result),
-      gc: "inner",
+      gc: "steady",
       blackhole: true,
       // Six samples are the minimum for a 95% order-statistic median interval.
       samples: 6,

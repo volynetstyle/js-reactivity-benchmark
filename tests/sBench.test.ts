@@ -54,6 +54,7 @@ for (const { framework } of frameworkInfo) {
       const fixture = row.setup();
       const result = row.benchmark(fixture);
       expect(row.blackhole).toBe(true);
+      expect(row.gc).toBe(row.name.startsWith("create") ? "cold" : "steady");
       expect(row.validate).toBeTypeOf("function");
       row.validate!(result);
       if (row.name.startsWith("create")) {

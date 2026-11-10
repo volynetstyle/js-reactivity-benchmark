@@ -11,18 +11,19 @@ Local benchmark harness for comparing JavaScript reactivity libraries as behavio
 - computation creation and update tests
 - larger static and dynamic dependency graphs
 
-The project bundles the runner with `esbuild`, runs benchmarks under `node --expose-gc`, saves the raw log, and generates an HTML results page. Each framework/scenario pair runs in a fresh child process. The report ranks by relative geometric mean and shows per-test medians and capped status.
+The project bundles the runner with `esbuild`, runs benchmarks under `node --expose-gc`, saves the raw log, and generates an HTML results page. Each framework/scenario pair runs in a fresh child process. The report ranks by a family-balanced relative geometric mean and shows per-test medians and censored status.
 
 The current workload contract is **semantics v4**: v3's validated values,
 effect delivery and native lifecycle workloads, plus production library builds,
-exact dependency versions, interleaved run order, an order-independent cap,
-time-budgeted chronological sampling, and a 95% interval for every median.
-Compare runs with the same version and profile; v3 logs need a fresh run. See
+exact dependency versions, interleaved run order and chronological sampling.
+The measurement protocol is now **v2**: family-specific GC, censored pilots,
+paired comparisons and family-balanced scoring. Compare runs with the same
+workload semantics, measurement version and profile; earlier logs need a fresh run. See
 [the research and decisions](docs/benchmark-methodology.md).
 
-Measurement is centralized in [`src/util/benchmark.ts`](src/util/benchmark.ts). Each framework/scenario pair runs in a fresh worker process that loads only the selected library, bundled with `NODE_ENV=production`. Each invocation prepares its fixture, runs a full GC, then starts the clock; preparation, validation, cleanup, and reporting stay outside timing. No automatic batching or sample trimming is used. Creation fixtures stay fresh; explicitly warm static graphs restore an exact checkpoint between samples.
+Measurement is centralized in [`src/util/benchmark.ts`](src/util/benchmark.ts). Each framework/scenario pair runs in a fresh worker process that loads only the selected library, bundled with `NODE_ENV=production`. Creation uses `cold` GC before every invocation. Other workloads use `steady`: one GC after the first fixture setup, then natural GC during warmup and sampling. Cases can select `throughput` to disable forced GC entirely. Preparation, validation, cleanup, and reporting stay outside timing. No automatic batching or sample trimming is used. Creation fixtures stay fresh; explicitly warm static graphs restore an exact checkpoint between samples.
 
-Every case starts with one validated cold pilot run, excluded from the score. Results slower than the adaptive performance ceiling (`max(1500 ms, 3x the fastest pilot of any framework for that scenario)`) are reported but skip repeated sampling and carry a `SLOW/CAPPED samples=1` marker. The decision waits until every framework's pilot is known, so it does not depend on run order. Override the policy with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`.
+Every case starts with a cold pilot, excluded from the score. Completed invocations are validated. Pilots exceeding the adaptive ceiling (`max(1500 ms, 3x a completed reference pilot for that scenario)`) are censored. Available anchor implementations (`alien-signals`, `reflex-quant`, `reflex`) calibrate the first round first; the remaining order follows a seeded permutation, its reverse, then a half rotation. A parent watchdog can kill a slow pilot after the ceiling, excluding import, setup and forced GC time. Without a reference, a completed slow pilot is deferred until all available pilots are known. Censored rows show `>threshold ms CENSORED samples=0`, have no exact estimate, and make their framework unranked. This is a bound on the cold pilot, not on an unknown warmed median. Override the ceiling with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`. In-process diagnostics cannot interrupt synchronous JavaScript and use completed-pilot deferral only.
 
 ## Quick Start
 
@@ -118,6 +119,14 @@ runs on the same VM and each per-scenario comparison stays within one CPU
   versions, or sampling policy, or that cover scenarios incompletely or twice.
   The page lists every machine and the scenarios it measured.
 
+For a fixed host, dispatch with `runner_labels=["self-hosted","reactivity-benchmark"]`
+and optionally `cpu_affinity=2` (Linux `taskset`; children inherit affinity).
+Provision a dedicated idle runner with a fixed CPU governor before using those
+labels. Repetitions on that host are repeated runs on the same hardware, not
+independent physical machines. Hosted runners remain the automatic default.
+Sample and process-round budgets stay unchanged until fresh paired-ratio data
+justify a scenario-wide budget chosen before measurement.
+
 Run a shard locally with, for example, `BENCH_SHARD=2/8 pnpm run run`, and merge
 shard outputs (`<name>.log` + `<name>.samples.json` pairs) with
 `node scripts/merge-shards.mjs <dir>`.
@@ -189,13 +198,13 @@ The semantics and interpretation rules are documented in [SEMANTICS.md](SEMANTIC
 ## Reported Metrics
 
 The primary `time` is the median of measured samples (the median of round
-medians with `BENCH_ROUNDS`), excluding the pilot unless the row is capped.
+medians with `BENCH_ROUNDS`), always excluding the pilot. Censored rows have no primary time estimate.
 Each row carries `median_ci95`, a distribution-free 95% interval for the median
 (6+ samples), `round_range` for multi-round runs, or `machine_range` for merged
 machine rounds. Only `median_ci95` is a 95% interval, and it covers sample noise
 inside one process only; the range of `n` independent estimates covers their
 median with probability `1 - 2 × 0.5^n` (75% for three). Merged rows also carry
-`machine_estimates` (in machine-round order) and the noise components
+`machine_estimates` (in machine-round order), `process_estimates` and the noise components
 `sd_within`, `sd_process` and `sd_machine` (SD of ln(time)). Expanded output includes
 p95/p99 when supported, CV, group, family, and counters. The log header records
 the semantics version, sampling policy, runtime, machine, GC, isolation, run
@@ -210,22 +219,29 @@ The HTML leaderboard uses:
 
 ```txt
 r(L, test) = median_time(L, test) / best_median_time(test)
-score(L) = geometric_mean(r(L, tests))
+family_score(L, group) = geometric_mean(r(L, shared_tests_in_group))
+score(L) = geometric_mean(family_score(L, groups))
+flat_score(L) = geometric_mean(r(L, shared_tests))
 ```
 
 With machine rounds, each round is a complete leaderboard measured on its own
 VMs: `r` is formed within one round (one VM per scenario), each round is scored
 separately, and the page shows the median score with its range across rounds.
 Dividing medians taken from different machines would mix CPU models inside one
-ratio. A `≈` next to a rank means its range overlaps the one above.
+ratio. A `≈` next to a rank means the paired machine-set score ratios cross 1.
 
-Lower is better. The score weights each included scenario equally; use per-row
-results to assess a particular application. Capped rows have only one sample.
+Lower is better. Each semantic workload group has equal weight, and scenarios
+within a group have equal weight. The legacy flat score remains visible for continuity.
+Censored rows never enter either score, and their framework is unranked overall.
 Overall scores use the same scenario intersection for every framework.
 Lifecycle is compared within its supported group; unsupported ownership is
-absent, never a fabricated zero. In per-test cards a `≈` marks a result whose
-median interval overlaps the leader's; a scenario counts as a win only when the
-leader's interval lies entirely below the runner-up's.
+absent, never a fabricated zero. Per-test comparisons use the range of paired
+time ratios across machines, or matched process rounds on one machine. A range
+crossing 1 gets `≈`; a win requires ratios below 1 against every measured
+competitor and no failed or censored competitor. With a single process, median
+intervals are the fallback. A three-machine ratio range is descriptive, not a
+95% confidence interval. `sd_ratio_process` and `sd_ratio_machine` expose the
+SD of log ratios to a fixed fully measured reference per scenario.
 
 ## Dependency versions
 
@@ -283,10 +299,10 @@ authors of these benchmark adapters.
 
 Two adapters remain outside the default comparison after the [2026-10-23 recheck](docs/adapter-recheck.md):
 
-| Library                                                                      | Author / team                                                                         | Adapter / current limitation                                                                                                                            |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Library                                              | Author / team                                                   | Adapter / current limitation                                                                                           |
+| ---------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | [Compostate](https://github.com/lxsmnsyc/compostate) | [Alexis Munsayac](https://github.com/lxsmnsyc) and contributors | [compostate.ts](src/frameworks/compostate.ts); 1.0.0 repeatedly traverses shared dependency paths on deep cellx graphs |
-| [Valtio](https://github.com/pmndrs/valtio) | [Daishi Kato](https://github.com/dai-shi) and contributors | [valtio.ts](src/frameworks/valtio.ts); 2.3.2 + valtio-reactive 0.2.0 emits transient diamond values inside a batch |
+| [Valtio](https://github.com/pmndrs/valtio)           | [Daishi Kato](https://github.com/dai-shi) and contributors      | [valtio.ts](src/frameworks/valtio.ts); 2.3.2 + valtio-reactive 0.2.0 emits transient diamond values inside a batch     |
 
 The active list is defined in [src/config.ts](src/config.ts) and checked against
 [the isolated-worker catalog](src/frameworkCatalog.json). See the

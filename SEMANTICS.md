@@ -142,11 +142,11 @@ and propagation algorithms are left to each library's documentation.
 | @maverick-js/signals         | microtask effects; `tick()` at commit           | `root`                | yes                            |
 | cellx                        | `release()` at commit                           | –                     | no                             |
 | rescript-signals             | `Signal.batch`                                  | –                     | no                             |
-| MobX 7.1                    | `runInAction`                                    | –                     | no                             |
-| Svelte 5                    | outer private runtime `flush`                    | `effect_root`         | yes                            |
-| TC39 Signals Polyfill       | outer adapter Watcher drain                      | –                     | yes                            |
-| Angular Signals             | outer adapter Watch queue                        | –                     | yes                            |
-| Kairo 0.8 alpha             | native `batch`                                   | –                     | no                             |
+| MobX 7.1                     | `runInAction`                                   | –                     | no                             |
+| Svelte 5                     | outer private runtime `flush`                   | `effect_root`         | yes                            |
+| TC39 Signals Polyfill        | outer adapter Watcher drain                     | –                     | yes                            |
+| Angular Signals              | outer adapter Watch queue                       | –                     | yes                            |
+| Kairo 0.8 alpha              | native `batch`                                  | –                     | no                             |
 
 "Minimal recomputation asserted" means the adapter's recomputation counts must
 match the minimal counts exactly; libraries marked "no" recompute more on some
@@ -216,10 +216,15 @@ The report groups benchmarks into these families:
 
 ### Sampling
 
-Each row runs in a fresh process: one validated pilot (cold), validated warmup
-invocations, then measured samples. Each invocation prepares its fixture,
-runs a full GC, and only then starts the clock, so setup garbage and the
-previous sample's garbage are never charged to the measured call.
+Each row runs in a fresh process: one pilot (cold), validated warmup
+invocations, then measured samples. Measurement protocol **v2** uses `cold` GC
+for creation (after each fixture setup, before each timed call) and `steady` GC
+for other workloads (once, after the first fixture setup). `throughput` runs
+with natural GC only. Steady sampling also includes any natural GC triggered
+inside a timed workload. Legacy `true`/`inner`, `once`, and `false` map to
+`cold`, `steady`, and `throughput` respectively. Fixture preparation, validation
+and disposal stay outside timing. Earlier measurement protocols require fresh
+measurements; the workload semantics remain v4.
 
 | Profile           | Warmup | Measured samples                                                             |
 | ----------------- | ------ | ---------------------------------------------------------------------------- |
@@ -253,23 +258,36 @@ descriptive: with three machines `sd_machine` of a single row is itself very
 uncertain, so the page reports medians over rows.
 
 Rows run scenario-major: all frameworks for one scenario, then the next. The
-framework order rotates per scenario and per round, so no library is always
-measured first or last as the machine heats up or picks up background load.
+framework order follows a deterministic seeded permutation, its reverse, then
+a half rotation. Later blocks shift the base permutation. In the first round,
+available `alien-signals`, `reflex-quant` and `reflex` anchors run first to
+establish a conservative pilot ceiling; other rounds use the full schedule.
 
 ### Adaptive performance ceiling
 
 The default ceiling is:
 
 ```txt
-max(1500 ms, 3 * fastest pilot of any framework for the same scenario)
+max(1500 ms, 3 * fastest completed reference pilot for the same scenario)
 ```
 
-A row whose pilot exceeds 1500 ms is deferred; once every framework's pilot for
-the scenario is known, it is either capped or measured in full in a new process.
-The decision therefore does not depend on run order (before v4 it compared only
-with frameworks that happened to run earlier). A capped row keeps its cold pilot
-as the score, is marked `SLOW/CAPPED samples=1`, and has no interval. Configure
-with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`.
+Once a reference exists, a watchdog starts on the worker's pilot-start message
+and kills it when that invocation exceeds the ceiling. Setup, import and forced
+GC do not consume that budget. Until a reference exists, pilots above the floor
+are deferred; after all available pilots, they are censored or remeasured in a
+fresh process. Earlier references may make a ceiling more permissive than the
+eventual global best, never stricter. An in-process diagnostic cannot interrupt
+a synchronous pilot and uses deferral only.
+
+A censored row is printed as `>threshold ms CENSORED samples=0`. It has no
+`estimateMs`, measured-sample statistics or uncertainty interval, and its
+framework is unranked overall. A completed pilot remains in the raw rounds for
+audit, but never becomes a measured sample. An interrupted pilot has validation
+`not-completed`. The bound concerns the cold pilot; it does not establish a lower
+bound on the unknown warmed median. If only one machine censors the row, that
+machine is identified and the other records are preserved; no exact merged
+median is computed. Historical `SLOW/CAPPED` rows are likewise excluded from
+scores. Configure with `BENCH_MIN_CEILING_MS` and `BENCH_MAX_SLOWDOWN`.
 
 ### Uncertainty
 
@@ -279,18 +297,30 @@ interval covers sample noise inside one process only: a new process, another VM
 or another CPU model can move the median further. The range of `n` independent
 estimates (`round_range`, `machine_range`) covers their population median with
 probability `1 - 2 × 0.5^n`, 75% for three, and is labelled as such, never as a
-95% interval. The report marks a result whose interval overlaps the leader's
-with `≈` and counts a scenario as a win only when the leader's interval lies
-below the runner-up's.
+95% interval. Comparisons use paired ratios of framework times on the same VM,
+across machine rounds. With one VM and multiple process rounds, ratios pair the
+same round numbers. A ratio range crossing 1 receives `≈`. A decisive test win
+requires the leader's paired range below 1 against every measured competitor,
+with no failed or censored competitor; these are descriptive repeated-run wins,
+not a claim of 95% confidence. Single-process comparisons fall back to median
+intervals. Absolute time ranges remain visible as diagnostics.
 p95 requires 200 samples and p99 1000, with 95% order-statistic bounds. All
 intervals assume iid samples; autocorrelation, JIT transitions and thermal
 changes limit that interpretation, which is what rounds are for. Saved JSON
-contains every duration, including pilot and warmup.
-The HTML report ranks libraries by geometric mean of relative slowdown:
+contains every completed duration, including pilot and warmup. Merged rows also
+store `paired`: a fully measured reference framework, `machineRatios`, per-VM
+`processRatios`, and SD of log ratios at the process and machine levels. The
+log exposes `sd_ratio_process` and `sd_ratio_machine`; self-comparisons are
+excluded from summary spreads. Process pairs are sequential matched rounds,
+not simultaneous executions. Budgets remain unchanged until fresh paired
+statistics justify changing them for a whole scenario before measurement.
+The HTML report ranks libraries by a family-balanced geometric mean:
 
 ```txt
 r(L, test) = median_time(L, test) / best_median_time(test)
-score(L) = exp(mean(log(r(L, shared_test))))
+family_score(L, group) = exp(mean(log(r(L, shared_tests_in_group))))
+score(L) = exp(mean(log(family_score(L, groups))))
+flat_score(L) = exp(mean(log(r(L, shared_test))))
 ```
 
 Lower is better. A score of `1.00x` means best on every included row.
@@ -300,14 +330,15 @@ frameworks of a scenario ran on the same VM:
 
 ```txt
 r_m(L, test) = time_m(L, test) / best_time_m(test)
-score_m(L) = exp(mean(log(r_m(L, shared_test))))
+score_m(L) = geometric_mean over groups of geometric_mean(r_m(L, shared_tests_in_group))
 score(L) = median over m of score_m(L), reported with min..max over m
 ```
 
 Each machine round is a complete leaderboard on its own set of VMs, so the
 range of `score_m` shows how much the ranking depends on which CPUs a run drew
-(the algorithm × microarchitecture interaction), and a rank whose range
-overlaps the one above is marked `≈`. Without machine rounds the overall score
+(the algorithm × microarchitecture interaction). A rank whose paired score
+ratios cross 1 against the preceding rank is marked `≈`. The legacy flat score
+is retained alongside the primary score. Without machine rounds the overall score
 has no interval: each scenario ran on one VM and different scenarios on
 different CPU models.
 

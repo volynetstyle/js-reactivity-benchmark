@@ -1,5 +1,14 @@
 # Benchmark methodology: research and semantics v4
 
+Measurement protocol v2 supersedes the original v4 measurement decisions below:
+steady workloads collect once after fixture setup; creation retains per-call
+GC. Slow pilots are censored and excluded from scores. Comparisons use paired
+ratios, the overall score balances workload groups equally, and the schedule
+uses seeded/reversed/half-rotated permutations after first-round calibration.
+The workload contract stays v4; old protocol measurements require a fresh run.
+See [the current contract](../SEMANTICS.md#sampling) for exact rules. Sample and
+round budgets remain unchanged pending fresh paired-ratio evidence.
+
 ## Semantics v4: measurement honesty review
 
 v4 audits what is actually executed and timed. Each finding below changed
@@ -174,8 +183,9 @@ process containing only its selected library. Creation samples use fresh fixture
 Explicitly warm static full-read graphs reuse a fixture after an exact untimed
 checkpoint restore, leaf flush, and counter reset. Tests across all 14 adapters
 verify identical sums and recomputation counts after restoration. The pilot is
-excluded from an uncapped median; a capped row retains its one pilot. The parent
-passes the fastest pilot reference between workers for the adaptive cap.
+excluded from every measured median. A completed censored pilot is retained
+only for audit; interrupted pilots have no completed duration. The parent
+supervises later pilots using completed references for the adaptive ceiling.
 `BENCH_IN_PROCESS=1` is a diagnostic override, recorded as shared isolation in
 the log header. Compare runs with the same isolation policy.
 

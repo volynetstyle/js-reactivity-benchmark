@@ -48,6 +48,16 @@ on:
         required: false
         type: string
         default: "3"
+      runner_labels:
+        description: 'Runner labels as JSON; use ["self-hosted","reactivity-benchmark"] for a dedicated host'
+        required: false
+        type: string
+        default: '["ubuntu-latest"]'
+      cpu_affinity:
+        description: "Optional Linux CPU list for taskset, e.g. 2 (dedicated runner)"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -106,7 +116,7 @@ jobs:
   measure:
     name: Measure shard ${{ matrix.shard }} (machine round ${{ matrix.round }})
     needs: plan
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.inputs.runner_labels || '["ubuntu-latest"]') }}
     timeout-minutes: 120
     strategy:
       # A partial set of shards cannot be published; stop spending runners.
@@ -153,10 +163,15 @@ jobs:
           # FAILED row (not ranked) instead of blocking the whole leaderboard.
           BENCH_ALLOW_FAILURES: "1"
           BENCH_SOURCE_COMMIT: ${{ env.TESTED_SHA }}
+          BENCH_CPU_AFFINITY: ${{ github.event.inputs.cpu_affinity }}
           BENCH_SAMPLES_FILE: shard-out/shard-${{ matrix.round }}-${{ matrix.shard }}.samples.json
         run: |
           mkdir -p shard-out
-          node --expose-gc dist/index.js > "shard-out/shard-${{ matrix.round }}-${{ matrix.shard }}.log"
+          if [ -n "$BENCH_CPU_AFFINITY" ]; then
+            taskset -c "$BENCH_CPU_AFFINITY" node --expose-gc dist/index.js > "shard-out/shard-${{ matrix.round }}-${{ matrix.shard }}.log"
+          else
+            node --expose-gc dist/index.js > "shard-out/shard-${{ matrix.round }}-${{ matrix.shard }}.log"
+          fi
 
       - name: Upload shard output
         uses: actions/upload-artifact@v7

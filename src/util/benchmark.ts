@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import path from "node:path";
+import { SeededRandom } from "./seededRandom";
 import { timingStatistics, TimingStatistics } from "./statistics";
 import {
   logPerfResult,
@@ -15,10 +16,23 @@ import {
 export const SEMANTICS_VERSION = "v4";
 
 /**
- * `true` and `"inner"`: full GC after each fixture is prepared and before each
- * timed invocation. `"once"`: a single GC before the pilot. `false`: never.
+ * cold: GC before every invocation; steady: GC after the first fixture setup;
+ * throughput: natural GC only. Legacy aliases remain supported.
  */
-export type BenchmarkGcMode = false | true | "once" | "inner";
+export type BenchmarkGcMode =
+  "cold" | "steady" | "throughput" | false | true | "once" | "inner";
+
+export function gcMode(
+  entry: Pick<BenchmarkCase<unknown, unknown>, "gc" | "name" | "group">
+): "cold" | "steady" | "throughput" {
+  if (entry.gc === false || entry.gc === "throughput") return "throughput";
+  if (entry.gc === true || entry.gc === "inner" || entry.gc === "cold")
+    return "cold";
+  if (entry.gc === "once" || entry.gc === "steady") return "steady";
+  return (entry.group ?? workloadFamily(entry.name)[0]) === "creation"
+    ? "cold"
+    : "steady";
+}
 
 export interface BenchmarkCase<TFixture, TResult> {
   framework: string;
@@ -59,18 +73,20 @@ export interface TimingRecord {
   name: string;
   profile: string;
   capped: boolean;
+  censored?: boolean;
+  gcMode: "cold" | "steady" | "throughput";
   ceilingMs?: number;
   /** Primary row score: the median, or the median of round medians. */
-  estimateMs: number;
+  estimateMs?: number;
   interval?: {
     kind: "median-order-statistic-95" | "round-median-range";
     lowMs: number;
     highMs: number;
   };
-  /** Over all measured samples of all rounds (the pilot when capped). */
-  statistics: TimingStatistics;
+  /** Over measured samples only; absent for censored rows. */
+  statistics?: TimingStatistics;
   rounds: RoundRecord[];
-  validation: "passed" | "absent";
+  validation: "passed" | "absent" | "not-completed";
   group: string;
   family: string;
   fixture: "fresh" | "warm-reused";
@@ -120,6 +136,7 @@ export interface FailedRecord {
 type CaseOutcome =
   | { kind: "measured"; id: string; round: RoundRecord; row: PerfRowStrings }
   | { kind: "deferred"; id: string; pilotMs: number; row: PerfRowStrings }
+  | { kind: "censored"; id: string; ceilingMs: number }
   | { kind: "failed"; id: string; failure: RowFailure };
 
 /** Thrown when a produced result is wrong, as opposed to a crash. */
@@ -258,9 +275,8 @@ export function registerBenchmark<TFixture, TResult>(
 }
 
 /**
- * Scenario-major order. Within each scenario the framework order rotates per
- * scenario and per round, so no library is systematically measured first or
- * last while the machine warms up, throttles, or picks up background load.
+ * Scenario-major seeded permutation, its reverse, then a half rotation.
+ * Further blocks rotate the base permutation again.
  */
 export function executionOrder<T extends { name: string }>(
   cases: readonly T[],
@@ -272,9 +288,19 @@ export function executionOrder<T extends { name: string }>(
     row.push(entry);
     byName.set(entry.name, row);
   }
-  return Array.from(byName.values()).flatMap((row, scenario) => {
-    const offset = (scenario + round - 1) % row.length;
-    return [...row.slice(offset), ...row.slice(0, offset)];
+  return Array.from(byName.entries()).flatMap(([name, members]) => {
+    const row = [...members];
+    const random = new SeededRandom(`execution-order-v2:${name}`);
+    for (let i = row.length - 1; i > 0; i--) {
+      const j = random.int(0, i);
+      [row[i], row[j]] = [row[j], row[i]];
+    }
+    const block = Math.floor((round - 1) / 3);
+    const offset =
+      (block + ((round - 1) % 3 === 2 ? Math.floor(row.length / 2) : 0)) %
+      row.length;
+    const ordered = [...row.slice(offset), ...row.slice(0, offset)];
+    return (round - 1) % 3 === 1 ? ordered.reverse() : ordered;
   });
 }
 
@@ -437,7 +463,7 @@ export async function runBenchmarks(): Promise<void> {
   const machineRound = readPositiveInteger("BENCH_MACHINE_ROUND", 1);
   const bundle = bundleSha256();
   console.log(
-    `# semantics=${SEMANTICS_VERSION} profile=${policy.profile} rounds=${policy.rounds} warmup=${policy.warmup} min_samples=${process.env.BENCH_SAMPLES?.trim() || "per-case"} max_samples=${policy.maxSamples} min_time_ms=${policy.minTimeMs} node=${process.version} v8=${process.versions.v8} platform=${process.platform}/${process.arch} cpu=${(cpus()[0]?.model ?? "unknown").trim().replace(/\s+/g, "_")} cores=${cpus().length} ram=${totalmem()} gc=${!!globalThis.gc} isolation=${isolation} order=interleaved node_env=production instrumented=${process.env.BENCH_INSTRUMENT === "1"} shard=${shard ? `${shard.index}/${shard.count}` : "none"} machine_round=${machineRound} bundle=${bundle.slice(0, 12)} heap_mb=${WORKER_HEAP_MB} row_timeout_s=${Math.round(ROW_TIMEOUT_MS / 1000)}`
+    `# semantics=${SEMANTICS_VERSION} measurement=v2 gc_policy=family profile=${policy.profile} rounds=${policy.rounds} warmup=${policy.warmup} min_samples=${process.env.BENCH_SAMPLES?.trim() || "per-case"} max_samples=${policy.maxSamples} min_time_ms=${policy.minTimeMs} node=${process.version} v8=${process.versions.v8} platform=${process.platform}/${process.arch} cpu=${(cpus()[0]?.model ?? "unknown").trim().replace(/\s+/g, "_")} cores=${cpus().length} ram=${totalmem()} gc=${!!globalThis.gc} isolation=${isolation} order=seeded-balanced node_env=production instrumented=${process.env.BENCH_INSTRUMENT === "1"} shard=${shard ? `${shard.index}/${shard.count}` : "none"} machine_round=${machineRound} bundle=${bundle.slice(0, 12)} heap_mb=${WORKER_HEAP_MB} row_timeout_s=${Math.round(ROW_TIMEOUT_MS / 1000)}`
   );
   const packages = packageVersions();
   for (const [framework, versions] of Object.entries(packages))
@@ -474,7 +500,7 @@ interface RowState {
   entry: RegisteredCase;
   rounds: RoundRecord[];
   row?: PerfRowStrings;
-  capped?: { pilotMs: number; ceilingMs: number };
+  capped?: { pilotMs?: number; ceilingMs: number };
   failure?: RowFailure;
   wallMs?: number;
 }
@@ -505,7 +531,17 @@ async function runPlan(
       ...summarize(state.entry, state.rounds, state.capped),
       wallMs: state.wallMs,
     };
-    logPerfResult(formatRow(record, state.row!));
+    logPerfResult(
+      formatRow(
+        record,
+        state.row ?? {
+          framework: state.entry.framework,
+          test: state.entry.title ?? state.entry.name,
+          time: "",
+          metrics: "",
+        }
+      )
+    );
     records.push(record);
   };
 
@@ -520,12 +556,25 @@ async function runPlan(
         `[${++started}/${total}] round ${round}/${policy.rounds} ${state.entry.id}\n`
       );
       const startedAt = performance.now();
-      const outcome = await runRow(state.entry, round, allowDefer);
+      const reference = pilots.get(state.entry.name);
+      const outcome = await runRow(
+        state.entry,
+        round,
+        allowDefer,
+        allowDefer && reference !== undefined
+          ? performanceCeilingMs(reference)
+          : undefined
+      );
       // Whole-row cost, process start included: what CI shards must balance.
       state.wallMs = (state.wallMs ?? 0) + performance.now() - startedAt;
       if (outcome.kind === "failed") {
         // A failure in any round is the row's result.
         state.failure = outcome.failure;
+        finish(state);
+        return;
+      }
+      if (outcome.kind === "censored") {
+        state.capped = { ceilingMs: outcome.ceilingMs };
         finish(state);
         return;
       }
@@ -540,10 +589,23 @@ async function runPlan(
       if (round === policy.rounds) finish(state);
     };
 
-    for (const entry of executionOrder(registeredCases, round)) {
+    const order = executionOrder(registeredCases, round);
+    // Calibrate with known fast implementations before supervising other pilots.
+    // Sorting is stable and scenario-major; all later rounds use the full schedule.
+    const anchors = new Set(["alien-signals", "reflex-quant", "reflex"]);
+    const scenarioIndex = new Map(
+      [...new Set(order.map((entry) => entry.name))].map((name, i) => [name, i])
+    );
+    if (round === 1)
+      order.sort(
+        (a, b) =>
+          scenarioIndex.get(a.name)! - scenarioIndex.get(b.name)! ||
+          Number(anchors.has(b.framework)) - Number(anchors.has(a.framework))
+      );
+    for (const entry of order) {
       const state = states.get(entry.id)!;
       if (state.failure || state.capped) continue;
-      // The cap is decided once, in the first round, from all frameworks' pilots.
+      // Only the first round calibrates/censors pilots; later rounds measure.
       await attempt(state, round === 1);
     }
 
@@ -572,7 +634,8 @@ async function runPlan(
 async function runRow(
   entry: RegisteredCase,
   round: number,
-  allowDefer: boolean
+  allowDefer: boolean,
+  ceilingMs?: number
 ): Promise<CaseOutcome> {
   if (process.env.BENCH_IN_PROCESS === "1")
     return measureCaseSafely(entry, round, allowDefer);
@@ -584,6 +647,8 @@ async function runRow(
   return await new Promise<CaseOutcome>((resolve) => {
     let outcome: CaseOutcome | undefined;
     let timedOut = false;
+    let censored = false;
+    let pilotTimer: ReturnType<typeof setTimeout> | undefined;
     // Keep the end of the worker's diagnostics to classify crashes.
     let tail = "";
     const remember = (chunk: Buffer) => {
@@ -600,6 +665,7 @@ async function runRow(
           BENCH_CASE: entry.id,
           BENCH_ROUND: String(round),
           BENCH_DEFER_CAP: allowDefer ? "1" : "",
+          BENCH_SUPERVISE_PILOT: ceilingMs === undefined ? "" : "1",
         },
         execArgv: [
           ...process.execArgv.filter(
@@ -617,15 +683,35 @@ async function runRow(
     }, ROW_TIMEOUT_MS);
     child.stdout!.on("data", remember);
     child.stderr!.on("data", remember);
-    child.on("message", (message: CaseOutcome) => {
-      if (message?.id === entry.id) outcome = message;
-    });
+    child.on(
+      "message",
+      (
+        message:
+          | CaseOutcome
+          | { kind: "pilot-start"; id: string }
+          | { kind: "pilot-end"; id: string }
+      ) => {
+        if (message?.id !== entry.id) return;
+        if (message.kind === "pilot-start") {
+          if (ceilingMs !== undefined && !pilotTimer)
+            pilotTimer = setTimeout(() => {
+              censored = true;
+              child.kill("SIGKILL");
+            }, ceilingMs);
+        } else if (message.kind === "pilot-end") {
+          clearTimeout(pilotTimer);
+        } else outcome = message;
+      }
+    );
     child.on("error", (error) =>
       resolve(failed({ kind: "crashed", message: error.message }))
     );
     child.on("close", (code, signal) => {
       clearTimeout(timer);
-      if (timedOut)
+      clearTimeout(pilotTimer);
+      if (censored)
+        resolve({ kind: "censored", id: entry.id, ceilingMs: ceilingMs! });
+      else if (timedOut)
         resolve(
           failed({
             kind: "timeout",
@@ -711,8 +797,10 @@ function measureCase(
 ): CaseOutcome {
   const policy = samplingPolicy(entry.samples);
   const guard = consoleGuard();
-  const hasGc = entry.gc !== false && typeof globalThis.gc === "function";
-  const gcEverySample = hasGc && entry.gc !== "once";
+  const mode = gcMode(entry);
+  const hasGc = mode !== "throughput" && typeof globalThis.gc === "function";
+  let collected = false;
+  let pilot = true;
   let fixture: unknown;
   let hasFixture = false;
   let result: unknown;
@@ -749,16 +837,25 @@ function measureCase(
   const invoke = (): number => {
     prepare();
     // Collect setup and previous-sample garbage outside the timed region.
-    if (gcEverySample) globalThis.gc!();
+    if (hasGc && (mode === "cold" || !collected)) {
+      globalThis.gc!();
+      collected = true;
+    }
     guard.measured = true;
     let start = 0;
     let end = 0;
     try {
       start = performance.now();
+      // Pilot IPC is excluded from warmed statistics. The parent starts its
+      // deadline after this message, so setup/GC never consume that budget.
+      if (pilot && process.env.BENCH_SUPERVISE_PILOT === "1")
+        process.send?.({ kind: "pilot-start", id: entry.id });
       result = entry.benchmark(fixture);
       end = performance.now();
     } finally {
       guard.measured = false;
+      if (pilot && process.env.BENCH_SUPERVISE_PILOT === "1")
+        process.send?.({ kind: "pilot-end", id: entry.id });
     }
     pendingValidation = true;
     if (entry.blackhole) blackholeSink.value = result;
@@ -776,8 +873,8 @@ function measureCase(
     };
 
   try {
-    if (hasGc && !gcEverySample) globalThis.gc!();
     const pilotMs = invoke();
+    pilot = false;
     validatePending();
     // Only a pilot above the absolute floor can be capped; the parent decides
     // once the pilots of every framework for this scenario are known.
@@ -836,7 +933,7 @@ function consoleGuard() {
 function summarize(
   entry: RegisteredCase,
   rounds: RoundRecord[],
-  capped?: { pilotMs: number; ceilingMs: number }
+  capped?: { pilotMs?: number; ceilingMs: number }
 ): TimingRecord {
   const [defaultGroup, defaultFamily] = workloadFamily(entry.name);
   const base = {
@@ -848,17 +945,27 @@ function summarize(
     group: entry.group ?? defaultGroup,
     family: entry.family ?? defaultFamily,
     fixture: entry.reuseFixture ? ("warm-reused" as const) : ("fresh" as const),
+    gcMode: gcMode(entry),
   };
   if (capped) {
     return {
       ...base,
       capped: true,
+      censored: true,
       ceilingMs: capped.ceilingMs,
-      estimateMs: capped.pilotMs,
-      statistics: timingStatistics([capped.pilotMs]),
-      rounds: [
-        { round: 1, pilotMs: capped.pilotMs, warmupMs: [], samplesMs: [] },
-      ],
+      validation:
+        capped.pilotMs === undefined ? "not-completed" : base.validation,
+      rounds:
+        capped.pilotMs === undefined
+          ? []
+          : [
+              {
+                round: 1,
+                pilotMs: capped.pilotMs,
+                warmupMs: [],
+                samplesMs: [],
+              },
+            ],
     };
   }
   const statistics =
@@ -896,19 +1003,22 @@ function formatRow(
   const { statistics } = record;
   const out: PerfRowStrings = {
     ...row,
-    time: record.estimateMs.toFixed(6),
-    p95: statistics.p95?.toFixed(6) ?? "",
-    p99: statistics.p99?.toFixed(6) ?? "",
-    cv: statistics.cv?.toFixed(6) ?? "",
+    time: record.censored
+      ? `>${record.ceilingMs!.toFixed(6)}`
+      : record.estimateMs!.toFixed(6),
+    p95: statistics?.p95?.toFixed(6) ?? "",
+    p99: statistics?.p99?.toFixed(6) ?? "",
+    cv: statistics?.cv?.toFixed(6) ?? "",
     group: record.group,
     family: record.family,
   };
   const tokens: string[] = [];
   if (record.capped) {
     tokens.push(
-      `SLOW/CAPPED samples=1 ceiling=${record.ceilingMs!.toFixed(0)}ms pilot=cold`
+      `CENSORED samples=0 ceiling=${record.ceilingMs!.toFixed(6)}ms pilot=cold validation=${record.validation}`
     );
   } else {
+    const statistics = record.statistics!;
     const warmup = record.rounds[0].warmupMs.length;
     const tails =
       statistics.p99 !== undefined
@@ -917,7 +1027,7 @@ function formatRow(
           ? "p95"
           : "insufficient";
     tokens.push(
-      `samples=${statistics.count} rounds=${record.rounds.length} profile=${record.profile} warmup=${warmup} pilot=excluded tails=${tails} fixture=${record.fixture}`
+      `samples=${statistics.count} rounds=${record.rounds.length} profile=${record.profile} warmup=${warmup} pilot=excluded tails=${tails} fixture=${record.fixture} gc_mode=${record.gcMode} process_estimates=${record.rounds.map((r) => r.statistics!.median.toFixed(6)).join(";")}`
     );
     if (record.interval) {
       const key =
@@ -972,6 +1082,7 @@ async function saveTimingRecords(
     JSON.stringify(
       {
         semantics: SEMANTICS_VERSION,
+        measurementVersion: "v2",
         profile: policy.profile,
         policy: {
           ...policy,
@@ -990,9 +1101,10 @@ async function saveTimingRecords(
         machineRound: run.machineRound,
         bundleSha256: run.bundleSha256,
         gc: !!globalThis.gc,
+        cpuAffinity: process.env.BENCH_CPU_AFFINITY || undefined,
         isolation,
         order:
-          "interleaved: scenario-major, framework rotation per scenario and round",
+          "scenario-major: seeded permutation, reverse, half rotation; first-round anchors first",
         nodeEnv: "production",
         limits: { heapMb: WORKER_HEAP_MB, rowTimeoutMs: ROW_TIMEOUT_MS },
         capPolicy: {
