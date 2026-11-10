@@ -38,7 +38,7 @@
     "@amadeus-it-group/tansu": "2.0.0",
     "@angular/core": "22.2.5",
     "@maverick-js/signals": "6.0.0",
-    "@pravosleva/reactive-engine": "2.6.3",
+    "@pravosleva/reactive-engine": "2.7.0",
     "@preact/signals-core": "1.14.5",
     "@reactively/core": "0.0.8",
     "@reatom/core": "1001.3.0",
@@ -53,9 +53,9 @@
     "dalien-signals": "3.2.1",
     "kairo": "0.8.0-alpha.2",
     "mobx": "7.1.5",
-    "mol_wire_lib": "1.0.1837",
+    "mol_wire_lib": "1.0.1839",
     "oby": "15.1.2",
-    "reflex-quant": "1.1.1",
+    "reflex-quant": "1.1.2",
     "rescript-signals": "3.2.0",
     "s-js": "0.4.9",
     "signal-polyfill": "0.2.2",
@@ -74,8 +74,8 @@
     "esbuild": "0.28.2",
     "prettier": "3.9.10",
     "typescript": "7.0.2",
-    "vite": "8.3.6",
-    "vitest": "5.0.5"
+    "vite": "8.3.7",
+    "vitest": "5.1.0"
   },
   "engines": {
     "node": ">=22"
