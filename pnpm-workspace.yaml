@@ -6,14 +6,18 @@ peerDependencyRules:
     "cellx@2.4.0>@preact/signals-core": "1.14.5"
     "cellx@2.4.0>@reatom/core": "1001.3.0"
     "cellx@2.4.0>alien-signals": "3.2.1"
-    "cellx@2.4.0>mobx": "7.1.5"
-    "cellx@2.4.0>mol_wire_lib": "1.0.1839"
-    "cellx@2.4.0>solid-js": "1.9.18"
+    "cellx@2.4.0>mobx": "7.1.7"
+    "cellx@2.4.0>mol_wire_lib": "1.0.1846"
+    "cellx@2.4.0>solid-js": "1.9.19"
 
 packageExtensions:
   "rescript-signals@3.2.0":
     dependencies:
       "@rescript/runtime": "12.3.1"
 
-onlyBuiltDependencies:
-  - esbuild
+allowBuilds:
+  esbuild: true
+
+minimumReleaseAgeExclude:
+  - mol_wire_lib@1.0.1846
+  - signal-polyfill@0.2.3
