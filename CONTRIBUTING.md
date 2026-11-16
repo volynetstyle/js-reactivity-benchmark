@@ -5,7 +5,7 @@ reporting improvements are welcome.
 
 ## Local Setup
 
-Use the Node.js version in `.nvmrc` and pnpm 10, then run:
+Use the Node.js version in `.nvmrc` and pnpm 12.21.0, then run:
 
 ```bash
 pnpm install --frozen-lockfile

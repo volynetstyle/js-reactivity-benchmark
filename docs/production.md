@@ -11,7 +11,7 @@ Use the exact Node.js version from `.nvmrc` (24.15.0) for comparable measurement
 on every shard and on the merged result. The generated JavaScript targets
 Node.js 22 and later, which CI checks on Node.js 22, 24 and 26: that is a
 compatibility matrix, never a source of published numbers. `package.json` pins
-pnpm 10.22.0; all dependencies, including TypeScript, have exact versions.
+pnpm 12.21.0; all dependencies, including TypeScript, have exact versions.
 
 ```sh
 pnpm install --frozen-lockfile --strict-peer-dependencies

@@ -31,7 +31,7 @@ When some machines measure a row and others censor it, the merge retains the suc
 
 ## Quick Start
 
-Use the Node.js version in [`.nvmrc`](.nvmrc) (the one CI publishes with) and pnpm 10.
+Use the Node.js version in [`.nvmrc`](.nvmrc) (the one CI publishes with) and pnpm 12.21.0.
 Keep `.nvmrc` pinned to an exact `major.minor.patch` release so every CI shard
 uses the same Node/V8 runtime, regardless of the runner's cached versions.
 Compatibility and performance are separate questions: CI checks that the suite
