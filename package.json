@@ -61,7 +61,7 @@
     "signal-polyfill": "0.2.3",
     "signia": "0.1.5",
     "solid-js": "1.9.19",
-    "solid-js-2": "npm:solid-js@1.9.19",
+    "solid-js-2": "npm:solid-js@2.0.0-rc.20",
     "solid-signals-2": "npm:@solidjs/signals@2.0.0-rc.20",
     "svelte": "5.57.3",
     "usignal": "0.10.0",
